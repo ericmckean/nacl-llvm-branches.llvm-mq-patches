@@ -3,15 +3,17 @@
 # Date 1301357236 25200
 # Branch pnacl-sfi
 # Node ID 865f8296339784a347213612e8d97b9453e9af15
-# Parent fbf21e3891a29e366e0e832bb84b84a3c5e96767
+# Parent fcc7a954685cd184f214794cf9798af946f2d5d5
 # Parent  5fc7321392bef1d0ad3c470a913a34945df60a23
 Merge 242:5fc7321392be and 238:bb23f96ef85a
 
  From llvm-pnacl-0019-243-865f8296339784a347213612e8d97b9453e9af15.patch
 
-diff -r fbf21e3891a2 lib/Target/ARM/ARMExpandPseudoInsts.cpp
+ From .hg/patches/llvm-pnacl-0019-243-865f8296339784a347213612e8d97b9453e9af15.patch.stripped
+
+diff -r fcc7a954685c lib/Target/ARM/ARMExpandPseudoInsts.cpp
 --- a/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Tue Jun 07 14:19:31 2011 -0700
++++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Tue Jun 07 14:28:36 2011 -0700
 @@ -853,17 +853,32 @@
      }
      case ARM::TPsoft: {
@@ -55,10 +57,10 @@ diff -r fbf21e3891a2 lib/Target/ARM/ARMExpandPseudoInsts.cpp
        return true;
      }
      case ARM::t2LDRHpci:
-diff -r fbf21e3891a2 lib/Target/X86/X86ISelDAGToDAG.cpp
+diff -r fcc7a954685c lib/Target/X86/X86ISelDAGToDAG.cpp
 --- a/lib/Target/X86/X86ISelDAGToDAG.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/lib/Target/X86/X86ISelDAGToDAG.cpp	Tue Jun 07 14:19:31 2011 -0700
-@@ -232,8 +232,9 @@
++++ b/lib/Target/X86/X86ISelDAGToDAG.cpp	Tue Jun 07 14:28:36 2011 -0700
+@@ -231,8 +231,9 @@
      inline void getAddressOperands(X86ISelAddressMode &AM, SDValue &Base, 
                                     SDValue &Scale, SDValue &Index,
                                     SDValue &Disp, SDValue &Segment) {
@@ -69,7 +71,7 @@ diff -r fbf21e3891a2 lib/Target/X86/X86ISelDAGToDAG.cpp
          AM.Base_Reg;
        Scale = getI8Imm(AM.Scale);
        Index = AM.IndexReg;
-@@ -1202,8 +1203,6 @@
+@@ -1201,8 +1202,6 @@
    if (MatchAddress(N, AM))
      return false;
  
@@ -78,7 +80,7 @@ diff -r fbf21e3891a2 lib/Target/X86/X86ISelDAGToDAG.cpp
    // @LOCALMOD-START
    if (Subtarget->isTargetNaCl64()) {
      // NaCl needs to zero the top 32-bits of the index, so we can't
-@@ -1211,7 +1210,9 @@
+@@ -1210,7 +1209,9 @@
      LegalizeIndexForNaCl(N, AM);
    }
    // @LOCALMOD-END
@@ -89,7 +91,7 @@ diff -r fbf21e3891a2 lib/Target/X86/X86ISelDAGToDAG.cpp
    if (AM.BaseType == X86ISelAddressMode::RegBase) {
      if (!AM.Base_Reg.getNode())
        AM.Base_Reg = CurDAG->getRegister(0, VT);
-@@ -1221,6 +1222,31 @@
+@@ -1220,6 +1221,31 @@
      AM.IndexReg = CurDAG->getRegister(0, VT);
  
    getAddressOperands(AM, Base, Scale, Index, Disp, Segment);
@@ -121,9 +123,9 @@ diff -r fbf21e3891a2 lib/Target/X86/X86ISelDAGToDAG.cpp
    return true;
  }
  
-diff -r fbf21e3891a2 lib/Target/X86/X86RegisterInfo.cpp
+diff -r fcc7a954685c lib/Target/X86/X86RegisterInfo.cpp
 --- a/lib/Target/X86/X86RegisterInfo.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/lib/Target/X86/X86RegisterInfo.cpp	Tue Jun 07 14:19:31 2011 -0700
++++ b/lib/Target/X86/X86RegisterInfo.cpp	Tue Jun 07 14:28:36 2011 -0700
 @@ -310,18 +310,14 @@
  
  const TargetRegisterClass *
@@ -145,9 +147,9 @@ diff -r fbf21e3891a2 lib/Target/X86/X86RegisterInfo.cpp
        return &X86::GR64_NOSPRegClass;
      return &X86::GR32_NOSPRegClass;
    }
-diff -r fbf21e3891a2 tools/llc/nacl_file.cpp
+diff -r fcc7a954685c tools/llc/nacl_file.cpp
 --- a/tools/llc/nacl_file.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/tools/llc/nacl_file.cpp	Tue Jun 07 14:19:31 2011 -0700
++++ b/tools/llc/nacl_file.cpp	Tue Jun 07 14:28:36 2011 -0700
 @@ -124,7 +124,11 @@
    }
    entry->real_fd = fd;

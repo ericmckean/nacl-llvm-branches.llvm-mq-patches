@@ -3,15 +3,17 @@
 # Date 1299527282 28800
 # Branch pnacl-sfi
 # Node ID 8b90cf891e03714c9ea8aa42c008f58a89f0c0f6
-# Parent aadd2bdaf43eee414739ef341a26cea0bca915d4
+# Parent 619b8781740de382e0a3b9b5d1dc35488fb882f2
 LLVM support for intrinsics for elf starting, setjmp, and longjmp.
 http://codereview.chromium.org/6602011/
 
  From llvm-pnacl-0013-233-8b90cf891e03714c9ea8aa42c008f58a89f0c0f6.patch
 
-diff -r aadd2bdaf43e include/llvm/Intrinsics.td
+ From .hg/patches/llvm-pnacl-0013-233-8b90cf891e03714c9ea8aa42c008f58a89f0c0f6.patch.stripped
+
+diff -r 619b8781740d include/llvm/Intrinsics.td
 --- a/include/llvm/Intrinsics.td	Fri Feb 25 09:54:29 2011 -0500
-+++ b/include/llvm/Intrinsics.td	Tue Jun 07 14:19:20 2011 -0700
++++ b/include/llvm/Intrinsics.td	Tue Jun 07 14:28:31 2011 -0700
 @@ -480,6 +480,19 @@
  def int_convertuu  : Intrinsic<[llvm_anyint_ty],
                                 [llvm_anyint_ty, llvm_i32_ty, llvm_i32_ty]>;
@@ -32,10 +34,10 @@ diff -r aadd2bdaf43e include/llvm/Intrinsics.td
  //===----------------------------------------------------------------------===//
  // Target-specific intrinsics
  //===----------------------------------------------------------------------===//
-diff -r aadd2bdaf43e lib/Target/ARM/ARMInstrInfo.td
+diff -r 619b8781740d lib/Target/ARM/ARMInstrInfo.td
 --- a/lib/Target/ARM/ARMInstrInfo.td	Fri Feb 25 09:54:29 2011 -0500
-+++ b/lib/Target/ARM/ARMInstrInfo.td	Tue Jun 07 14:19:20 2011 -0700
-@@ -4026,3 +4026,71 @@
++++ b/lib/Target/ARM/ARMInstrInfo.td	Tue Jun 07 14:28:31 2011 -0700
+@@ -4024,3 +4024,71 @@
    let Inst{23-20} = 0b0110;
    let Inst{7-4} = 0b0000;
  }
@@ -107,18 +109,10 @@ diff -r aadd2bdaf43e lib/Target/ARM/ARMInstrInfo.td
 +                       [(int_nacl_longjmp R0, R1)]>;
 +}
 +// @LOCALMOD-END
-diff -r aadd2bdaf43e lib/Target/X86/X86InstrNaCl.cpp
+diff -r 619b8781740d lib/Target/X86/X86InstrNaCl.cpp
 --- a/lib/Target/X86/X86InstrNaCl.cpp	Fri Feb 25 09:54:29 2011 -0500
-+++ b/lib/Target/X86/X86InstrNaCl.cpp	Tue Jun 07 14:19:20 2011 -0700
-@@ -32,6 +32,7 @@
-                            MCStreamer &Out) {
-   Out.EmitBundleAlignEnd();
-   Out.EmitBundleLock();
-+
-   MCInst CALLInst;
-   CALLInst.setOpcode(Is64Bit ? X86::CALL64pcrel32 : X86::CALLpcrel32);
-   CALLInst.addOperand(Op);
-@@ -39,15 +40,6 @@
++++ b/lib/Target/X86/X86InstrNaCl.cpp	Tue Jun 07 14:28:31 2011 -0700
+@@ -39,15 +39,6 @@
    Out.EmitBundleUnlock();
  }
  
@@ -134,14 +128,6 @@ diff -r aadd2bdaf43e lib/Target/X86/X86InstrNaCl.cpp
  static void EmitIndirectBranch(const MCOperand &Op, bool Is64Bit, bool IsCall,
                                 MCStreamer &Out) {
    const int JmpMask = FlagSfiX86JmpMask;
-@@ -86,7 +78,6 @@
-     JMPInst.addOperand(MCOperand::CreateReg(Is64Bit ? Reg64 : Reg32));
-     Out.EmitInstruction(JMPInst);
-   }
--
-   Out.EmitBundleUnlock();
- }
- 
 @@ -135,12 +126,12 @@
    // lea (%rsp, %r15, 1), %rsp
    MCInst Tmp;
@@ -584,9 +570,9 @@ diff -r aadd2bdaf43e lib/Target/X86/X86InstrNaCl.cpp
    }
  
    if (PrefixSaved) {
-diff -r aadd2bdaf43e lib/Target/X86/X86InstrNaCl.td
+diff -r 619b8781740d lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Fri Feb 25 09:54:29 2011 -0500
-+++ b/lib/Target/X86/X86InstrNaCl.td	Tue Jun 07 14:19:20 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Tue Jun 07 14:28:31 2011 -0700
 @@ -29,7 +29,7 @@
  // These instructions cannot be encoded (written into an object file) by the
  // MCCodeEmitter. Instead, during direct object emission, they get lowered to
@@ -723,9 +709,9 @@ diff -r aadd2bdaf43e lib/Target/X86/X86InstrNaCl.td
 +                       [(int_nacl_longjmp EDI, EAX)]>,
 +                       Requires<[IsNaCl64]>, TB;
 +}
-diff -r aadd2bdaf43e lib/Target/X86/X86NaClRewritePass.cpp
+diff -r 619b8781740d lib/Target/X86/X86NaClRewritePass.cpp
 --- a/lib/Target/X86/X86NaClRewritePass.cpp	Fri Feb 25 09:54:29 2011 -0500
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Tue Jun 07 14:19:20 2011 -0700
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Tue Jun 07 14:28:31 2011 -0700
 @@ -10,6 +10,10 @@
  // This file contains a pass that ensures stores and loads and stack/frame
  // pointer addresses are within the NaCl sandbox (for x86-64).

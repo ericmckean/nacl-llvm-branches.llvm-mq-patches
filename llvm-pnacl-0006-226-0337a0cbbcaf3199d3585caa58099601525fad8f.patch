@@ -3,7 +3,7 @@
 # Date 1298504194 28800
 # Branch pnacl-sfi
 # Node ID 0337a0cbbcaf3199d3585caa58099601525fad8f
-# Parent 5b5a3ed2ab2cb306a5dbb10a06304c678e26ebd3
+# Parent 4c80a838ac70c250f4ac7c8903a028366422d9f0
 Just what it says - for ARM/MC/ELF
 http://llvm.org/viewvc/llvm-project?view=rev&revision=124899
 
@@ -17,9 +17,11 @@ PNaCl lib/MC/ELFObjectwriter.cpp had a @LOCALMOD to deal with the NaCl specific 
 
  From llvm-pnacl-0006-226-0337a0cbbcaf3199d3585caa58099601525fad8f.patch
 
-diff -r 5b5a3ed2ab2c include/llvm/Support/ELF.h
+ From .hg/patches/llvm-pnacl-0006-226-0337a0cbbcaf3199d3585caa58099601525fad8f.patch.stripped
+
+diff -r 4c80a838ac70 include/llvm/Support/ELF.h
 --- a/include/llvm/Support/ELF.h	Tue Feb 22 17:59:22 2011 -0500
-+++ b/include/llvm/Support/ELF.h	Tue Jun 07 14:19:08 2011 -0700
++++ b/include/llvm/Support/ELF.h	Tue Jun 07 14:28:25 2011 -0700
 @@ -306,6 +306,10 @@
    R_MICROBLAZE_COPY           = 21
  };
@@ -31,9 +33,9 @@ diff -r 5b5a3ed2ab2c include/llvm/Support/ELF.h
  // ELF Relocation types for ARM
  // Meets 2.08 ABI Specs.
  
-diff -r 5b5a3ed2ab2c lib/MC/ELFObjectWriter.cpp
+diff -r 4c80a838ac70 lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Tue Feb 22 17:59:22 2011 -0500
-+++ b/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:19:08 2011 -0700
++++ b/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:28:25 2011 -0700
 @@ -276,6 +276,20 @@
  
      virtual void WriteHeader(uint64_t SectionDataSize, unsigned NumberOfSections);
@@ -91,15 +93,7 @@ diff -r 5b5a3ed2ab2c lib/MC/ELFObjectWriter.cpp
  
    // e_ehsize = ELF header size
    Write16(is64Bit() ? sizeof(ELF::Elf64_Ehdr) : sizeof(ELF::Elf32_Ehdr));
-@@ -1495,7 +1506,6 @@
- 
- /// START OF SUBCLASSES for ELFObjectWriter
- //===- ARMELFObjectWriter -------------------------------------------===//
--
- ARMELFObjectWriter::ARMELFObjectWriter(MCELFObjectTargetWriter *MOTW,
-                                        raw_ostream &_OS,
-                                        bool IsLittleEndian)
-@@ -1505,6 +1515,20 @@
+@@ -1505,6 +1516,20 @@
  ARMELFObjectWriter::~ARMELFObjectWriter()
  {}
  
@@ -120,9 +114,9 @@ diff -r 5b5a3ed2ab2c lib/MC/ELFObjectWriter.cpp
  unsigned ARMELFObjectWriter::GetRelocType(const MCValue &Target,
                                            const MCFixup &Fixup,
                                            bool IsPCRel,
-diff -r 5b5a3ed2ab2c test/MC/ARM/elf-eflags-eabi.s
+diff -r 4c80a838ac70 test/MC/ARM/elf-eflags-eabi.s
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/test/MC/ARM/elf-eflags-eabi.s	Tue Jun 07 14:19:08 2011 -0700
++++ b/test/MC/ARM/elf-eflags-eabi.s	Tue Jun 07 14:28:25 2011 -0700
 @@ -0,0 +1,13 @@
 +@ RUN: llvm-mc %s -triple=armv7-linux-gnueabi -filetype=obj -o - | \
 +@ RUN:    elf-dump --dump-section-data  | FileCheck -check-prefix=OBJ %s

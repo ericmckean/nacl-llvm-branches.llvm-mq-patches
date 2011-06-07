@@ -3,14 +3,16 @@
 # Date 1298504194 28800
 # Branch pnacl-sfi
 # Node ID 2c354d09798c4c01137f160a5054d94a4e0d614a
-# Parent c34a3aa54cef270c3d28903ff83e16500f6e4066
+# Parent ba673e2a80bdb82072020c4d45d14024f51b5d4f
 Cherrypick arm-mc-elf-r125025-lowercase.patch for .ARM.attributes. Stupid lowercase vs upppercase nonsense.
 
  From llvm-pnacl-0011-231-2c354d09798c4c01137f160a5054d94a4e0d614a.patch
 
-diff -r c34a3aa54cef lib/Target/ARM/ARMAsmPrinter.cpp
+ From .hg/patches/llvm-pnacl-0011-231-2c354d09798c4c01137f160a5054d94a4e0d614a.patch.stripped
+
+diff -r ba673e2a80bd lib/Target/ARM/ARMAsmPrinter.cpp
 --- a/lib/Target/ARM/ARMAsmPrinter.cpp	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/Target/ARM/ARMAsmPrinter.cpp	Tue Jun 07 14:19:17 2011 -0700
++++ b/lib/Target/ARM/ARMAsmPrinter.cpp	Tue Jun 07 14:28:29 2011 -0700
 @@ -93,7 +93,7 @@
      void EmitTextAttribute(unsigned Attribute, StringRef String) {
        switch (Attribute) {

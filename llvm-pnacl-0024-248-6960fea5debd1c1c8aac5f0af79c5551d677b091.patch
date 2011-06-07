@@ -3,7 +3,7 @@
 # Date 1303412567 25200
 # Branch pnacl-sfi
 # Node ID 6960fea5debd1c1c8aac5f0af79c5551d677b091
-# Parent 20f15f5775b8ab1888b6a21cf0dfde68ac3b121c
+# Parent 5fae15831c958c1302cc1c4dd1e48ab7720ea8e5
 Address the last bit of relocation flag related divergence betweeen
 LLVM and binutils.
 
@@ -36,9 +36,11 @@ TEST=utman.sh test-arm-pic
 
  From llvm-pnacl-0024-248-6960fea5debd1c1c8aac5f0af79c5551d677b091.patch
 
-diff -r 20f15f5775b8 lib/MC/ELFObjectWriter.cpp
+ From .hg/patches/llvm-pnacl-0024-248-6960fea5debd1c1c8aac5f0af79c5551d677b091.patch.stripped
+
+diff -r 5fae15831c95 lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Fri Apr 15 18:11:24 2011 -0400
-+++ b/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:19:40 2011 -0700
++++ b/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:28:40 2011 -0700
 @@ -31,13 +31,25 @@
  #include "llvm/Support/ELF.h"
  #include "llvm/Target/TargetAsmBackend.h"
@@ -179,7 +181,7 @@ diff -r 20f15f5775b8 lib/MC/ELFObjectWriter.cpp
      if (const MCSymbolRefExpr *RefB = Target.getSymB()) {
        const MCSymbol &SymbolB = RefB->getSymbol();
        MCSymbolData &SDB = Asm.getSymbolData(SymbolB);
-@@ -1546,31 +1574,94 @@
+@@ -1547,31 +1575,94 @@
  // In ARM, _MergedGlobals and other most symbols get emitted directly.
  // I.e. not as an offset to a section symbol.
  // This code is a first-cut approximation of what ARM/gcc does.
@@ -285,7 +287,7 @@ diff -r 20f15f5775b8 lib/MC/ELFObjectWriter.cpp
  unsigned ARMELFObjectWriter::GetRelocType(const MCValue &Target,
                                            const MCFixup &Fixup,
                                            bool IsPCRel,
-@@ -1579,6 +1670,20 @@
+@@ -1580,6 +1671,20 @@
    MCSymbolRefExpr::VariantKind Modifier = Target.isAbsolute() ?
      MCSymbolRefExpr::VK_None : Target.getSymA()->getKind();
  
@@ -306,7 +308,7 @@ diff -r 20f15f5775b8 lib/MC/ELFObjectWriter.cpp
    unsigned Type = 0;
    if (IsPCRel) {
      switch ((unsigned)Fixup.getKind()) {
-@@ -1587,7 +1692,7 @@
+@@ -1588,7 +1693,7 @@
        switch (Modifier) {
        default: llvm_unreachable("Unsupported Modifier");
        case MCSymbolRefExpr::VK_None:
@@ -315,7 +317,7 @@ diff -r 20f15f5775b8 lib/MC/ELFObjectWriter.cpp
          break;
        case MCSymbolRefExpr::VK_ARM_TLSGD:
          assert(0 && "unimplemented");
-@@ -1608,7 +1713,15 @@
+@@ -1609,7 +1714,15 @@
        }
        break;
      case ARM::fixup_arm_condbranch:
@@ -332,7 +334,7 @@ diff -r 20f15f5775b8 lib/MC/ELFObjectWriter.cpp
        break;
      case ARM::fixup_arm_movt_hi16:
      case ARM::fixup_arm_movt_hi16_pcrel:
-@@ -1683,11 +1796,9 @@
+@@ -1684,11 +1797,9 @@
      }
    }
  
