@@ -1,0 +1,22 @@
+# HG changeset patch
+# User David Meyer <pdox@google.com>
+# Date 1304631442 25200
+# Branch pnacl-sfi
+# Node ID cb04533056093333fdb7377eb95b72b883527249
+# Parent 185fb02b49039ec1cd2b40981a327a1acaba4327
+Add libplatform and libgio to LLVM self-build
+
+ From llvm-pnacl-0029-253-cb04533056093333fdb7377eb95b72b883527249.patch
+
+diff -r 185fb02b4903 Makefile.rules
+--- a/Makefile.rules	Thu Apr 28 13:00:37 2011 -0700
++++ b/Makefile.rules	Tue Jun 07 14:19:49 2011 -0700
+@@ -578,7 +578,7 @@
+ endif
+ 
+ ifeq ($(NACL_SANDBOX),1)
+-  LIBS += -lsrpc -lpthread -lm -lnacl -lnosys
++  LIBS += -lsrpc -lpthread -lplatform -lgio -lm -lnacl -lnosys
+ else
+   LIBS +=
+ endif

@@ -1,0 +1,190 @@
+# HG changeset patch
+# User David Meyer <pdox@google.com>
+# Date 1300409399 25200
+# Branch pnacl-sfi
+# Node ID d64f068b8c80062e712fb851da70dfbe4c5070dd
+# Parent 780950a48c0139dd91d5219374ba3e6f91f6550a
+Tweaks to LLVM for self-build
+
+ From llvm-pnacl-0014-234-d64f068b8c80062e712fb851da70dfbe4c5070dd.patch
+
+diff -r 780950a48c01 lib/Target/SubtargetFeature.cpp
+--- a/lib/Target/SubtargetFeature.cpp	Mon Mar 07 11:48:02 2011 -0800
++++ b/lib/Target/SubtargetFeature.cpp	Tue Jun 07 14:19:22 2011 -0700
+@@ -380,5 +380,11 @@
+       AddFeature("64bit");
+       AddFeature("altivec");
+     }
++// @LOCALMOD-BEGIN
++  } else if (Triple.getArch() == Triple::arm &&
++             Triple.getOS() == Triple::NativeClient) {
++    AddFeature("-neon");
++    AddFeature("+vfp2");
++// @LOCALMOD-END
+   }
+ }
+diff -r 780950a48c01 lib/Target/X86/X86InstrControl.td
+--- a/lib/Target/X86/X86InstrControl.td	Mon Mar 07 11:48:02 2011 -0800
++++ b/lib/Target/X86/X86InstrControl.td	Tue Jun 07 14:19:22 2011 -0700
+@@ -146,13 +146,13 @@
+     def CALLpcrel32 : Ii32PCRel<0xE8, RawFrm,
+                            (outs), (ins i32imm_pcrel:$dst,variable_ops),
+                            "call{l}\t$dst", []>,
+-                      Requires<[In32BitMode, NotNaCl]>;
++                      Requires<[In32BitMode]>;
+     def CALL32r     : I<0xFF, MRM2r, (outs), (ins GR32:$dst, variable_ops),
+-                        "call{l}\t{*}$dst", [(X86call GR32:$dst)]>,
+-                         Requires<[In32BitMode, NotNaCl]>;
++                        "call{l}\t{*}$dst", []>, // @LOCALMOD
++                         Requires<[In32BitMode]>;
+     def CALL32m     : I<0xFF, MRM2m, (outs), (ins i32mem:$dst, variable_ops),
+-                        "call{l}\t{*}$dst", [(X86call (loadi32 addr:$dst))]>,
+-                        Requires<[In32BitMode, NotNaCl]>;
++                        "call{l}\t{*}$dst", []>, // @LOCALMOD
++                        Requires<[In32BitMode]>;
+   
+     def FARCALL16i  : Iseg16<0x9A, RawFrmImm16, (outs), 
+                              (ins i16imm:$off, i16imm:$seg),
+@@ -174,6 +174,16 @@
+                        Requires<[NotNaCl]>; // @LOCALMOD
+   }
+ 
++// @LOCALMOD-BEGIN
++// These CodeGen patterns are normally part of the declaration above.
++// However, we need to be able to disable these patterns for NaCl
++// without disabling the the instruction itself. (so we can use the
++// instruction in assembly input)
++def : Pat<(X86call GR32:$dst),
++          (CALL32r GR32:$dst)>, Requires<[NotNaCl]>;
++def : Pat<(X86call (loadi32 addr:$dst)),
++          (CALL32m addr:$dst)>, Requires<[NotNaCl]>;
++// @LOCALMOD-END
+ 
+ // Tail call stuff.
+ 
+diff -r 780950a48c01 lib/Target/X86/X86InstrNaCl.td
+--- a/lib/Target/X86/X86InstrNaCl.td	Mon Mar 07 11:48:02 2011 -0800
++++ b/lib/Target/X86/X86InstrNaCl.td	Tue Jun 07 14:19:22 2011 -0700
+@@ -61,7 +61,7 @@
+ 
+ let isCall = 1, isAsmParserOnly = 1 in {
+   def NACL_CALL32d : NaClPI32<(outs), (ins i32imm_pcrel:$dst),
+-                     "call\t$dst">;
++                     "naclcall\t$dst">;
+   def NACL_CALL32r : NaClPI32<(outs), (ins GR32:$dst),
+                      "naclcall\t$dst">;
+ }
+@@ -91,7 +91,7 @@
+ 
+ let isCall = 1, isAsmParserOnly = 1 in {
+   def NACL_CALL64d : NaClPI64<(outs), (ins i32imm_pcrel:$dst),
+-                     "call\t$dst">;
++                     "naclcall\t$dst">;
+   def NACL_CALL64r : NaClPI64<(outs), (ins GR32:$dst, GR64:$rZP),
+                      "naclcall\t$dst,$rZP">;
+ }
+@@ -167,7 +167,7 @@
+ 
+     def NACL_CG_CALLpcrel32 : I<0, Pseudo,
+                               (outs), (ins i32imm_pcrel:$dst, variable_ops),
+-                              "call\t$dst", []>, Requires<[IsNaCl32]>;
++                              "naclcall\t$dst", []>, Requires<[IsNaCl32]>;
+     def NACL_CG_CALL32r     : I<0, Pseudo,
+                               (outs), (ins GR32:$dst, variable_ops),
+                               "naclcall\t$dst", [(X86call GR32:$dst)]>,
+@@ -217,7 +217,7 @@
+ 
+     def NACL_CG_CALL64pcrel32 : I<0, Pseudo, (outs),
+                                 (ins i32imm_pcrel:$dst, variable_ops),
+-                                "call\t$dst", []>,
++                                "naclcall\t$dst", []>,
+                                 Requires<[IsNaCl64]>;
+ 
+     def NACL_CG_CALL64r       : I<0, Pseudo, (outs), (ins GR32:$dst, variable_ops),
+diff -r 780950a48c01 tools/gold/gold-plugin.cpp
+--- a/tools/gold/gold-plugin.cpp	Mon Mar 07 11:48:02 2011 -0800
++++ b/tools/gold/gold-plugin.cpp	Tue Jun 07 14:19:22 2011 -0700
+@@ -62,6 +62,7 @@
+   };
+ 
+   lto_codegen_model output_type = LTO_CODEGEN_PIC_MODEL_STATIC;
++  bool output_type_override = false; // @LOCALMOD
+   std::string output_name = "";
+   std::list<claimed_file> Modules;
+   std::vector<sys::Path> Cleanup;
+@@ -91,7 +92,14 @@
+       return;
+     llvm::StringRef opt = opt_;
+ 
+-    if (opt == "generate-api-file") {
++    // @LOCALMOD-BEGIN
++    // The plugin generates non-PIC if targetting a static executable.
++    // This option overrides that behavior.
++    if (opt == "PIC") {
++      output_type = LTO_CODEGEN_PIC_MODEL_DYNAMIC;
++      output_type_override = true;
++    // @LOCALMOD-END
++    } else if (opt == "generate-api-file") {
+       generate_api_file = true;
+     } else if (opt.startswith("mcpu=")) {
+       mcpu = opt.substr(strlen("mcpu="));
+@@ -159,6 +167,10 @@
+         output_name = tv->tv_u.tv_string;
+         break;
+       case LDPT_LINKER_OUTPUT:
++        // @LOCALMOD-BEGIN
++        if (output_type_override)
++          break;
++        // @LOCALMOD-END
+         switch (tv->tv_u.tv_val) {
+           case LDPO_REL:  // .o
+           case LDPO_DYN:  // .so
+diff -r 780950a48c01 tools/llc/llc.cpp
+--- a/tools/llc/llc.cpp	Mon Mar 07 11:48:02 2011 -0800
++++ b/tools/llc/llc.cpp	Tue Jun 07 14:19:22 2011 -0700
+@@ -299,6 +299,11 @@
+   if (MCPU.size() || MAttrs.size()) {
+     SubtargetFeatures Features;
+     Features.setCPU(MCPU);
++    // @LOCALMOD-BEGIN
++    // Use the same default attribute settings as libLTO.
++    // TODO(pdox): Figure out why this isn't done for upstream llc.
++    Features.getDefaultSubtargetFeatures(MCPU, TheTriple);
++    // @LOCALMOD-END
+     for (unsigned i = 0; i != MAttrs.size(); ++i)
+       Features.AddFeature(MAttrs[i]);
+     FeaturesStr = Features.getString();
+diff -r 780950a48c01 tools/llc/nacl_file.cpp
+--- a/tools/llc/nacl_file.cpp	Mon Mar 07 11:48:02 2011 -0800
++++ b/tools/llc/nacl_file.cpp	Tue Jun 07 14:19:22 2011 -0700
+@@ -37,8 +37,8 @@
+ #define printerr(...)                           \
+   fprintf(stderr, __VA_ARGS__)
+ 
+-extern "C" int __real_open(const char *pathname, int oflags, int mode);
+-extern "C" int __wrap_open(const char *pathname, int oflags, int mode);
++extern "C" int __real_open(const char *pathname, int oflags, ...);
++extern "C" int __wrap_open(const char *pathname, int oflags, ...);
+ extern "C" int __real_close(int dd);
+ extern "C" int __wrap_close(int dd);
+ extern "C" int __real_read(int dd, void *, size_t);
+@@ -344,11 +344,18 @@
+   return 0;
+ }
+ 
+-int __wrap_open(const char *pathname, int oflags, int mode) {
++int __wrap_open(const char *pathname, int oflags, ...) {
+   int dd = -1;
+   int i;
++  int mode = 0;
++  va_list ap;
+   struct NaCl_file_map *entry;
+ 
++  va_start(ap, oflags);
++  if (oflags & O_CREAT) {
++    mode = va_arg(ap, int);
++  }
++
+   for (entry = nacl_fs; NULL != entry; entry = entry->next) {
+     if (!strcmp(pathname, entry->filename)) {
+       break;

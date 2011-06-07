@@ -1,0 +1,170 @@
+# HG changeset patch
+# User Jan Voung <jvoung@google.com>
+# Date 1298061279 28800
+# Branch pnacl-sfi
+# Node ID 98e4ddb336993b15df8257b7ddd54cda34e4781c
+# Parent d96cf74c437b505f7a1025419083a6a6a9e65a02
+Add an rpc for setting LLC arguments.
+http://codereview.chromium.org/6546003/
+
+ From llvm-pnacl-0004-224-98e4ddb336993b15df8257b7ddd54cda34e4781c.patch
+
+diff -r d96cf74c437b tools/llc/nacl_file.cpp
+--- a/tools/llc/nacl_file.cpp	Mon Feb 14 12:22:55 2011 -0800
++++ b/tools/llc/nacl_file.cpp	Tue Jun 07 14:19:05 2011 -0700
+@@ -55,7 +55,7 @@
+   char *filename;
+   int real_fd;
+   int is_reg_file;    /* We use shm for output, and UrlAsNaClDesc supplies
+-                      * regular files. Differentiate between the two. */
++                       * regular files. Differentiate between the two. */
+   pthread_mutex_t mu;
+   size_t size;        /* Bytes mmap'ed for this file. */
+   size_t real_size;   /* Bytes actually written, if it is a shm. */
+@@ -383,11 +383,17 @@
+ }
+ 
+ int __wrap_close(int dd) {
+-
+   if (!IsValidDescriptor(dd)) {
+     return __real_close(dd);
+   }
+ 
++  /* Be careful w/ the test... if !IsValidDescriptor(dd),
++     is_reg_file could return -1 */
++  if (1 == is_reg_file(dd)) {
++    int fd = get_real_fd(dd);
++    return __real_close(fd);
++  }
++
+   pthread_mutex_lock(&nacl_files[dd].mu);
+ 
+   if (NULL == nacl_files[dd].file_ptr) {
+@@ -408,17 +414,15 @@
+   off_t base_pos;
+   off_t adj;
+   size_t count_up;
+-  struct stat stb;
+-  mode_t fmt;
+-  int fd;
+ 
+   if (!IsValidDescriptor(dd)) {
+     return __real_read(dd, buf, count);
+   }
+ 
+-  /* Be careful w/ the test... if it !IsValidDescriptor it could return -1 */
++ /* Be careful w/ the test... if !IsValidDescriptor(dd),
++    is_reg_file could return -1 */
+   if (1 == is_reg_file(dd)) {
+-    fd = get_real_fd(dd);
++    int fd = get_real_fd(dd);
+     return __real_read(fd, buf, count);
+   }
+ 
+@@ -494,6 +498,13 @@
+     return __real_write(dd, buf, count);
+   }
+ 
++ /* Be careful w/ the test... if !IsValidDescriptor(dd),
++    is_reg_file could return -1 */
++  if (1 == is_reg_file(dd)) {
++    int fd = get_real_fd(dd);
++    return __real_write(fd, buf, count);
++  }
++
+   pthread_mutex_lock(&nacl_files[dd].mu);
+ 
+   if (NULL == nacl_files[dd].file_ptr) {
+@@ -550,15 +561,15 @@
+ }
+ 
+ off_t __wrap_lseek(int dd, off_t offset, int whence) {
+-  int fd;
+ 
+   if (!IsValidDescriptor(dd)) {
+     return __real_lseek(dd, offset, whence);
+   }
+ 
+-  /* Be careful w/ the test... if it !IsValidDescriptor it could return -1 */
++ /* Be careful w/ the test... if !IsValidDescriptor(dd),
++    is_reg_file could return -1 */
+   if (1 == is_reg_file(dd)) {
+-    fd = get_real_fd(dd);
++    int fd = get_real_fd(dd);
+     return __real_lseek(fd, offset, whence);
+   }
+ 
+@@ -594,17 +605,49 @@
+   return offset;
+ }
+ 
++#define MAX_LLC_ARGS 256
++// Must keep in sync with initializer.
++#define BAKED_IN_LLC_ARGS 4
++static char *llc_argv[MAX_LLC_ARGS] = { "llc",
++                                        "bitcode_combined",
++                                        "-o",
++                                        "obj_combined", };
++static int llc_argc = BAKED_IN_LLC_ARGS;
++
++static void reset_arg_array() {
++  // Free old args
++  for (int i = BAKED_IN_LLC_ARGS; i < llc_argc; ++i) {
++    free(llc_argv[i]);
++  }
++  llc_argc = BAKED_IN_LLC_ARGS;
++}
++
++static void add_arg_string(NaClSrpcRpc *rpc,
++          NaClSrpcArg **in_args,
++          NaClSrpcArg **out_args,
++          NaClSrpcClosure *done) {
++  if (llc_argc >= MAX_LLC_ARGS) {
++    printerr("Can't AddArg #(%d) beyond MAX_LLC_ARGS(%d)\n",
++             llc_argc, MAX_LLC_ARGS);
++    exit(1);
++  }
++
++  llc_argv[llc_argc] = strdup(in_args[0]->arrays.str);
++  if (NULL == llc_argv[llc_argc]) {
++    printerr("Out of memory for copying arg string\n");
++    exit(1);
++  }
++  llc_argc++;
++
++  rpc->result = NACL_SRPC_RESULT_OK;
++  done->Run(done);
++}
++
+ void
+ translate(NaClSrpcRpc *rpc,
+           NaClSrpcArg **in_args,
+           NaClSrpcArg **out_args,
+           NaClSrpcClosure *done) {
+-  /* TODO(robertm): receive command line arguments from SRPC.
+-     That way, we can supply x86-32 params and ARM params as well. */
+-  char *argv[] = {"llc", "-march=x86-64", "-mcpu=core2",
+-                  "-asm-verbose=false", "-filetype=obj",
+-                  "bitcode_combined", "-o", "obj_combined"};
+-  int kArgvLength = sizeof argv / sizeof argv[0];
+   /* Input bitcode file.
+    * Supplied by urlAsNaClDesc, which should get the right
+    * size from fstat(). */
+@@ -615,7 +658,8 @@
+   NaClFile_new("obj_combined");
+ 
+   /* Call main. */
+-  llc_main(kArgvLength, argv);
++  llc_main(llc_argc, llc_argv);
++  reset_arg_array();
+ 
+   /* Save obj fd for return. */
+   out_args[0]->u.hval = get_real_fd_by_name("obj_combined");
+@@ -626,6 +670,7 @@
+ }
+ 
+ const struct NaClSrpcHandlerDesc srpc_methods[] = {
++  { "AddArg:s:", add_arg_string },
+   { "Translate:h:hi", translate },
+   { NULL, NULL },
+ };

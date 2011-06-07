@@ -1,0 +1,97 @@
+# HG changeset patch
+# User Jason Kim <jasonwkim@google.com>
+# Date 1305243594 25200
+# Branch pnacl-sfi
+# Node ID 19c5680568b4d5af396453646b2796753dac2b28
+# Parent b9b939f4a8382fb9cf8df504ee2a8d7dba517287
+This fixes the last bit of divergence between LLVM and binutils for ARM in the
+text section.
+
+There is quite a lot going on here with the simple two line change...
+
+Assume the following bit of annotated assembly:
+
+	.section	.data.rel.ro,"aw",%progbits
+	.align	2
+.LAlpha:
+	.long	startval(GOTOFF)
+
+	.text
+	.align	2
+	.type	main,%function
+	.align	4
+
+main:  ;;; assume "main" starts at offset 0x20
+0x0	push	{r11, lr}
+0x4	movw	r0, :lower16:(.LAlpha-(.LBeta+8))
+         ;;;     ==> (.AddrOf(.LAlpha) - ((.AddrOf(.LBeta) - .AddrOf(".")) + 8)
+         ;;;     ==> (??? - ((16-4) + 8) = -20
+0x8	movt	r0, :upper16:(.LAlpha-(.LBeta+8))
+         ;;;     ==> (.AddrOf(.LAlpha) - ((.AddrOf(.LBeta) - .AddrOf(".")) + 8)
+         ;;;     ==> (??? - ((16-8) + 8) = -16
+0xc	... blah
+
+.LBeta:
+0x10	add	r0, pc, r0
+0x14	... blah
+
+.LGamma:
+0x18	add	r1, pc, r1
+
+Above snippet results in the following relocs in the .o file for the
+first pair of movw/movt instructions
+
+00000024 R_ARM_MOVW_PREL_NC  .LAlpha
+00000028 R_ARM_MOVT_PREL     .LAlpha
+
+And the encoded instructions in the .o file for main: must be
+
+00000020 <main>:
+  20:	e92d4800 	push	{fp, lr}
+  24:	e30f0fec 	movw	r0, #65516	; 0xffec i.e. -20
+  28:	e34f0ff0 	movt	r0, #65520	; 0xfff0 i.e. -16
+
+However, llc (prior to this commit) generates the following sequence
+
+00000020 <main>:
+  20:	e92d4800 	push	{fp, lr}
+  24:	e30f0fec 	movw	r0, #65516	; 0xffec - i.e. -20
+  28:	e34f0fff 	movt	r0, #65535	; 0xffff - i.e. -1
+
+What has to happen in the ArmAsmBackend is that if the relocation is pc
+relative, the 16 bits encoded as part of movw and movt must be both addends,
+not addresses. It makes sense to encode addresses by right shifting the value
+by 16, but the result is incorrect for PIC.
+
+So the right shift by 16 for movt is ONLY valid for the NON-PCRel case.
+This change agrees with what GNU as does, and makes the PIC code run.
+
+ From llvm-pnacl-0031-255-19c5680568b4d5af396453646b2796753dac2b28.patch
+
+diff -r b9b939f4a838 lib/Target/ARM/ARMAsmBackend.cpp
+--- a/lib/Target/ARM/ARMAsmBackend.cpp	Thu May 05 16:52:14 2011 -0700
++++ b/lib/Target/ARM/ARMAsmBackend.cpp	Tue Jun 07 14:19:52 2011 -0700
+@@ -172,10 +172,10 @@
+   case FK_Data_4:
+     return Value;
+   case ARM::fixup_arm_movt_hi16:
+-  case ARM::fixup_arm_movt_hi16_pcrel:
+     Value >>= 16;
+     // Fallthrough
+   case ARM::fixup_arm_movw_lo16:
++  case ARM::fixup_arm_movt_hi16_pcrel:
+   case ARM::fixup_arm_movw_lo16_pcrel: {
+     unsigned Hi4 = (Value & 0xF000) >> 12;
+     unsigned Lo12 = Value & 0x0FFF;
+@@ -185,10 +185,10 @@
+     return Value;
+   }
+   case ARM::fixup_t2_movt_hi16:
+-  case ARM::fixup_t2_movt_hi16_pcrel:
+     Value >>= 16;
+     // Fallthrough
+   case ARM::fixup_t2_movw_lo16:
++  case ARM::fixup_t2_movt_hi16_pcrel:
+   case ARM::fixup_t2_movw_lo16_pcrel: {
+     unsigned Hi4 = (Value & 0xF000) >> 12;
+     unsigned i = (Value & 0x800) >> 11;

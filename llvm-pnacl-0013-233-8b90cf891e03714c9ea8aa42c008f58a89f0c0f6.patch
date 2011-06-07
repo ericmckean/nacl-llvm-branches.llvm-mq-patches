@@ -1,0 +1,794 @@
+# HG changeset patch
+# User David Sehr <sehr@google.com>
+# Date 1299527282 28800
+# Branch pnacl-sfi
+# Node ID 8b90cf891e03714c9ea8aa42c008f58a89f0c0f6
+# Parent aadd2bdaf43eee414739ef341a26cea0bca915d4
+LLVM support for intrinsics for elf starting, setjmp, and longjmp.
+http://codereview.chromium.org/6602011/
+
+ From llvm-pnacl-0013-233-8b90cf891e03714c9ea8aa42c008f58a89f0c0f6.patch
+
+diff -r aadd2bdaf43e include/llvm/Intrinsics.td
+--- a/include/llvm/Intrinsics.td	Fri Feb 25 09:54:29 2011 -0500
++++ b/include/llvm/Intrinsics.td	Tue Jun 07 14:19:20 2011 -0700
+@@ -480,6 +480,19 @@
+ def int_convertuu  : Intrinsic<[llvm_anyint_ty],
+                                [llvm_anyint_ty, llvm_i32_ty, llvm_i32_ty]>;
+ 
++// @LOCALMOD-BEGIN
++//===----------------------- Native Client Intrinsics ---------------------===//
++// TODO(sehr): conditionalize this on IsNaCl64 | IsNaCl32 | IsNaClArm.
++// The expansions of these are in lib/Target/X86/X86InstrNacl.{td, cpp} and
++// lib/Target/ARM/ARMInstrInfo.td.
++def int_nacl_elf_start : Intrinsic<[], [llvm_ptr_ty]>,
++                         GCCBuiltin<"__builtin_nacl_elf_start">;
++def int_nacl_setjmp : Intrinsic<[llvm_i32_ty],  [llvm_ptr_ty, llvm_ptr_ty]>,
++                      GCCBuiltin<"__builtin_nacl_setjmp">;
++def int_nacl_longjmp : Intrinsic<[],  [llvm_ptr_ty, llvm_i32_ty]>,
++                       GCCBuiltin<"__builtin_nacl_longjmp">;
++// @LOCALMOD-END
++
+ //===----------------------------------------------------------------------===//
+ // Target-specific intrinsics
+ //===----------------------------------------------------------------------===//
+diff -r aadd2bdaf43e lib/Target/ARM/ARMInstrInfo.td
+--- a/lib/Target/ARM/ARMInstrInfo.td	Fri Feb 25 09:54:29 2011 -0500
++++ b/lib/Target/ARM/ARMInstrInfo.td	Tue Jun 07 14:19:20 2011 -0700
+@@ -4026,3 +4026,71 @@
+   let Inst{23-20} = 0b0110;
+   let Inst{7-4} = 0b0000;
+ }
++
++// @LOCALMOD-BEGIN
++//===----------------------------------------------------------------------===//
++// NativeClient intrinsics
++// These provide the ability to implement several low-level features without
++// having to link native ASM code on the client.
++// This code has to be kept in sync with include/llvm/Intrinsics.td and
++// lib/Target/X86InstrNaCl.{td, cpp}.
++// TODO(sehr): conditionalize this on IsNaCl64 | IsNaCl32 | IsNaClArm.
++
++let isTerminator = 1, isBarrier = 1, Uses = [R4, SP] in {
++  // At ELF startup time the parameters that are eventually passed to main
++  // need to be computed from one value on the stack.  That value, argc, is
++  // loaded into r0.  Four bytes above that is argv[argc + 1].  And above that
++  // is envp the start of the environment.
++  // The bic r3, ... fragment aligns the stack 0mod8.  Remove when issue
++  // http://code.google.com/p/nativeclient/issues/detail?id=94 is fixed.
++  // This intrinsic loads r0 = argc, r1 = argv, and r2 = envp, expecting that
++  // there will be a call to __nacl_startup(argc, argv, envp).
++  def NACL_ELF_START : AXI<(outs), (ins), MiscFrm, NoItinerary,
++                           "mov r11, #0; "            // clear frame pointer
++                           "mov lr, #0; "             // clear link register
++                           "ldr r0, [sp]; "           // r0 = argc
++                           "add r1, sp, #4; "         // r1 = argv
++                           "add r2, r1, r0, lsl #2; " // r2 = envp
++                           "bic r3, sp, #7; "
++                           "teq r3, sp; "
++                           "pushne {{r1}}; "          // sp aligned 0mod8
++                           "sfi_nops_to_force_slot2; "
++                           "sfi_code_mask r4; "
++                           "blx r4; "
++                           "trap",                    // Bundle start
++                           [(int_nacl_elf_start R4)]>;
++}
++
++let Uses = [R0], Defs = [R0] in {
++  // Saves all the callee-saves registers, sp, and lr to the JMP_BUF structure
++  // pointed to by r0.  The JMP_BUF structure is the maximum size over all
++  // supported architectures.
++  def NACL_SETJ : AXI<(outs), (ins),
++                      MiscFrm, NoItinerary,
++                      // Bundle start
++                      "sfi_nop_if_at_bundle_end; "
++                      "sfi_data_mask r0; "
++                      "stmia r0!, {{r4, r5, r6, r7, r8, r10, r11, sp, lr}}; "
++                      "mov r0, #0; ",
++                      [(set R0, (int_nacl_setjmp R0, LR))]>;
++}
++
++let isTerminator = 1, isBranch = 1, isBarrier = 1, Uses = [R0, R1] in {
++  // Restores all the callee-saves registers, sp, and lr from the JMP_BUF
++  // structure pointed to by r0.  Returns the value in r1 at entry.  This
++  // implements the tail of longjmp, with the normalization of the return value   // (if the caller passes zero to longjmp, it should return 1) done in the
++  // caller.
++  def NACL_LONGJ : AXI<(outs), (ins), MiscFrm, NoItinerary,
++                       // Bundle start
++                       "ldmia r0!, {{r4, r5, r6, r7, r8, r10, r11, r12, lr}}; "
++                       "sfi_nop_if_at_bundle_end; "
++                       "mov sp, r12; "
++                       "sfi_data_mask sp; "
++                       "movs r0, r1; "
++                       "moveq r0, #1; "
++                       "sfi_nop_if_at_bundle_end; "
++                       "sfi_code_mask lr; "
++                       "bx lr; ",
++                       [(int_nacl_longjmp R0, R1)]>;
++}
++// @LOCALMOD-END
+diff -r aadd2bdaf43e lib/Target/X86/X86InstrNaCl.cpp
+--- a/lib/Target/X86/X86InstrNaCl.cpp	Fri Feb 25 09:54:29 2011 -0500
++++ b/lib/Target/X86/X86InstrNaCl.cpp	Tue Jun 07 14:19:20 2011 -0700
+@@ -32,6 +32,7 @@
+                            MCStreamer &Out) {
+   Out.EmitBundleAlignEnd();
+   Out.EmitBundleLock();
++
+   MCInst CALLInst;
+   CALLInst.setOpcode(Is64Bit ? X86::CALL64pcrel32 : X86::CALLpcrel32);
+   CALLInst.addOperand(Op);
+@@ -39,15 +40,6 @@
+   Out.EmitBundleUnlock();
+ }
+ 
+-static void EmitRegTruncate(unsigned Reg64, MCStreamer &Out) {
+-  unsigned Reg32 = getX86SubSuperRegister(Reg64, MVT::i32);
+-  MCInst MOVInst;
+-  MOVInst.setOpcode(X86::MOV32rr);
+-  MOVInst.addOperand(MCOperand::CreateReg(Reg32));
+-  MOVInst.addOperand(MCOperand::CreateReg(Reg32));
+-  Out.EmitInstruction(MOVInst);
+-}
+-
+ static void EmitIndirectBranch(const MCOperand &Op, bool Is64Bit, bool IsCall,
+                                MCStreamer &Out) {
+   const int JmpMask = FlagSfiX86JmpMask;
+@@ -86,7 +78,6 @@
+     JMPInst.addOperand(MCOperand::CreateReg(Is64Bit ? Reg64 : Reg32));
+     Out.EmitInstruction(JMPInst);
+   }
+-
+   Out.EmitBundleUnlock();
+ }
+ 
+@@ -135,12 +126,12 @@
+   // lea (%rsp, %r15, 1), %rsp
+   MCInst Tmp;
+   Tmp.setOpcode(X86::LEA64r);
+-  Tmp.addOperand(MCOperand::CreateReg(Reg64)); // DestReg
+-  Tmp.addOperand(MCOperand::CreateReg(Reg64)); // BaseReg
+-  Tmp.addOperand(MCOperand::CreateImm(1)); // Scale
++  Tmp.addOperand(MCOperand::CreateReg(Reg64));    // DestReg
++  Tmp.addOperand(MCOperand::CreateReg(Reg64));    // BaseReg
++  Tmp.addOperand(MCOperand::CreateImm(1));        // Scale
+   Tmp.addOperand(MCOperand::CreateReg(X86::R15)); // IndexReg
+-  Tmp.addOperand(MCOperand::CreateImm(0)); // Offset
+-  Tmp.addOperand(MCOperand::CreateReg(0)); // SegmentReg
++  Tmp.addOperand(MCOperand::CreateImm(0));        // Offset
++  Tmp.addOperand(MCOperand::CreateReg(0));        // SegmentReg
+   Out.EmitInstruction(Tmp);
+ }
+ 
+@@ -166,47 +157,16 @@
+   Tmp.setOpcode(X86::LEA64_32r);
+   Tmp.addOperand(MCOperand::CreateReg(X86::RSP)); // DestReg
+   Tmp.addOperand(MCOperand::CreateReg(X86::RBP)); // BaseReg
+-  Tmp.addOperand(MCOperand::CreateImm(1)); // Scale
+-  Tmp.addOperand(MCOperand::CreateReg(0)); // IndexReg
+-  Tmp.addOperand(ImmOp); // Offset
+-  Tmp.addOperand(MCOperand::CreateReg(0)); // SegmentReg
++  Tmp.addOperand(MCOperand::CreateImm(1));        // Scale
++  Tmp.addOperand(MCOperand::CreateReg(0));        // IndexReg
++  Tmp.addOperand(ImmOp);                          // Offset
++  Tmp.addOperand(MCOperand::CreateReg(0));        // SegmentReg
+   Out.EmitInstruction(Tmp);
+ 
+   EmitRegFix(X86::RSP, Out);
+   Out.EmitBundleUnlock();
+ }
+ 
+-static void EmitREST(const MCInst &Inst, unsigned Reg32, bool IsMem, MCStreamer &Out) {
+-  unsigned Reg64 = getX86SubSuperRegister(Reg32, MVT::i64);
+-
+-  Out.EmitBundleLock();
+-  MCInst MOVInst;
+-  if (!IsMem) {
+-    MOVInst.setOpcode(X86::MOV32rr);
+-    MOVInst.addOperand(MCOperand::CreateReg(Reg32));
+-    MOVInst.addOperand(Inst.getOperand(0));
+-  } else {
+-    // Do load/store sandbox also if needed
+-    unsigned SegmentReg = Inst.getOperand(4).getReg();
+-    if (SegmentReg == X86::PSEUDO_NACL_SEG) {
+-      unsigned IndexReg = Inst.getOperand(2).getReg();
+-      EmitRegTruncate(IndexReg, Out);
+-      SegmentReg = 0;
+-    }
+-    MOVInst.setOpcode(X86::MOV32rm);
+-    MOVInst.addOperand(MCOperand::CreateReg(Reg32));
+-    MOVInst.addOperand(Inst.getOperand(0)); // BaseReg
+-    MOVInst.addOperand(Inst.getOperand(1)); // Scale
+-    MOVInst.addOperand(Inst.getOperand(2)); // IndexReg
+-    MOVInst.addOperand(Inst.getOperand(3)); // Offset
+-    MOVInst.addOperand(MCOperand::CreateReg(SegmentReg)); // Segment
+-  }
+-  Out.EmitInstruction(MOVInst);
+-
+-  EmitRegFix(Reg64, Out);
+-  Out.EmitBundleUnlock();
+-}
+-
+ static void EmitPrefix(unsigned Opc, MCStreamer &Out) {
+   assert(PrefixSaved == 0);
+   assert(PrefixPass == false);
+@@ -220,6 +180,310 @@
+   assert(PrefixPass == false);
+ }
+ 
++static void EmitMoveRegReg(bool Is64Bit, unsigned ToReg,
++                           unsigned FromReg, MCStreamer &Out) {
++  MCInst Move;
++  Move.setOpcode(Is64Bit ? X86::MOV64rr : X86::MOV32rr);
++  Move.addOperand(MCOperand::CreateReg(ToReg));
++  Move.addOperand(MCOperand::CreateReg(FromReg));
++  Out.EmitInstruction(Move);
++}
++
++static void EmitMoveRegImm32(bool Is64Bit, unsigned ToReg,
++                             unsigned Imm32, MCStreamer &Out) {
++  MCInst MovInst;
++  MovInst.setOpcode(X86::MOV32ri);
++  MovInst.addOperand(MCOperand::CreateReg(X86::EBX));
++  MovInst.addOperand(MCOperand::CreateImm(Imm32));
++  Out.EmitInstruction(MovInst);
++}
++
++static void EmitCmove(bool Is64Bit, unsigned ToReg,
++                      unsigned FromReg, MCStreamer &Out) {
++  MCInst CmovInst;
++  CmovInst.setOpcode(Is64Bit ? X86::CMOVE64rr : X86::CMOVE32rr);
++  CmovInst.addOperand(MCOperand::CreateReg(ToReg));
++  CmovInst.addOperand(MCOperand::CreateReg(ToReg));
++  CmovInst.addOperand(MCOperand::CreateReg(FromReg));
++  Out.EmitInstruction(CmovInst);
++}
++
++static void EmitClearReg(bool Is64Bit, unsigned Reg, MCStreamer &Out) {
++  MCInst Clear;
++  Clear.setOpcode(X86::XOR32rr);
++  Clear.addOperand(MCOperand::CreateReg(Reg));
++  Clear.addOperand(MCOperand::CreateReg(Reg));
++  Clear.addOperand(MCOperand::CreateReg(Reg));
++  Out.EmitInstruction(Clear);
++}
++
++static void EmitRegTruncate(unsigned Reg64, MCStreamer &Out) {
++  unsigned Reg32 = getX86SubSuperRegister(Reg64, MVT::i32);
++  EmitMoveRegReg(false, Reg32, Reg32, Out);
++}
++
++static void EmitLea(bool Is64Bit,
++                    unsigned DestReg,
++                    unsigned BaseReg,
++                    unsigned Scale,
++                    unsigned IndexReg,
++                    unsigned Offset,
++                    unsigned SegmentReg,
++                    MCStreamer &Out) {
++  MCInst Lea;
++  Lea.setOpcode((Is64Bit ? X86::LEA64r : X86::LEA32r));
++  Lea.addOperand(MCOperand::CreateReg(DestReg));
++  Lea.addOperand(MCOperand::CreateReg(BaseReg));
++  Lea.addOperand(MCOperand::CreateImm(Scale));
++  Lea.addOperand(MCOperand::CreateReg(IndexReg));
++  Lea.addOperand(MCOperand::CreateImm(Offset));
++  Lea.addOperand(MCOperand::CreateReg(SegmentReg));
++  Out.EmitInstruction(Lea);
++}
++
++static void EmitPushReg(bool Is64Bit, unsigned FromReg, MCStreamer &Out) {
++  MCInst Push;
++  Push.setOpcode(Is64Bit ? X86::PUSH64r : X86::PUSH32r);
++  Push.addOperand(MCOperand::CreateReg(FromReg));
++  Out.EmitInstruction(Push);
++}
++
++static void EmitPopReg(bool Is64Bit, unsigned ToReg, MCStreamer &Out) {
++  MCInst Pop;
++  Pop.setOpcode(Is64Bit ? X86::POP64r : X86::POP32r);
++  Pop.addOperand(MCOperand::CreateReg(ToReg));
++  Out.EmitInstruction(Pop);
++}
++
++static void EmitLoad(bool Is64Bit,
++                     unsigned DestReg,
++                     unsigned BaseReg,
++                     unsigned Scale,
++                     unsigned IndexReg,
++                     unsigned Offset,
++                     unsigned SegmentReg,
++                     MCStreamer &Out) {
++  // Load DestReg from address BaseReg + Scale * IndexReg + Offset
++  MCInst Load;
++  Load.setOpcode(Is64Bit ? X86::MOV64rm : X86::MOV32rm);
++  Load.addOperand(MCOperand::CreateReg(DestReg));
++  Load.addOperand(MCOperand::CreateReg(BaseReg));
++  Load.addOperand(MCOperand::CreateImm(Scale));
++  Load.addOperand(MCOperand::CreateReg(IndexReg));
++  Load.addOperand(MCOperand::CreateImm(Offset));
++  Load.addOperand(MCOperand::CreateReg(SegmentReg));
++  Out.EmitInstruction(Load);
++}
++
++// Utility function for storing done by setjmp.
++// Creates a store from Reg into the address PtrReg + Offset.
++static void EmitStore(bool Is64Bit,
++                      unsigned BaseReg,
++                      unsigned Scale,
++                      unsigned IndexReg,
++                      unsigned Offset,
++                      unsigned SegmentReg,
++                      unsigned SrcReg,
++                      MCStreamer &Out) {
++  // Store SrcReg to address BaseReg + Scale * IndexReg + Offset
++  MCInst Store;
++  Store.setOpcode(Is64Bit ? X86::MOV64mr : X86::MOV32mr);
++  Store.addOperand(MCOperand::CreateReg(BaseReg));
++  Store.addOperand(MCOperand::CreateImm(Scale));
++  Store.addOperand(MCOperand::CreateReg(IndexReg));
++  Store.addOperand(MCOperand::CreateImm(Offset));
++  Store.addOperand(MCOperand::CreateReg(SegmentReg));
++  Store.addOperand(MCOperand::CreateReg(SrcReg));
++  Out.EmitInstruction(Store);
++}
++
++static void EmitAndRegReg(bool Is64Bit, unsigned DestReg,
++                          unsigned SrcReg, MCStreamer &Out) {
++  MCInst AndInst;
++  AndInst.setOpcode(X86::AND32rr);
++  AndInst.addOperand(MCOperand::CreateReg(DestReg));
++  AndInst.addOperand(MCOperand::CreateReg(DestReg));
++  AndInst.addOperand(MCOperand::CreateReg(SrcReg));
++  Out.EmitInstruction(AndInst);
++}
++
++static bool SandboxMemoryRef(MCInst *Inst,
++                             unsigned *IndexReg,
++                             MCStreamer &Out) {
++  for (unsigned i = 0, last = Inst->getNumOperands(); i < last; i++) {
++    if (!Inst->getOperand(i).isReg() ||
++        Inst->getOperand(i).getReg() != X86::PSEUDO_NACL_SEG) {
++      continue;
++    }
++    // Return the index register that will need to be truncated.
++    // The order of operands on a memory reference is always:
++    // (BaseReg, ScaleImm, IndexReg, DisplacementImm, SegmentReg),
++    // So if we found a match for a segment register value, we know that
++    // the index register is exactly two operands prior.
++    *IndexReg = Inst->getOperand(i - 2).getReg();
++    // Remove the PSEUDO_NACL_SEG annotation.
++    Inst->getOperand(i).setReg(0);
++    return true;
++  }
++  return false;
++}
++
++static void EmitREST(const MCInst &Inst, unsigned Reg32, bool IsMem, MCStreamer &Out) {
++  unsigned Reg64 = getX86SubSuperRegister(Reg32, MVT::i64);
++  Out.EmitBundleLock();
++  if (!IsMem) {
++    EmitMoveRegReg(false, Reg32, Inst.getOperand(0).getReg(), Out);
++  } else {
++    unsigned IndexReg;
++    MCInst SandboxedInst = Inst;
++    if (SandboxMemoryRef(&SandboxedInst, &IndexReg, Out)) {
++      EmitRegTruncate(IndexReg, Out);
++    }
++    EmitLoad(false,
++             Reg32,
++             SandboxedInst.getOperand(0).getReg(),  // BaseReg
++             SandboxedInst.getOperand(1).getImm(),  // Scale
++             SandboxedInst.getOperand(2).getReg(),  // IndexReg
++             SandboxedInst.getOperand(3).getImm(),  // Offset
++             SandboxedInst.getOperand(4).getReg(),  // SegmentReg
++             Out);
++  }
++
++  EmitRegFix(Reg64, Out);
++  Out.EmitBundleUnlock();
++}
++
++// Does the platform specific portion of ELF start up.
++// On entry 0(%esp) contains argc.  This function computes argv and envp
++// from argc, and sets up a call to what will eventually be main.
++// After popping argc, argv is simply the value of the stack pointer.
++// Above argv[argc + 1] pointers is where envp should point.
++// On 32 bit platforms we also mark the root frame for debuggers by clearing
++// ebp.
++// These need to be kept in sync with in lib/Target/ARM/ARMInstrInfo.td and
++// lib/Target/X86/X86InstrNaCl.td.
++static void EmitElfStart(bool Is64Bit, MCStreamer &Out) {
++  unsigned StackPointer = Is64Bit ? X86::RSP : X86::ESP;
++  unsigned ArgcReg = Is64Bit ? X86::RSI : X86::ESI;
++  unsigned ArgvReg = Is64Bit ? X86::RCX : X86::ECX;
++  unsigned EnvpReg = Is64Bit ? X86::RBX : X86::EBX;
++
++  // Save argc.
++  EmitPopReg(Is64Bit, ArgcReg, Out);
++  // Save argv.
++  EmitMoveRegReg(Is64Bit, ArgvReg, StackPointer, Out);
++  // envp = argv + (4 * argc) + 4.
++  EmitLea(Is64Bit, EnvpReg, ArgvReg, 4, ArgcReg, 4, 0, Out);
++  // Align the stack 0mod16.
++  MCInst AlignStack;
++  AlignStack.setOpcode((Is64Bit ? X86::AND64ri32 : X86::AND32ri));
++  AlignStack.addOperand(MCOperand::CreateReg(StackPointer));
++  AlignStack.addOperand(MCOperand::CreateReg(StackPointer));
++  AlignStack.addOperand(MCOperand::CreateImm(0xfffffff0));
++  Out.EmitInstruction(AlignStack);
++
++  if (Is64Bit) {
++    // Set up the arguments to __nacl_startup.
++    EmitMoveRegReg(true, ArgcReg, X86::RDI, Out);
++    EmitMoveRegReg(true, ArgvReg, X86::RSI, Out);
++    EmitMoveRegReg(true, EnvpReg, X86::RDX, Out);
++  } else {
++    // Set ebx to zero to indicate this is the root frame on the stack.
++    EmitClearReg(false, X86::EBP, Out);
++    // Align and set up the arguments to __nacl_startup.
++    EmitPushReg(false, X86::EBP, Out);
++    EmitPushReg(false, EnvpReg, Out);
++    EmitPushReg(false, ArgvReg, Out);
++    EmitPushReg(false, ArgcReg, Out);
++  }
++  EmitIndirectBranch(MCOperand::CreateReg(X86::EAX), Is64Bit, true, Out);
++  MCInst Halt;
++  Halt.setOpcode(X86::HLT);
++  Out.EmitInstruction(Halt);
++}
++
++// Does the x86 platform specific work for setjmp.
++// It expects that a pointer to a JMP_BUF in %ecx/%rdi, and that the return
++// address is in %edx/%rdx.
++// The JMP_BUF is a structure that has the maximum size over all supported
++// architectures.  The callee-saves registers plus [er]ip and [er]sp are stored
++// into the JMP_BUF.
++static void EmitSetjmp(bool Is64Bit, MCStreamer &Out) {
++  unsigned JmpBuf = Is64Bit ? X86::RDI : X86::ECX;
++  unsigned RetAddr = Is64Bit ? X86::RDX : X86::EDX;
++  if (Is64Bit) {
++    unsigned BasePtr = X86::R15;
++    unsigned Segment = X86::PSEUDO_NACL_SEG;
++    // Save the registers.
++    EmitStore(true, BasePtr, 1, JmpBuf,  0, Segment, X86::RBX, Out);
++    EmitStore(true, BasePtr, 1, JmpBuf,  8, Segment, X86::RBP, Out);
++    EmitStore(true, BasePtr, 1, JmpBuf, 16, Segment, X86::RSP, Out);
++    EmitStore(true, BasePtr, 1, JmpBuf, 24, Segment, X86::R12, Out);
++    EmitStore(true, BasePtr, 1, JmpBuf, 32, Segment, X86::R13, Out);
++    EmitStore(true, BasePtr, 1, JmpBuf, 40, Segment, X86::R14, Out);
++    EmitStore(true, BasePtr, 1, JmpBuf, 48, Segment, X86::RDX, Out);
++  } else {
++    // Save the registers.
++    EmitStore(false, JmpBuf, 1, 0,  0, 0, X86::EBX, Out);
++    EmitStore(false, JmpBuf, 1, 0,  4, 0, X86::EBP, Out);
++    EmitStore(false, JmpBuf, 1, 0,  8, 0, X86::ESP, Out);
++    EmitStore(false, JmpBuf, 1, 0, 12, 0, X86::ESI, Out);
++    EmitStore(false, JmpBuf, 1, 0, 16, 0, X86::EDI, Out);
++    EmitStore(false, JmpBuf, 1, 0, 20, 0, X86::EDX, Out);
++  }
++  // Return 0.
++  EmitClearReg(false, X86::EAX, Out);
++}
++
++// Does the x86 platform specific work for longjmp other than normalizing the
++// return parameter (returns of zero are changed to return 1 in the caller).
++// It expects that a pointer to a JMP_BUF in %ecx/%rdi, and that the return
++// value is in %eax.
++// The JMP_BUF is a structure that has the maximum size over all supported
++// architectures.  The saved registers are restored from the JMP_BUF.
++static void EmitLongjmp(bool Is64Bit, MCStreamer &Out) {
++  unsigned JmpBuf = Is64Bit ? X86::RDI : X86::ECX;
++  // If the return value was 0, make it 1.
++  EmitAndRegReg(false, X86::EAX, X86::EAX, Out);
++  EmitMoveRegImm32(false, X86::EBX, 1, Out);
++  EmitCmove(false, X86::EAX, X86::EBX, Out);
++  if (Is64Bit) {
++    unsigned BasePtr = X86::R15;
++    unsigned Segment = X86::PSEUDO_NACL_SEG;
++    // Restore the registers.
++    EmitLoad(true, X86::RBX, BasePtr, 1, JmpBuf,  0, Segment, Out);
++    EmitLoad(true, X86::RDX, BasePtr, 1, JmpBuf,  8, Segment, Out);
++    // restbp
++    Out.EmitBundleLock();
++    EmitRegTruncate(X86::RBP, Out);
++    EmitRegFix(X86::RBP, Out);
++    Out.EmitBundleUnlock();
++    EmitLoad(true, X86::RDX, BasePtr, 1, JmpBuf, 16, Segment, Out);
++    // restsp
++    Out.EmitBundleLock();
++    EmitRegTruncate(X86::RSP, Out);
++    EmitRegFix(X86::RSP, Out);
++    Out.EmitBundleUnlock();
++    EmitLoad(true, X86::R12, BasePtr, 1, JmpBuf, 24, Segment, Out);
++    EmitLoad(true, X86::R13, BasePtr, 1, JmpBuf, 32, Segment, Out);
++    EmitLoad(true, X86::R14, BasePtr, 1, JmpBuf, 40, Segment, Out);
++    EmitLoad(true, X86::RDX, BasePtr, 1, JmpBuf, 48, Segment, Out);
++  } else {
++    // Restore the registers.
++    EmitLoad(false, X86::EBX, JmpBuf, 1, 0,  0, 0, Out);
++    EmitLoad(false, X86::EBP, JmpBuf, 1, 0,  4, 0, Out);
++    EmitLoad(false, X86::ESP, JmpBuf, 1, 0,  8, 0, Out);
++    EmitLoad(false, X86::ESI, JmpBuf, 1, 0, 12, 0, Out);
++    EmitLoad(false, X86::EDI, JmpBuf, 1, 0, 16, 0, Out);
++    EmitLoad(false, X86::ECX, JmpBuf, 1, 0, 20, 0, Out);
++  }
++  // Jmp to the saved return address.
++  MCInst JMPInst;
++  JMPInst.setOpcode(Is64Bit ? X86::NACL_JMP64r : X86::NACL_JMP32r);
++  JMPInst.addOperand(MCOperand::CreateReg(X86::ECX));
++  Out.EmitInstruction(JMPInst);
++}
++
+ namespace llvm {
+ // CustomExpandInstNaCl -
+ //   If Inst is a NaCl pseudo instruction, emits the substitute
+@@ -338,28 +602,41 @@
+     assert(PrefixSaved == 0);
+     EmitREST(Inst, X86::ESP, false, Out);
+     return true;
++  // Intrinsics for eliminating platform specific .s code from the client
++  // side link.  These are recognized in X86InstrNaCl.td.
++  case X86::NACL_ELF_START32:
++    EmitElfStart(false, Out);
++    return true;
++  case X86::NACL_ELF_START64:
++    EmitElfStart(true, Out);
++    return true;
++  case X86::NACL_SETJ32:
++    EmitSetjmp(false, Out);
++    return true;
++  case X86::NACL_SETJ64:
++    EmitSetjmp(true, Out);
++    return true;
++  case X86::NACL_LONGJ32:
++    EmitLongjmp(false, Out);
++    return true;
++  case X86::NACL_LONGJ64:
++    EmitLongjmp(true, Out);
++    return true;
+   }
+ 
+-  for (unsigned i=0, e = Inst.getNumOperands(); i != e; i++) {
+-    if (Inst.getOperand(i).isReg() &&
+-        Inst.getOperand(i).getReg() == X86::PSEUDO_NACL_SEG) {
+-      // Sandbox memory access
+-      unsigned IndexReg = Inst.getOperand(i-2).getReg();
++  unsigned IndexReg;
++  MCInst SandboxedInst = Inst;
++  if (SandboxMemoryRef(&SandboxedInst, &IndexReg, Out)) {
++    unsigned PrefixLocal = PrefixSaved;
++    PrefixSaved = 0;
+ 
+-      MCInst InstClean = Inst;
+-      InstClean.getOperand(i).setReg(0);
+-
+-      unsigned PrefixLocal = PrefixSaved;
+-      PrefixSaved = 0;
+-
+-      Out.EmitBundleLock();
+-      EmitRegTruncate(IndexReg, Out);
+-      if (PrefixLocal)
+-        EmitPrefix(PrefixLocal, Out);
+-      Out.EmitInstruction(InstClean);
+-      Out.EmitBundleUnlock();
+-      return true;
+-    }
++    Out.EmitBundleLock();
++    EmitRegTruncate(IndexReg, Out);
++    if (PrefixLocal)
++      EmitPrefix(PrefixLocal, Out);
++    Out.EmitInstruction(SandboxedInst);
++    Out.EmitBundleUnlock();
++    return true;
+   }
+ 
+   if (PrefixSaved) {
+diff -r aadd2bdaf43e lib/Target/X86/X86InstrNaCl.td
+--- a/lib/Target/X86/X86InstrNaCl.td	Fri Feb 25 09:54:29 2011 -0500
++++ b/lib/Target/X86/X86InstrNaCl.td	Tue Jun 07 14:19:20 2011 -0700
+@@ -29,7 +29,7 @@
+ // These instructions cannot be encoded (written into an object file) by the
+ // MCCodeEmitter. Instead, during direct object emission, they get lowered to
+ // a sequence of streamer emits. (see X86InstrNaCl.cpp)
+-// 
++//
+ // These instructions should not be used in CodeGen. They have no pattern
+ // and lack CodeGen metadata. Instead, the X86NaClRewritePass should
+ // generate these instructions after CodeGen is finished.
+@@ -314,3 +314,126 @@
+                      (X86vaarg64 addr:$ap, imm:$size, imm:$mode, imm:$align)),
+                      (implicit EFLAGS)]>,
+                      Requires<[IsNaCl64]>;
++
++//===----------------------------------------------------------------------===//
++// NativeClient intrinsics
++// These provide the ability to implement several low-level features without
++// having to link native ASM code on the client.
++// These need to be kept in sync with in lib/Target/ARM/ARMInstrInfo.td and
++// lib/Target/X86/X86InstrNaCl.cpp.
++// TODO(sehr): Separate this code to allow NaCl and non-NaCl versions.
++
++// At ELF startup time the parameters that are eventually passed to main
++// need to be computed from one value on the stack.  That value, argc, is
++// loaded into [er]si.  Four bytes above that is argv[argc + 1].  And above that
++// is envp the start of the environment.
++// This intrinsic loads [er]si = argc, [er]cx = argv, and [er]bp = envp, and
++// then sets up a call frame, expecting that there will be a call to
++// __nacl_startup(argc, argv, envp).
++let isBranch = 1, isTerminator = 1, isBarrier = 1, isIndirectBranch = 1,
++    Uses = [EAX] in {
++def NACL_ELF_START32 : I<0, Pseudo, (outs), (ins),
++                         "popl %esi; "
++                         "movl %esp, %ecx; "
++                         "leal 4(%esp, %esi, 4), %ebx; "
++                         "andl $$0xfffffff0, %esp; "
++                         "andl $$0xfffffff0, %esp; "
++                         "xorl %ebp, %ebp; "
++                         "pushl %ebp; "
++                         "pushl %ebx; "
++                         "pushl %ecx; "
++                         "pushl %esi; "
++                         "naclcall %eax; "
++                         "hlt; ",
++                         [(int_nacl_elf_start EAX)]>,
++                         Requires<[IsNaCl32]>;
++}
++
++let isBranch = 1, isTerminator = 1, isBarrier = 1, isIndirectBranch = 1,
++    Uses = [EAX, R15] in {
++def NACL_ELF_START64 : I<0, Pseudo, (outs), (ins),
++                         "popl %rsi; "
++                         "movl %rsp, %rcx; "
++                         "leal 4(%rsp, %rsi, 4), %ebx; "
++                         "andq $$0xfffffffffffffff0, %rsp; "
++                         "movq %rsi, %rdi; "
++                         "movq %rcx, %rsi; "
++                         "movl %ebx, %edx; "
++                         "movl %ebx, %edx; "
++                         "naclcall %eax, %r15; "
++                         "hlt; ",
++                         [(int_nacl_elf_start EAX)]>,
++                         Requires<[IsNaCl64]>;
++}
++
++// Saves all the callee-saves registers, [er]sp, and [er]ip to the JMP_BUF
++// structure pointed to by 4(%esp) or rdi.  The JMP_BUF structure is the
++// maximum size over all supported architectures.  The MC expansions happen
++// in X86InstrNaCl.cpp.
++let Uses = [ECX, RDX], Defs = [EAX, EFLAGS] in {
++  def NACL_SETJ32 : I<0, Pseudo, (outs), (ins),
++                     "movl %ebx, 0(%ecx); "
++                     "movl %ebp, 4(%ecx); "
++                     "movl %esp, 8(%ecx); "
++                     "movl %esi, 12(%ecx); "
++                     "movl %edi, 16(%ecx); "
++                     "movl %edx, 20(%ecx); "
++                     "xorl %eax, %eax; ",
++                     [(set EAX, (int_nacl_setjmp ECX, EDX))]>,
++                     Requires<[IsNaCl32]>;
++}
++let Uses = [EDI, RDX], Defs = [EAX, EFLAGS] in {
++  def NACL_SETJ64 : I<0, Pseudo, (outs), (ins),
++                      "movq %rbx, %nacl:0(%r15, %rdi); "
++                      "movq %rbp, %nacl:8(%r15, %rdi); "
++                      "movq %rsp, %nacl:16(%r15, %rdi); "
++                      "movq %r12, %nacl:24(%r15, %rdi); "
++                      "movq %r13, %nacl:32(%r15, %rdi); "
++                      "movq %r14, %nacl:40(%r15, %rdi); "
++                      "movq %rdx, %nacl:48(%r15, %rdi); "
++                      "xorl %eax, %eax; ",
++                      [(set EAX, (int_nacl_setjmp EDI, EDX))]>,
++                      Requires<[IsNaCl64]>;
++}
++
++// Restores all the callee-saves registers, [er]sp, and [er]ip from the JMP_BUF
++// structure pointed to by 4(%esp) or %rdi.  Returns the value in 8(%esp) or
++// %rsi at entry.  This implements the tail of longjmp, with the normalization
++// of the return value (if the caller passes zero to longjmp, it should return
++// 1) done in the caller. The MC expansions happen in X86InstrNaCl.cpp.
++let isBranch = 1, isTerminator = 1, isBarrier = 1, isIndirectBranch = 1,
++    Uses = [EAX, ECX] in {
++  def NACL_LONGJ32 : I<0, Pseudo, (outs), (ins),
++                       "movl $$1, %ebx; "
++                       "andl %eax, %eax; "
++                       "cmovzl %ebx, %eax; "
++                       "movl 0(%ecx), %ebx; "
++                       "movl 4(%ecx), %ebp; "
++                       "movl 8(%ecx), %esp; "
++                       "movl 12(%ecx), %esi; "
++                       "movl 16(%ecx), %edi; "
++                       "movl 20(%ecx), %ecx; "
++                       "nacljmp %ecx; ",
++                       [(int_nacl_longjmp ECX, EAX)]>,
++                       Requires<[IsNaCl32]>, TB;
++}
++
++let isBranch = 1, isTerminator = 1, isBarrier = 1, isIndirectBranch = 1,
++    Uses = [EAX, EDI, R15] in {
++  def NACL_LONGJ64 : I<0, Pseudo, (outs), (ins),
++                       "movl $$1, %ebx; "
++                       "andl %eax, %eax; "
++                       "cmovzl %ebx, %eax; "
++                       "movq %nacl:0(%r15, %edi), %rbx; "
++                       "movq %nacl:8(%r15, %edi), %rdx; "
++                       "naclrestbp %edx, %r15; "
++                       "movq %nacl:16(%r15, %edi), %rdx; "
++                       "naclrestsp %edx, %r15; "
++                       "movq %nacl:24(%r15, %edi), %r12; "
++                       "movq %nacl:32(%r15, %edi), %r13; "
++                       "movq %nacl:40(%r15, %edi), %r14; "
++                       "movq %nacl:48(%r15, %edi), %rcx; "
++                       "nacljmp %ecx, %r15; ",
++                       [(int_nacl_longjmp EDI, EAX)]>,
++                       Requires<[IsNaCl64]>, TB;
++}
+diff -r aadd2bdaf43e lib/Target/X86/X86NaClRewritePass.cpp
+--- a/lib/Target/X86/X86NaClRewritePass.cpp	Fri Feb 25 09:54:29 2011 -0500
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Tue Jun 07 14:19:20 2011 -0700
+@@ -10,6 +10,10 @@
+ // This file contains a pass that ensures stores and loads and stack/frame
+ // pointer addresses are within the NaCl sandbox (for x86-64).
+ // It also ensures that indirect control flow follows NaCl requirments.
++//
++// The other major portion of rewriting for NaCl is done in X86InstrNaCl.cpp,
++// which is responsible for expanding the NaCl-specific operations introduced
++// here and also the intrinsic functions to support setjmp, etc.
+ //===----------------------------------------------------------------------===//
+ #define DEBUG_TYPE "x86-sandboxing"
+ 
+@@ -128,7 +132,7 @@
+           Reg == X86::R15 || Reg == X86::RIP);
+ }
+ 
+-static unsigned FindMemoryOperand(const MachineInstr &MI) {
++static bool FindMemoryOperand(const MachineInstr &MI, unsigned* index) {
+   int NumFound = 0;
+   unsigned MemOp = 0;
+   for (unsigned i = 0; i < MI.getNumOperands(); ) {
+@@ -141,13 +145,17 @@
+     }
+   }
+ 
++  // Intrinsics and other functions can have mayLoad and mayStore to reflect
++  // the side effects of those functions.  This function is used to find
++  // explicit memory references in the instruction, of which there are none.
+   if (NumFound == 0)
+-    llvm_unreachable("Unable to find memory operands in load/store!");
++    return false;
+ 
+   if (NumFound > 1)
+     llvm_unreachable("Too many memory operands in instruction!");
+ 
+-  return MemOp;
++  *index = MemOp;
++  return true;
+ }
+ 
+ static unsigned PromoteRegTo64(unsigned RegIn) {
+@@ -455,6 +463,14 @@
+     return true;
+   }
+ 
++  if (Opc == X86::NACL_ELF_START32 ||
++      Opc == X86::NACL_ELF_START64 ||
++      Opc == X86::NACL_LONGJ32 ||
++      Opc == X86::NACL_LONGJ64) {
++    // The expansions for these intrinsics already handle control SFI.
++    return false;
++  }
++
+   DumpInstructionVerbose(MI);
+   llvm_unreachable("Unhandled Control SFI");
+ }
+@@ -474,7 +490,9 @@
+   if (IsPushPop(MI))
+     return false;
+ 
+-  unsigned MemOp = FindMemoryOperand(MI);
++  unsigned MemOp;
++  if (!FindMemoryOperand(MI, &MemOp))
++    return false;
+   assert(isMem(&MI, MemOp));
+   MachineOperand &BaseReg  = MI.getOperand(MemOp + 0);
+   MachineOperand &Scale = MI.getOperand(MemOp + 1);

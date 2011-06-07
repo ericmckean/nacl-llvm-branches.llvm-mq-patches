@@ -1,0 +1,72 @@
+# HG changeset patch
+# User Jason Kim <jasonwkim@google.com>
+# Date 1303413871 25200
+# Branch pnacl-sfi
+# Node ID 953e674850af79fe3d42ac6130c114c411ffa05d
+# Parent 9710ba110e05c6b76db5c73232eb86a4fac9244a
+Fix the variant NOP issue
+
+Differences in the .o files for .s -> .o and direct .o to do with NOPs.  The
+current NOP used in LLVM is a mov r0, r0 but GNU as like to use the real nop
+instruction.
+
+BUG=http://code.google.com/p/nativeclient/issues/detail?id=1588
+BUG=http://code.google.com/p/nativeclient/issues/detail?id=424
+TEST=utman.sh test-arm
+TEST=utman.sh test-arm-pic
+
+ From llvm-pnacl-0025-249-953e674850af79fe3d42ac6130c114c411ffa05d.patch
+
+diff -r 9710ba110e05 lib/Target/ARM/ARMAsmBackend.cpp
+--- a/lib/Target/ARM/ARMAsmBackend.cpp	Thu Apr 21 12:02:47 2011 -0700
++++ b/lib/Target/ARM/ARMAsmBackend.cpp	Tue Jun 07 14:19:42 2011 -0700
+@@ -144,8 +144,15 @@
+   }
+   // ARM mode
+   uint64_t NumNops = Count / 4;
++  // @LOCALMOD-BEGIN-UPSTREAM
++  // FIXME: e1a00000 vs e320f000
++  //  e1a00000 is mov r0, r0 which may result in a stall
++  //  but the real nop instruction is not available on early hw....
++  //  Perhaps this really needs to be switched on the Subtarget??
++  //  GNU as likes to emit e320f000...
+   for (uint64_t i = 0; i != NumNops; ++i)
+-    OW->Write32(0xe1a00000);
++    OW->Write32(0xe320f000); // regular NOP
++  // @LOCALMOD-END
+   switch (Count % 4) {
+   default: break; // No leftover bytes to write
+   case 1: OW->Write8(0); break;
+diff -r 9710ba110e05 lib/Target/ARM/ARMNaClHeaders.cpp
+--- a/lib/Target/ARM/ARMNaClHeaders.cpp	Thu Apr 21 12:02:47 2011 -0700
++++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Tue Jun 07 14:19:42 2011 -0700
+@@ -45,25 +45,25 @@
+ 
+   O <<
+     "\t.macro sfi_nop_if_at_bundle_end\n"
+-    "\tsfi_long_based_on_pos 0 0 0 1 0xe1a00000\n"
++    "\tsfi_long_based_on_pos 0 0 0 1 0xe320f000\n"
+     "\t.endm\n"
+       "\n\n";
+ 
+   O <<
+     "\t.macro sfi_nops_to_force_slot3\n"
+-    "\tsfi_long_based_on_pos 3 2 1 0 0xe1a00000\n"
++    "\tsfi_long_based_on_pos 3 2 1 0 0xe320f000\n"
+     "\t.endm\n"
+     "\n\n";
+ 
+   O <<
+     "\t.macro sfi_nops_to_force_slot2\n"
+-    "\tsfi_long_based_on_pos 2 1 0 3 0xe1a00000\n"
++    "\tsfi_long_based_on_pos 2 1 0 3 0xe320f000\n"
+     "\t.endm\n"
+     "\n\n";
+ 
+   O <<
+     "\t.macro sfi_nops_to_force_slot1\n"
+-    "\tsfi_long_based_on_pos 1 0 3 2 0xe1a00000\n"
++    "\tsfi_long_based_on_pos 1 0 3 2 0xe320f000\n"
+     "\t.endm\n"
+     "\n\n";
+ 

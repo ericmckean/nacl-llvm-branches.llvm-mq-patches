@@ -1,0 +1,140 @@
+# HG changeset patch
+# User robertm@google.com
+# Date 1305315843 14400
+# Branch pnacl-sfi
+# Node ID bbaa8bbe8e9ec5b235a85f43d714842c17c35898
+# Parent 43d361526e8eed5a475473857f03edb378bf02e6
+This CL disables a few more file operations like rename, sym_link, etc. in llvm support lib when compiling it with
+the pnacl TC.
+
+Also, remove the dependency on libnosys
+
+CL http://codereview.chromium.org/6969069
+
+ From llvm-pnacl-0032-256-bbaa8bbe8e9ec5b235a85f43d714842c17c35898.patch
+
+diff -r 43d361526e8e Makefile.rules
+--- a/Makefile.rules	Thu May 12 16:39:54 2011 -0700
++++ b/Makefile.rules	Tue Jun 07 14:19:54 2011 -0700
+@@ -578,7 +578,7 @@
+ endif
+ 
+ ifeq ($(NACL_SANDBOX),1)
+-  LIBS += -lsrpc -limc_syscalls -lpthread -lplatform -lgio -lm -lnacl -lnosys
++  LIBS += -lsrpc -limc_syscalls -lpthread -lplatform -lgio -lm -lnacl 
+ else
+   LIBS +=
+ endif
+diff -r 43d361526e8e lib/Support/Unix/Path.inc
+--- a/lib/Support/Unix/Path.inc	Thu May 12 16:39:54 2011 -0700
++++ b/lib/Support/Unix/Path.inc	Tue Jun 07 14:19:54 2011 -0700
+@@ -785,9 +785,11 @@
+ 
+ bool
+ Path::renamePathOnDisk(const Path& newName, std::string* ErrMsg) {
++#if !defined(__native_client__)
+   if (0 != ::rename(path.c_str(), newName.c_str()))
+     return MakeErrMsg(ErrMsg, std::string("can't rename '") + path + "' as '" +
+                newName.str() + "'");
++#endif
+   return false;
+ }
+ 
+diff -r 43d361526e8e lib/Support/Unix/PathV2.inc
+--- a/lib/Support/Unix/PathV2.inc	Thu May 12 16:39:54 2011 -0700
++++ b/lib/Support/Unix/PathV2.inc	Tue Jun 07 14:19:54 2011 -0700
+@@ -94,7 +94,9 @@
+ 
+ error_code current_path(SmallVectorImpl<char> &result) {
+   result.reserve(MAXPATHLEN);
+-
++#ifdef __native_client__
++  llvm_unreachable("current_path() not implemented for Native Client");
++#else
+   while (true) {
+     if (::getcwd(result.data(), result.capacity()) == 0) {
+       // See if there was a real error.
+@@ -107,6 +109,7 @@
+   }
+ 
+   result.set_size(strlen(result.data()));
++#endif
+   return success;
+ }
+ 
+@@ -170,6 +173,9 @@
+ }
+ 
+ error_code create_directory(const Twine &path, bool &existed) {
++#ifdef __native_client__
++  llvm_unreachable("create_directory() not implemented for Native Client");
++#else
+   SmallString<128> path_storage;
+   StringRef p = path.toNullTerminatedStringRef(path_storage);
+ 
+@@ -181,9 +187,13 @@
+     existed = false;
+ 
+   return success;
++#endif
+ }
+ 
+ error_code create_hard_link(const Twine &to, const Twine &from) {
++#ifdef __native_client__
++  llvm_unreachable("create_hard_link() not implemented for Native Client");
++#else
+   // Get arguments.
+   SmallString<128> from_storage;
+   SmallString<128> to_storage;
+@@ -194,9 +204,13 @@
+     return error_code(errno, system_category());
+ 
+   return success;
++#endif
+ }
+ 
+ error_code create_symlink(const Twine &to, const Twine &from) {
++#ifdef __native_client__
++  llvm_unreachable("create_symlink() not implemented for Native Client");
++#else
+   // Get arguments.
+   SmallString<128> from_storage;
+   SmallString<128> to_storage;
+@@ -207,9 +221,13 @@
+     return error_code(errno, system_category());
+ 
+   return success;
++#endif
+ }
+ 
+ error_code remove(const Twine &path, bool &existed) {
++#ifdef __native_client__
++  llvm_unreachable("remove() not implemented for Native Client");
++#else
+   SmallString<128> path_storage;
+   StringRef p = path.toNullTerminatedStringRef(path_storage);
+ 
+@@ -219,11 +237,14 @@
+     existed = false;
+   } else
+     existed = true;
+-
+   return success;
++#endif
+ }
+ 
+ error_code rename(const Twine &from, const Twine &to) {
++#ifdef __native_client__
++  llvm_unreachable("rename() not implemented for Native Client");
++#else
+   // Get arguments.
+   SmallString<128> from_storage;
+   SmallString<128> to_storage;
+@@ -243,6 +264,7 @@
+   }
+ 
+   return success;
++#endif
+ }
+ 
+ error_code resize_file(const Twine &path, uint64_t size) {

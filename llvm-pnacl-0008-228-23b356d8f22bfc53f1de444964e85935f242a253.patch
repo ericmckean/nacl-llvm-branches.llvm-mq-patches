@@ -1,0 +1,26 @@
+# HG changeset patch
+# User Jason Kim <jasonwkim@google.com>
+# Date 1298504194 28800
+# Branch pnacl-sfi
+# Node ID 23b356d8f22bfc53f1de444964e85935f242a253
+# Parent 4815d00396208e22c123eea6766ac9037f72a4a8
+This CL should have been part of http://codereview.chromium.org/6559005/
+because it was actually applied as part of
+http://llvm.org/viewvc/llvm-project?view=rev&revision=124895
+
+arm-mc-elf-s38-fixtest.patch
+
+ From llvm-pnacl-0008-228-23b356d8f22bfc53f1de444964e85935f242a253.patch
+
+diff -r 4815d0039620 test/MC/ARM/arm_fixups.s
+--- a/test/MC/ARM/arm_fixups.s	Wed Feb 23 15:36:34 2011 -0800
++++ b/test/MC/ARM/arm_fixups.s	Tue Jun 07 14:19:12 2011 -0700
+@@ -2,6 +2,6 @@
+ // RUN: FileCheck < %t %s
+ 
+ // CHECK: bl _printf @ encoding: [A,A,A,0xeb]
+-// CHECK: @ fixup A - offset: 0, value: _printf, kind: fixup_arm_branch
++// CHECK: @ fixup A - offset: 0, value: _printf, kind: fixup_arm_uncondbranch
+ bl _printf
+         
+\ No newline at end of file

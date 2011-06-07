@@ -1,0 +1,253 @@
+# HG changeset patch
+# User Jason Kim <jasonwkim@google.com>
+# Date 1298504194 28800
+# Branch pnacl-sfi
+# Node ID da182c26641a461d6093d1d9f275762cd7694f69
+# Parent 10f7035b373af523829414f86c1897578c29f502
+http://llvm.org/viewvc/llvm-project?view=rev&revision=124995
+Teach ARM/MC/ELF to handle R_ARM_JUMP24 relocation type for conditional jumps.
+(yes, this is different from R_ARM_CALL)
+
+- Adds a new method getARMBranchTargetOpValue() which handles the
+necessary distinction between the conditional and unconditional br/bl
+needed for ARM/ELF
+
+At least for ARM mode, the needed fixup for conditional versus unconditional
+br/bl is identical, but the ARM docs and existing ARM tools expect this
+reloc type...
+
+Added a few FIXME's for future naming fixups in ARMInstrInfo.td
+
+ From llvm-pnacl-0009-229-da182c26641a461d6093d1d9f275762cd7694f69.patch
+
+diff -r 10f7035b373a lib/Target/ARM/ARMAsmPrinter.cpp
+--- a/lib/Target/ARM/ARMAsmPrinter.cpp	Wed Feb 23 15:36:34 2011 -0800
++++ b/lib/Target/ARM/ARMAsmPrinter.cpp	Tue Jun 07 14:19:13 2011 -0700
+@@ -73,6 +73,7 @@
+   public:
+     virtual void MaybeSwitchVendor(StringRef Vendor) = 0;
+     virtual void EmitAttribute(unsigned Attribute, unsigned Value) = 0;
++    virtual void EmitTextAttribute(unsigned Attribute, StringRef String) = 0;
+     virtual void Finish() = 0;
+     virtual ~AttributeEmitter() {}
+   };
+@@ -89,6 +90,14 @@
+                            Twine(Attribute) + ", " + Twine(Value));
+     }
+ 
++    void EmitTextAttribute(unsigned Attribute, StringRef String) {
++      switch (Attribute) {
++      case ARMBuildAttrs::CPU_name:
++        Streamer.EmitRawText(StringRef("\t.cpu ") + String);
++        break;
++      default: assert(0 && "Unsupported Text attribute in ASM Mode"); break;
++      }
++    }
+     void Finish() { }
+   };
+ 
+@@ -122,6 +131,12 @@
+       Contents += Value;
+     }
+ 
++    void EmitTextAttribute(unsigned Attribute, StringRef String) {
++      Contents += Attribute;
++      Contents += String;
++      Contents += 0;
++    }
++
+     void Finish() {
+       const size_t ContentsSize = Contents.size();
+ 
+@@ -538,32 +553,53 @@
+   AttrEmitter->MaybeSwitchVendor("aeabi");
+ 
+   std::string CPUString = Subtarget->getCPUString();
+-  if (OutStreamer.hasRawTextSupport()) {
+-    if (CPUString != "generic")
+-      OutStreamer.EmitRawText(StringRef("\t.cpu ") + CPUString);
+-  } else {
+-    assert(CPUString == "generic" && "Unsupported .cpu attribute for ELF/.o");
++
++  if (CPUString == "cortex-a8" ||
++      Subtarget->isCortexA8()) {
++    AttrEmitter->EmitTextAttribute(ARMBuildAttrs::CPU_name, "CORTEX-A8");
++    AttrEmitter->EmitAttribute(ARMBuildAttrs::CPU_arch, ARMBuildAttrs::v7);
++    AttrEmitter->EmitAttribute(ARMBuildAttrs::CPU_arch_profile,
++                               ARMBuildAttrs::ApplicationProfile);
++    AttrEmitter->EmitAttribute(ARMBuildAttrs::ARM_ISA_use,
++                               ARMBuildAttrs::Allowed);
++    AttrEmitter->EmitAttribute(ARMBuildAttrs::THUMB_ISA_use,
++                               ARMBuildAttrs::AllowThumb32);
++    // Fixme: figure out when this is emitted.
++    //AttrEmitter->EmitAttribute(ARMBuildAttrs::WMMX_arch,
++    //                           ARMBuildAttrs::AllowWMMXv1);
++    //
++
++    /// ADD additional Else-cases here!
++  } else if (CPUString == "generic") {
+     // FIXME: Why these defaults?
+     AttrEmitter->EmitAttribute(ARMBuildAttrs::CPU_arch, ARMBuildAttrs::v4T);
+-    AttrEmitter->EmitAttribute(ARMBuildAttrs::ARM_ISA_use, 1);
+-    AttrEmitter->EmitAttribute(ARMBuildAttrs::THUMB_ISA_use, 1);
++    AttrEmitter->EmitAttribute(ARMBuildAttrs::ARM_ISA_use,
++                               ARMBuildAttrs::Allowed);
++    AttrEmitter->EmitAttribute(ARMBuildAttrs::THUMB_ISA_use,
++                               ARMBuildAttrs::Allowed);
+   }
+ 
+   // FIXME: Emit FPU type
+   if (Subtarget->hasVFP2())
+-    AttrEmitter->EmitAttribute(ARMBuildAttrs::VFP_arch, 2);
++    AttrEmitter->EmitAttribute(ARMBuildAttrs::VFP_arch,
++                               ARMBuildAttrs::AllowFPv2);
+ 
+   // Signal various FP modes.
+   if (!UnsafeFPMath) {
+-    AttrEmitter->EmitAttribute(ARMBuildAttrs::ABI_FP_denormal, 1);
+-    AttrEmitter->EmitAttribute(ARMBuildAttrs::ABI_FP_exceptions, 1);
++    AttrEmitter->EmitAttribute(ARMBuildAttrs::ABI_FP_denormal,
++                               ARMBuildAttrs::Allowed);
++    AttrEmitter->EmitAttribute(ARMBuildAttrs::ABI_FP_exceptions,
++                               ARMBuildAttrs::Allowed);
+   }
+ 
+   if (NoInfsFPMath && NoNaNsFPMath)
+-    AttrEmitter->EmitAttribute(ARMBuildAttrs::ABI_FP_number_model, 1);
++    AttrEmitter->EmitAttribute(ARMBuildAttrs::ABI_FP_number_model,
++                               ARMBuildAttrs::Allowed);
+   else
+-    AttrEmitter->EmitAttribute(ARMBuildAttrs::ABI_FP_number_model, 3);
++    AttrEmitter->EmitAttribute(ARMBuildAttrs::ABI_FP_number_model,
++                               ARMBuildAttrs::AllowIEE754);
+ 
++  // FIXME: add more flags to ARMBuildAttrs.h
+   // 8-bytes alignment stuff.
+   AttrEmitter->EmitAttribute(ARMBuildAttrs::ABI_align8_needed, 1);
+   AttrEmitter->EmitAttribute(ARMBuildAttrs::ABI_align8_preserved, 1);
+@@ -575,7 +611,8 @@
+   }
+   // FIXME: Should we signal R9 usage?
+ 
+-  AttrEmitter->EmitAttribute(ARMBuildAttrs::DIV_use, 1);
++  if (Subtarget->hasDivide())
++    AttrEmitter->EmitAttribute(ARMBuildAttrs::DIV_use, 1);
+ 
+   AttrEmitter->Finish();
+   delete AttrEmitter;
+diff -r 10f7035b373a lib/Target/ARM/ARMBuildAttrs.h
+--- a/lib/Target/ARM/ARMBuildAttrs.h	Wed Feb 23 15:36:34 2011 -0800
++++ b/lib/Target/ARM/ARMBuildAttrs.h	Tue Jun 07 14:19:13 2011 -0700
+@@ -92,6 +92,40 @@
+     v7E_M    = 13   // v7_M with DSP extensions
+   };
+ 
++  enum CPUArchProfile { // (=7), uleb128 
++    Not_Applicable = 0, // pre v7, or cross-profile code
++    ApplicationProfile = (0x41), // 'A' (e.g. for Cortex A8)
++    RealTimeProfile = (0x52), // 'R' (e.g. for Cortex R4)
++    MicroControllerProfile = (0x4D), // 'M' (e.g. for Cortex M3)
++    SystemProfile = (0x53) // 'S' Application or real-time profile
++  };
++
++  // The following have a lot of common use cases
++  enum { 
++    //ARMISAUse (=8), uleb128  and THUMBISAUse (=9), uleb128
++    Not_Allowed = 0,
++    Allowed = 1,
++
++    // FP_arch (=10), uleb128 (formerly Tag_VFP_arch = 10)
++    AllowFPv2  = 2, // v2 FP ISA permitted (implies use of the v1 FP ISA)
++    AllowFPv3A = 3, // v3 FP ISA permitted (implies use of the v2 FP ISA)
++    AllowFPv3B = 4, // v3 FP ISA permitted, but only D0-D15, S0-S31 
++    AllowFPv4A = 5, // v4 FP ISA permitted (implies use of v3 FP ISA) 
++    AllowFPv4B = 6, // v4 FP ISA was permitted, but only D0-D15, S0-S31
++
++    // Tag_WMMX_arch, (=11), uleb128
++    AllowThumb32 = 2, // 32-bit Thumb (implies 16-bit instructions)
++    
++    // Tag_WMMX_arch, (=11), uleb128
++    AllowWMMXv1 = 2,  // The user permitted this entity to use WMMX v2
++
++    // Tag_ABI_FP_denormal, (=20), uleb128 
++    PreserveFPSign = 2, // sign when flushed-to-zero is preserved
++
++    // Tag_ABI_FP_number_model, (=23), uleb128
++    AllowRTABI = 2,  // numbers, infinities, and one quiet NaN (see [RTABI])
++    AllowIEE754 = 3 // this code to use all the IEEE 754-defined FP encodings
++  };
+ }
+ 
+ #endif // __TARGET_ARMBUILDATTRS_H__
+diff -r 10f7035b373a test/CodeGen/ARM/2010-09-29-mc-asm-header-test.ll
+--- a/test/CodeGen/ARM/2010-09-29-mc-asm-header-test.ll	Wed Feb 23 15:36:34 2011 -0800
++++ b/test/CodeGen/ARM/2010-09-29-mc-asm-header-test.ll	Tue Jun 07 14:19:13 2011 -0700
+@@ -2,11 +2,11 @@
+ ; This tests that MC/asm header conversion is smooth
+ ;
+ ; CHECK:      .syntax unified
+-; CHECK-NEXT: .eabi_attribute 20, 1
+-; CHECK-NEXT: .eabi_attribute 21, 1
+-; CHECK-NEXT: .eabi_attribute 23, 3
+-; CHECK-NEXT: .eabi_attribute 24, 1
+-; CHECK-NEXT: .eabi_attribute 25, 1
++; CHECK: .eabi_attribute 20, 1
++; CHECK: .eabi_attribute 21, 1
++; CHECK: .eabi_attribute 23, 3
++; CHECK: .eabi_attribute 24, 1
++; CHECK: .eabi_attribute 25, 1
+ 
+ define i32 @f(i64 %z) {
+ 	ret i32 0
+diff -r 10f7035b373a test/CodeGen/ARM/2010-10-19-mc-elf-objheader.ll
+--- a/test/CodeGen/ARM/2010-10-19-mc-elf-objheader.ll	Wed Feb 23 15:36:34 2011 -0800
++++ b/test/CodeGen/ARM/2010-10-19-mc-elf-objheader.ll	Tue Jun 07 14:19:13 2011 -0700
+@@ -1,18 +1,36 @@
+ ; RUN: llc  %s -mtriple=arm-linux-gnueabi -filetype=obj -o - | \
+-; RUN:    elf-dump --dump-section-data | FileCheck %s
++; RUN:    elf-dump --dump-section-data | FileCheck  -check-prefix=BASIC %s 
++; RUN: llc  %s -mtriple=armv7-linux-gnueabi -march=arm -mcpu=cortex-a8 \
++; RUN:    -mattr=-neon -mattr=+vfp2 \
++; RUN:    -arm-reserve-r9 -filetype=obj -o - | \
++; RUN:    elf-dump --dump-section-data | FileCheck  -check-prefix=CORTEXA8 %s
++
++
+ ; This tests that the extpected ARM attributes are emitted.
+ ;
+-; CHECK:        .ARM.attributes
+-; CHECK-NEXT:         0x70000003
+-; CHECK-NEXT:         0x00000000
+-; CHECK-NEXT:         0x00000000
+-; CHECK-NEXT:         0x0000003c
+-; CHECK-NEXT:         0x00000022
+-; CHECK-NEXT:         0x00000000
+-; CHECK-NEXT:         0x00000000
+-; CHECK-NEXT:         0x00000001
+-; CHECK-NEXT:         0x00000000
+-; CHECK-NEXT:         '41210000 00616561 62690001 17000000 06020801 09011401 15011703 18011901 2c01'
++; BASIC:        .ARM.attributes
++; BASIC-NEXT:         0x70000003
++; BASIC-NEXT:         0x00000000
++; BASIC-NEXT:         0x00000000
++; BASIC-NEXT:         0x0000003c
++; BASIC-NEXT:         0x00000020
++; BASIC-NEXT:         0x00000000
++; BASIC-NEXT:         0x00000000
++; BASIC-NEXT:         0x00000001
++; BASIC-NEXT:         0x00000000
++; BASIC-NEXT:         '411f0000 00616561 62690001 15000000 06020801 09011401 15011703 18011901'
++
++; CORTEXA8:        .ARM.attributes
++; CORTEXA8-NEXT:         0x70000003
++; CORTEXA8-NEXT:         0x00000000
++; CORTEXA8-NEXT:         0x00000000
++; CORTEXA8-NEXT:         0x0000003c
++; CORTEXA8-NEXT:         0x0000002f
++; CORTEXA8-NEXT:         0x00000000
++; CORTEXA8-NEXT:         0x00000000
++; CORTEXA8-NEXT:         0x00000001
++; CORTEXA8-NEXT:         0x00000000
++; CORTEXA8-NEXT:         '412e0000 00616561 62690001 24000000 05434f52 5445582d 41380006 0a074108 0109020a 02140115 01170318 011901'
+ 
+ define i32 @f(i64 %z) {
+        ret i32 0

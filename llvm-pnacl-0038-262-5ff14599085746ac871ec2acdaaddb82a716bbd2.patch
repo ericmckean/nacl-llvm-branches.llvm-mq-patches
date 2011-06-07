@@ -1,0 +1,405 @@
+# HG changeset patch
+# User David Meyer <pdox@google.com>
+# Date 1306870429 25200
+# Branch pnacl-sfi
+# Node ID 5ff14599085746ac871ec2acdaaddb82a716bbd2
+# Parent ca534264509bd6bffdbdbe974dbe5c8d0e822a28
+Refactor TLS support (issue 7078016)
+
+ From llvm-pnacl-0038-262-5ff14599085746ac871ec2acdaaddb82a716bbd2.patch
+
+diff -r ca534264509b lib/CodeGen/SelectionDAG/TargetLowering.cpp
+--- a/lib/CodeGen/SelectionDAG/TargetLowering.cpp	Thu May 26 16:05:17 2011 -0700
++++ b/lib/CodeGen/SelectionDAG/TargetLowering.cpp	Tue Jun 07 14:20:04 2011 -0700
+@@ -26,12 +26,21 @@
+ #include "llvm/CodeGen/MachineFunction.h"
+ #include "llvm/CodeGen/SelectionDAG.h"
+ #include "llvm/ADT/STLExtras.h"
++#include "llvm/Support/CommandLine.h" // @LOCALMOD
+ #include "llvm/Support/ErrorHandling.h"
+ #include "llvm/Support/MathExtras.h"
+ #include <cctype>
+ using namespace llvm;
+ 
+ namespace llvm {
++
++// @LOCALMOD-BEGIN
++static cl::opt<bool>
++  ForceTLSNonPIC("force-tls-non-pic",
++                 cl::desc("Force TLS to use non-PIC models"),
++                 cl::init(false));
++// @LOCALMOD-END
++
+ TLSModel::Model getTLSModel(const GlobalValue *GV, Reloc::Model reloc) {
+   bool isLocal = GV->hasLocalLinkage();
+   bool isDeclaration = GV->isDeclaration();
+@@ -39,7 +48,7 @@
+   // For variables, is internal different from hidden?
+   bool isHidden = GV->hasHiddenVisibility();
+ 
+-  if (reloc == Reloc::PIC_) {
++  if (reloc == Reloc::PIC_ && !ForceTLSNonPIC) { // @LOCALMOD
+     if (isLocal || isHidden)
+       return TLSModel::LocalDynamic;
+     else
+diff -r ca534264509b lib/Target/X86/X86ISelLowering.cpp
+--- a/lib/Target/X86/X86ISelLowering.cpp	Thu May 26 16:05:17 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.cpp	Tue Jun 07 14:20:04 2011 -0700
+@@ -6064,7 +6064,7 @@
+ static SDValue
+ GetTLSADDR(SelectionDAG &DAG, SDValue Chain, GlobalAddressSDNode *GA,
+            SDValue *InFlag, const EVT PtrVT, unsigned ReturnReg,
+-           unsigned char OperandFlags) {
++           unsigned char OperandFlags, unsigned Opcode = 0) { // @LOCALMOD
+   MachineFrameInfo *MFI = DAG.getMachineFunction().getFrameInfo();
+   SDVTList NodeTys = DAG.getVTList(MVT::Other, MVT::Glue);
+   DebugLoc dl = GA->getDebugLoc();
+@@ -6072,12 +6072,16 @@
+                                            GA->getValueType(0),
+                                            GA->getOffset(),
+                                            OperandFlags);
++  // @LOCALMOD-BEGIN
++  if (Opcode == 0)
++    Opcode = X86ISD::TLSADDR;
++  // @LOCALMOD-END
+   if (InFlag) {
+     SDValue Ops[] = { Chain,  TGA, *InFlag };
+-    Chain = DAG.getNode(X86ISD::TLSADDR, dl, NodeTys, Ops, 3);
++    Chain = DAG.getNode(Opcode, dl, NodeTys, Ops, 3); // @LOCALMOD
+   } else {
+     SDValue Ops[]  = { Chain, TGA };
+-    Chain = DAG.getNode(X86ISD::TLSADDR, dl, NodeTys, Ops, 2);
++    Chain = DAG.getNode(Opcode, dl, NodeTys, Ops, 2); // @LOCALMOD
+   }
+ 
+   // TLSADDR will be codegen'ed as call. Inform MFI that function has calls.
+@@ -6112,16 +6116,28 @@
+ // @LOCALMOD-START
+ // Lower ISD::GlobalTLSAddress using the "general dynamic" model, NaCl 64 bit.
+ static SDValue
+-LowerToTLSGeneralDynamicModelNaCl64(GlobalAddressSDNode *GA, SelectionDAG &DAG,
+-                                    const EVT PtrVT) {
+-  // TODO(jvoung): Update this when 64-bit general dynamic TLS is ironed out.
+-  // e.g., one issue:
+-  // http://code.google.com/p/nativeclient/issues/detail?id=1685
+-  // We also need to hook up to glibc to get at __tls_get_addr
++LowerToTLSNaCl64(GlobalAddressSDNode *GA, SelectionDAG &DAG,
++                 const EVT PtrVT, TLSModel::Model model) {
++
++  // See: http://code.google.com/p/nativeclient/issues/detail?id=1685
++  unsigned char TargetFlag;
++  unsigned Opcode;
++  if (model == TLSModel::GeneralDynamic || model == TLSModel::LocalDynamic) {
++    TargetFlag = X86II::MO_TLSGD;
++    Opcode = X86ISD::TLSADDR;
++  } else if (model == TLSModel::LocalExec) {
++    TargetFlag = X86II::MO_TPOFF;
++    Opcode = X86ISD::TLSADDR_LE;
++  } else if (model == TLSModel::InitialExec) {
++    TargetFlag = X86II::MO_GOTTPOFF;
++    Opcode = X86ISD::TLSADDR_IE;
++  } else {
++    llvm_unreachable("Unknown TLS model");
++  }
++
+   return GetTLSADDR(DAG, DAG.getEntryNode(), GA, NULL, PtrVT,
+                     X86::EAX, // PtrVT is 32-bit.
+-                    X86II::MO_TPOFF); // Faking General Dynamic with Exec.
+-                                      // Should be X86II::MO_TLSGD
++                    TargetFlag, Opcode);
+ }
+ // @LOCALMOD-END
+ 
+@@ -6129,38 +6145,16 @@
+ // "local exec" model.
+ static SDValue LowerToTLSExecModel(GlobalAddressSDNode *GA, SelectionDAG &DAG,
+                                    const EVT PtrVT, TLSModel::Model model,
+-                                   bool is64Bit,
+-                                   bool isNaCl) { // @LOCALMOD
++                                   bool is64Bit) {
+   DebugLoc dl = GA->getDebugLoc();
+ 
+-  // @LOCALMOD-START
+-  // Get the Thread Pointer which is %gs:0 (32-bit) or %fs:0 (64-bit),
+-  // or returned by a call to __nacl_read_tp for Native Client 64-bit.
+-  // TODO(jvoung): add an option to do this for Native Client 32-bit as well.
+-  SDValue ThreadPointer;
+-  if (isNaCl && is64Bit) {
+-    SDValue Flag;
+-    SDVTList NodeTys = DAG.getVTList(MVT::Other, MVT::Glue);
+-    ThreadPointer = DAG.getNode(X86ISD::NACLREADTP, dl,
+-                                NodeTys, DAG.getEntryNode());
+-    Flag = ThreadPointer.getValue(1);
+-
+-    // This will be codegen'ed as a call. Inform MFI that function has calls.
+-    MachineFrameInfo *MFI = DAG.getMachineFunction().getFrameInfo();
+-    MFI->setAdjustsStack(true);
+-
+-    ThreadPointer = DAG.getCopyFromReg(ThreadPointer,
+-                                       dl, X86::EAX, PtrVT, Flag);
+-  } else {
+-    Value *Ptr = Constant::getNullValue(Type::getInt8PtrTy(*DAG.getContext(),
+-                                                           is64Bit ?
+-                                                           257 : 256));
+-
+-    ThreadPointer = DAG.getLoad(PtrVT, dl, DAG.getEntryNode(),
+-                                DAG.getIntPtrConstant(0),
+-                                MachinePointerInfo(Ptr), false, false, 0);
+-  }
+-  // @LOCALMOD-END
++  // Get the Thread Pointer, which is %gs:0 (32-bit) or %fs:0 (64-bit).
++  Value *Ptr = Constant::getNullValue(Type::getInt8PtrTy(*DAG.getContext(),
++                                                         is64Bit ? 257 : 256));
++
++  SDValue ThreadPointer = DAG.getLoad(PtrVT, dl, DAG.getEntryNode(),
++                                      DAG.getIntPtrConstant(0),
++                                      MachinePointerInfo(Ptr), false, false, 0);
+ 
+   unsigned char OperandFlags = 0;
+   // Most TLS accesses are not RIP relative, even on x86-64.  One exception is
+@@ -6211,23 +6205,21 @@
+     TLSModel::Model model
+       = getTLSModel(GV, getTargetMachine().getRelocationModel());
+ 
++    // @LOCALMOD-START
++    if (Subtarget->isTargetNaCl64())
++      return LowerToTLSNaCl64(GA, DAG, getPointerTy(), model);
++    // @LOCALMOD-END
++
+     switch (model) {
+       case TLSModel::GeneralDynamic:
+       case TLSModel::LocalDynamic: // not implemented
+-        // @LOCALMOD-START
+-        if (Subtarget->isTargetNaCl64()) {
+-          return LowerToTLSGeneralDynamicModelNaCl64(GA, DAG, getPointerTy());
+-        }
+-        // @LOCALMOD-END
+         if (Subtarget->is64Bit())
+           return LowerToTLSGeneralDynamicModel64(GA, DAG, getPointerTy());
+         return LowerToTLSGeneralDynamicModel32(GA, DAG, getPointerTy());
+-
+       case TLSModel::InitialExec:
+       case TLSModel::LocalExec:
+         return LowerToTLSExecModel(GA, DAG, getPointerTy(), model,
+-                                   Subtarget->is64Bit(),
+-                                   Subtarget->isTargetNaCl()); // @LOCALMOD
++                                   Subtarget->is64Bit());
+     }
+   } else if (Subtarget->isTargetDarwin()) {
+     // Darwin only has one model of TLS.  Lower to that.
+@@ -9007,8 +8999,9 @@
+   case X86ISD::FRSQRT:             return "X86ISD::FRSQRT";
+   case X86ISD::FRCP:               return "X86ISD::FRCP";
+   case X86ISD::TLSADDR:            return "X86ISD::TLSADDR";
++  case X86ISD::TLSADDR_LE:         return "X86ISD::TLSADDR_LE"; // @LOCALMOD
++  case X86ISD::TLSADDR_IE:         return "X86ISD::TLSADDR_IE"; // @LOCALMOD
+   case X86ISD::TLSCALL:            return "X86ISD::TLSCALL";
+-  case X86ISD::NACLREADTP:         return "X86ISD::NACLREADTP"; // @LOCALMOD
+   case X86ISD::EH_RETURN:          return "X86ISD::EH_RETURN";
+   case X86ISD::TC_RETURN:          return "X86ISD::TC_RETURN";
+   case X86ISD::FNSTCW16m:          return "X86ISD::FNSTCW16m";
+diff -r ca534264509b lib/Target/X86/X86ISelLowering.h
+--- a/lib/Target/X86/X86ISelLowering.h	Thu May 26 16:05:17 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.h	Tue Jun 07 14:20:04 2011 -0700
+@@ -181,15 +181,18 @@
+       // TLSADDR - Thread Local Storage.
+       TLSADDR,
+ 
++      // @LOCALMOD-BEGIN
++      // TLSADDR_LE - Thread Local Storage. (Local Exec Model)
++      TLSADDR_LE,
++
++      // TLSADDR_IE - Thread Local Storage. (Initial Exec Model)
++      TLSADDR_IE,
++      // @LOCALMOD-END
++
+       // TLSCALL - Thread Local Storage.  When calling to an OS provided
+       // thunk at the address from an earlier relocation.
+       TLSCALL,
+ 
+-      // @LOCALMOD-START
+-      // NACLREADTP - Thread Local Storage. Read the thread pointer for NaCl.
+-      NACLREADTP,
+-      // @LOCALMOD-END
+-
+       // EH_RETURN - Exception Handling helpers.
+       EH_RETURN,
+ 
+diff -r ca534264509b lib/Target/X86/X86InstrInfo.td
+--- a/lib/Target/X86/X86InstrInfo.td	Thu May 26 16:05:17 2011 -0700
++++ b/lib/Target/X86/X86InstrInfo.td	Tue Jun 07 14:20:04 2011 -0700
+@@ -191,6 +191,14 @@
+ def X86tlsaddr : SDNode<"X86ISD::TLSADDR", SDT_X86TLSADDR,
+                         [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]>;
+ 
++// @LOCALMOD-BEGIN
++def X86tlsaddr_le : SDNode<"X86ISD::TLSADDR_LE", SDT_X86TLSADDR,
++                           [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]>;
++
++def X86tlsaddr_ie : SDNode<"X86ISD::TLSADDR_IE", SDT_X86TLSADDR,
++                           [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]>;
++// @LOCALMOD-END
++
+ def X86ehret : SDNode<"X86ISD::EH_RETURN", SDT_X86EHRET,
+                         [SDNPHasChain]>;
+ 
+diff -r ca534264509b lib/Target/X86/X86InstrNaCl.td
+--- a/lib/Target/X86/X86InstrNaCl.td	Thu May 26 16:05:17 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Tue Jun 07 14:20:04 2011 -0700
+@@ -17,11 +17,6 @@
+ // NaCl specific DAG Nodes.
+ //
+ 
+-// Abstraction for getting the thread pointer for NaCl TLS.
+-def X86NaClReadTp : SDNode<"X86ISD::NACLREADTP", SDTX86Void,
+-                         [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]>;
+-
+-
+ //===----------------------------------------------------------------------===//
+ //
+ //                       Native Client Pseudo-Instructions
+@@ -286,21 +281,6 @@
+ 
+ // ELF TLS Support
+ 
+-// For the "exec" TLS models, the NaCl loader cannot set the FS or GS
+-// segmentation registers on Windows, so we must use a NaCl syscall.
+-// TODO(jvoung): Add a version with the 32-bit register clobbers,
+-// to abstract away access to the segment register for 32-bit NaCl.
+-let Defs = [RAX, RCX, RDX, RSI, RDI, R8, R9, R10, R11,
+-            FP0, FP1, FP2, FP3, FP4, FP5, FP6, ST0, ST1,
+-            MM0, MM1, MM2, MM3, MM4, MM5, MM6, MM7,
+-            XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7,
+-            XMM8, XMM9, XMM10, XMM11, XMM12, XMM13, XMM14, XMM15, EFLAGS],
+-    Uses = [RSP] in
+-def NACL_CG_TLS_readtp64 : I<0, Pseudo, (outs), (ins),
+-                         "naclcall\t__nacl_read_tp",
+-                         [(X86NaClReadTp)]>,
+-                         Requires<[IsNaCl64]>;
+-
+ // The linker expects this lea+call sequence to be directly adjacent.
+ let Defs = [EAX, ECX, EDX, FP0, FP1, FP2, FP3, FP4, FP5, FP6, ST0,
+             MM0, MM1, MM2, MM3, MM4, MM5, MM6, MM7,
+@@ -316,29 +296,23 @@
+                          [(X86tlsaddr tls32addr:$sym)]>,
+                          Requires<[In32BitMode, IsNaCl32]>;
+ 
+-// TODO(jvoung): Once the nacl-gcc folks have ironed out how to handle
+-// general dynamic TLS access, update this.
+-// http://code.google.com/p/nativeclient/issues/detail?id=1685
+-//
+-// The usual General Dynamic ABI sequence looks like:
+-// .byte 0x66
+-// leaq x@tlsgd(%rip), %rdi
+-// .word 0x6666
+-// rex64
+-// call __tls_get_addr@plt
+-//
+-// We could add bundle_lock/unlock to keep them together w/out additional nops.
++// These are lowered in X86NaClRewritePass.
+ let Defs = [RAX, RCX, RDX, RSI, RDI, R8, R9, R10, R11,
+             FP0, FP1, FP2, FP3, FP4, FP5, FP6, ST0, ST1,
+             MM0, MM1, MM2, MM3, MM4, MM5, MM6, MM7,
+             XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7,
+             XMM8, XMM9, XMM10, XMM11, XMM12, XMM13, XMM14, XMM15, EFLAGS],
+-    Uses = [RSP] in
+-def NACL_CG_TLS_addr64 : I<0, Pseudo, (outs), (ins i32mem:$sym),
+-                         "naclcall\t__nacl_read_tp@PLT;"
+-                         "leaq\t$$$sym(,%rax), %rax",
+-                         [(X86tlsaddr tls32addr:$sym)]>,
+-                         Requires<[IsNaCl64]>;
++    Uses = [RSP] in {
++def NACL_CG_GD_TLS_addr64 : I<0, Pseudo, (outs), (ins i32mem:$sym), "",
++                            [(X86tlsaddr tls32addr:$sym)]>,
++                            Requires<[IsNaCl64]>;
++def NACL_CG_LE_TLS_addr64 : I<0, Pseudo, (outs), (ins i32mem:$sym), "",
++                            [(X86tlsaddr_le tls32addr:$sym)]>,
++                            Requires<[IsNaCl64]>;
++def NACL_CG_IE_TLS_addr64 : I<0, Pseudo, (outs), (ins i32mem:$sym), "",
++                            [(X86tlsaddr_ie tls32addr:$sym)]>,
++                            Requires<[IsNaCl64]>;
++}
+ 
+ let usesCustomInserter = 1, Defs = [EFLAGS] in
+ def NACL_CG_VAARG_64 : I<0, Pseudo,
+diff -r ca534264509b lib/Target/X86/X86NaClRewritePass.cpp
+--- a/lib/Target/X86/X86NaClRewritePass.cpp	Thu May 26 16:05:17 2011 -0700
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Tue Jun 07 14:20:04 2011 -0700
+@@ -556,17 +556,6 @@
+     return true;
+   }
+ 
+-  // TODO(jvoung): when we add a switch for x86-32 to go through __nacl_read_tp
+-  // handle that here too...
+-  if (Opc == X86::NACL_CG_TLS_readtp64) {
+-    // Rewrite to:
+-    //   naclcall\t___nacl_read_tp
+-    BuildMI(MBB, MBBI, DL, TII->get(X86::NACL_CALL64d))
+-      .addExternalSymbol("__nacl_read_tp");
+-    MI.eraseFromParent();
+-    return true;
+-  }
+-
+   if (Opc == X86::NACL_CG_TLS_addr32) {
+     // Rewrite to:
+     //   .bundle_align_end
+@@ -589,11 +578,28 @@
+     return true;
+   }
+ 
+-  // TODO(jvoung): Once the nacl-gcc folks have ironed out how to handle
+-  // general dynamic TLS access, update this.
+-  // For now, we are using the old local exec model.
++  // General Dynamic NaCl TLS model
+   // http://code.google.com/p/nativeclient/issues/detail?id=1685
+-  if (Opc == X86::NACL_CG_TLS_addr64) {
++  if (Opc == X86::NACL_CG_GD_TLS_addr64) {
++
++    // Rewrite to:
++    //   leaq $sym@TLSGD(%rip), %rdi
++    //   naclcall __tls_get_addr@PLT
++    BuildMI(MBB, MBBI, DL, TII->get(X86::LEA64r), X86::RDI)
++        .addReg(X86::RIP) // Base
++        .addImm(1) // Scale
++        .addReg(0) // Index
++        .addGlobalAddress(MI.getOperand(3).getGlobal(), 0,
++                          MI.getOperand(3).getTargetFlags())
++        .addReg(0); // Segment
++    BuildMI(MBB, MBBI, DL, TII->get(X86::NACL_CALL64d))
++        .addExternalSymbol("__tls_get_addr", X86II::MO_PLT);
++    MI.eraseFromParent();
++    return true;
++  }
++
++  // Local Exec NaCl TLS Model
++  if (Opc == X86::NACL_CG_LE_TLS_addr64) {
+     // Rewrite to:
+     //   naclcall __nacl_read_tp@PLT
+     //   leaq $sym@flag(,%rax), %rax
+@@ -609,6 +615,26 @@
+     MI.eraseFromParent();
+     return true;
+   }
++
++  // Initial Exec NaCl TLS Model
++  if (Opc == X86::NACL_CG_IE_TLS_addr64) {
++    // Rewrite to:
++    //   naclcall __nacl_read_tp@PLT
++    //   addq sym@GOTTPOFF(%rip), %rax
++    BuildMI(MBB, MBBI, DL, TII->get(X86::NACL_CALL64d))
++        .addExternalSymbol("__nacl_read_tp", X86II::MO_PLT);
++    BuildMI(MBB, MBBI, DL, TII->get(X86::ADD64rm), X86::RAX)
++        .addReg(X86::RAX)
++        .addReg(X86::RIP) // Base
++        .addImm(1) // Scale
++        .addReg(0) // Index
++        .addGlobalAddress(MI.getOperand(3).getGlobal(), 0,
++                          MI.getOperand(3).getTargetFlags())
++        .addReg(0); // Segment
++    MI.eraseFromParent();
++    return true;
++  }
++
+   return false;
+ }
+ 

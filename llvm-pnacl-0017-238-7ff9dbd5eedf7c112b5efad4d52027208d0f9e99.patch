@@ -1,0 +1,759 @@
+# HG changeset patch
+# User Jason Kim <jasonwkim@google.com>
+# Date 1301356916 25200
+# Branch pnacl-sfi
+# Node ID 7ff9dbd5eedf7c112b5efad4d52027208d0f9e99
+# Parent 925eb3cf4a820c7843aa00d201c5f9473d06fa31
+Direct ARM/MC/ELF/.o emission:
+
+Strategy:
+
+1. Add ARMInstrNaCl.cpp/CustomExpandInstr to manually lower the SFI_*
+   instructions to MCInsts.
+   They currently
+
+2. Rename CustomExpandInstNaCl to CustomExpandInstNaClX86.
+   This allows for other versions (e.g. ARM) to exist.
+
+3. Added skeletons for the ARM equivalents to X86InstrNaCl.
+   They are not yet active. Empty TD file.
+
+4. Enabled distinctio of .s/.o side by adding checks against RawText support.
+
+Add reminder comment for future FIXMEs
+
+TODO:
+   The ARMInstrNaCl.td will have isAsmParserOnly instructions so that
+   macros defs can be removed entirely
+
+ From llvm-pnacl-0017-238-7ff9dbd5eedf7c112b5efad4d52027208d0f9e99.patch
+
+diff -r 925eb3cf4a82 lib/MC/ELFObjectWriter.cpp
+--- a/lib/MC/ELFObjectWriter.cpp	Mon Mar 28 17:01:54 2011 -0700
++++ b/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:19:27 2011 -0700
+@@ -1535,7 +1535,7 @@
+   unsigned e_flag = ELF::EF_ARM_EABIMASK & DefaultEABIVersion;
+   switch (TargetObjectWriter->getOSType()) {
+   case Triple::NativeClient:
+-    e_flag |= ELF::EF_NACL_ALIGN_32;
++    e_flag |= ELF::EF_NACL_ALIGN_16;
+     break;
+   default: break;
+   }
+diff -r 925eb3cf4a82 lib/Target/ARM/ARMAsmBackend.cpp
+--- a/lib/Target/ARM/ARMAsmBackend.cpp	Mon Mar 28 17:01:54 2011 -0700
++++ b/lib/Target/ARM/ARMAsmBackend.cpp	Tue Jun 07 14:19:27 2011 -0700
+@@ -10,6 +10,7 @@
+ #include "ARM.h"
+ #include "ARMAddressingModes.h"
+ #include "ARMFixupKinds.h"
++#include "ARMInstrNaCl.h" // @LOCALMOD
+ #include "llvm/ADT/Twine.h"
+ #include "llvm/MC/MCAssembler.h"
+ #include "llvm/MC/MCDirectives.h"
+@@ -391,9 +392,19 @@
+                   uint64_t Value) const;
+ 
+   // @LOCALMOD-BEGIN
++  // FIXME! NaCl should INHERIT from ELFARMAsmBackend, not
++  // add to it.
+   unsigned getBundleSize() const {
+     return (OSType == Triple::NativeClient) ? 16 : 0;
+   }
++
++  bool CustomExpandInst(const MCInst &Inst, MCStreamer &Out) const {
++    if (OSType == Triple::NativeClient) {
++      return CustomExpandInstNaClARM(Inst, Out);
++    }
++    return false;
++  }
++
+  // @LOCALMOD-END
+ 
+   MCObjectWriter *createObjectWriter(raw_ostream &OS) const {
+diff -r 925eb3cf4a82 lib/Target/ARM/ARMAsmPrinter.cpp
+--- a/lib/Target/ARM/ARMAsmPrinter.cpp	Mon Mar 28 17:01:54 2011 -0700
++++ b/lib/Target/ARM/ARMAsmPrinter.cpp	Tue Jun 07 14:19:27 2011 -0700
+@@ -243,7 +243,9 @@
+   int alignment = MF->getAlignment();
+   if (alignment < 4) alignment = 4;
+   EmitAlignment(alignment);
+-  OutStreamer.EmitRawText(StringRef("\t.set XmagicX, .\n"));
++  if (Subtarget->isTargetNaCl() && OutStreamer.hasRawTextSupport()) {
++    OutStreamer.EmitRawText(StringRef("\t.set XmagicX, .\n"));
++  }
+   // @LOCALMOD-END
+  
+   OutStreamer.EmitLabel(CurrentFnSym);
+@@ -454,7 +456,7 @@
+   }
+ 
+   // @LOCALMOD-BEGIN
+-  if (/*IsNaCl?*/ true) {
++  if (Subtarget->isTargetNaCl() && OutStreamer.hasRawTextSupport()) {
+     std::string str;
+     raw_string_ostream OS(str);
+     EmitSFIHeaders(OS);
+@@ -531,6 +533,16 @@
+   }
+ }
+ 
++// @LOCALMOD-START
++void ARMAsmPrinter::EmitFunctionBodyEnd() {
++  if (Subtarget->isTargetNaCl()) {
++    // FIXME! Get this value from ARMAsmBackend!
++    EmitAlignment(4);
++  }
++}
++// @LOCALMOD-END
++
++
+ //===----------------------------------------------------------------------===//
+ // Helper routines for EmitStartOfAsmFile() and EmitEndOfAsmFile()
+ // FIXME:
+@@ -1182,19 +1194,21 @@
+     // NOTE: we also should make sure that the first data item
+     // is not in a code bundle
+     // NOTE: there may be issues with alignment constraints
+-    const unsigned size = MI->getOperand(2).getImm();
+-    //assert(size == 4 || size == 8 && "Unsupported data item size");
+-    if (size == 8) {
+-      // we cannot generate a size 8 constant at offset 12 (mod 16)
+-      OutStreamer.EmitRawText(StringRef("sfi_nop_if_at_bundle_end\n"));
+-    }
++    if (Subtarget->isTargetNaCl() && OutStreamer.hasRawTextSupport()) {
++      const unsigned size = MI->getOperand(2).getImm();
++      //assert(size == 4 || size == 8 && "Unsupported data item size");
++      if (size == 8) {
++        // we cannot generate a size 8 constant at offset 12 (mod 16)
++        OutStreamer.EmitRawText(StringRef("sfi_nop_if_at_bundle_end\n"));
++      }
+ 
+-    if (FlagSfiData) {
+-      SmallString<128> Str;
+-      raw_svector_ostream OS(Str);
+-      OS << "sfi_illegal_if_at_bundle_begining  @ ========== SFI (" << 
+-            size << ")\n";
+-      OutStreamer.EmitRawText(OS.str());
++      if (FlagSfiData) {
++        SmallString<128> Str;
++        raw_svector_ostream OS(Str);
++        OS << "sfi_illegal_if_at_bundle_begining  @ ========== SFI (" << 
++          size << ")\n";
++        OutStreamer.EmitRawText(OS.str());
++      }
+     }
+     // @LOCALMOD-END
+     OutStreamer.EmitLabel(GetCPISymbol(LabelId));
+diff -r 925eb3cf4a82 lib/Target/ARM/ARMAsmPrinter.h
+--- a/lib/Target/ARM/ARMAsmPrinter.h	Mon Mar 28 17:01:54 2011 -0700
++++ b/lib/Target/ARM/ARMAsmPrinter.h	Tue Jun 07 14:19:27 2011 -0700
+@@ -81,6 +81,8 @@
+   void EmitStartOfAsmFile(Module &M);
+   void EmitEndOfAsmFile(Module &M);
+ 
++  virtual void EmitFunctionBodyEnd(); // @LOCALMOD
++
+   // @LOCALMOD-START
+   virtual bool UseReadOnlyJumpTables() const {
+     return true; // should be IsNaCl
+diff -r 925eb3cf4a82 lib/Target/ARM/ARMInstrInfo.td
+--- a/lib/Target/ARM/ARMInstrInfo.td	Mon Mar 28 17:01:54 2011 -0700
++++ b/lib/Target/ARM/ARMInstrInfo.td	Tue Jun 07 14:19:27 2011 -0700
+@@ -190,6 +190,8 @@
+ def UseFPVMLx        : Predicate<"Subtarget->useFPVMLx()">;
+ 
+ // @LOCALMOD-BEGIN
++// FIXME: Lift IsNaCl to share with X86
++def IsNaCl       : Predicate<"Subtarget->isTargetNaCl()">, AssemblerPredicate;
+ def UseConstPool : Predicate<"Subtarget->useConstPool()">;
+ def DontUseConstPool : Predicate<"!Subtarget->useConstPool()">;
+ // @LOCALMOD-END
+@@ -1014,6 +1016,11 @@
+ //===----------------------------------------------------------------------===//
+ 
+ // @LOCALMOD-START
++
++// New ARM SFI Model
++include "ARMInstrNaCl.td"
++
++// Older Macro base SFI Model
+ def SFI_GUARD_STORE :
+ PseudoInst<(outs GPR:$dst), (ins GPR:$a, pred:$p), NoItinerary, []>;
+ 
+diff -r 925eb3cf4a82 lib/Target/ARM/ARMInstrNaCl.cpp
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/lib/Target/ARM/ARMInstrNaCl.cpp	Tue Jun 07 14:19:27 2011 -0700
+@@ -0,0 +1,291 @@
++//=== ARMInstrNaCl.cpp - Expansion of NaCl pseudo-instructions  --*- C++ -*-=//
++//
++//                     The LLVM Compiler Infrastructure
++//
++// This file is distributed under the University of Illinois Open Source
++// License. See LICENSE.TXT for details.
++//
++//===----------------------------------------------------------------------===//
++//
++//===----------------------------------------------------------------------===//
++#define DEBUG_TYPE "arm-sandboxing"
++
++#include "ARM.h"
++#include "ARMInstrInfo.h"
++#include "ARMSubtarget.h"
++#include "llvm/MC/MCInst.h"
++#include "llvm/MC/MCStreamer.h"
++#include "llvm/Support/CommandLine.h"
++#include "llvm/Support/Debug.h"
++
++using namespace llvm;
++
++/// Two helper functions for emitting the actual guard instructions
++
++static void EmitBICMask(MCStreamer &Out,
++                        unsigned Addr, int64_t  Pred, unsigned Mask) {
++  // bic\Pred \Addr, \Addr, #Mask
++  MCInst BICInst;
++  BICInst.setOpcode(ARM::BICri);
++  BICInst.addOperand(MCOperand::CreateReg(Addr)); // rD
++  BICInst.addOperand(MCOperand::CreateReg(Addr)); // rS
++  BICInst.addOperand(MCOperand::CreateImm(Mask)); // imm
++  BICInst.addOperand(MCOperand::CreateImm(Pred));  // predicate
++  BICInst.addOperand(MCOperand::CreateReg(ARM::CPSR)); // CPSR
++  BICInst.addOperand(MCOperand::CreateReg(0)); // flag out
++  Out.EmitInstruction(BICInst);
++}
++
++static void EmitTST(MCStreamer &Out, unsigned Reg) {
++  // tst \reg, #\MASK typically 0xc0000000
++  const unsigned Mask = 0xC0000000;
++  MCInst TSTInst;
++  TSTInst.setOpcode(ARM::TSTri);
++  TSTInst.addOperand(MCOperand::CreateReg(Reg));  // rS
++  TSTInst.addOperand(MCOperand::CreateImm(Mask)); // imm
++  TSTInst.addOperand(MCOperand::CreateImm((int64_t)ARMCC::AL)); // Always
++  TSTInst.addOperand(MCOperand::CreateImm(0)); // flag out
++}
++
++
++// This is ONLY used for sandboxing stack changes.
++// The reason why SFI_NOP_IF_AT_BUNDLE_END gets handled here is that
++// it must ensure that the two instructions are in the same bundle.
++// It just so happens that the SFI_NOP_IF_AT_BUNDLE_END is always
++// emitted in conjunction with a SFI_DATA_MASK
++// 
++static void EmitDataMask(int I, MCInst Saved[], MCStreamer &Out) {
++  assert(I == 3 && 
++         (ARM::SFI_NOP_IF_AT_BUNDLE_END == Saved[0].getOpcode()) &&
++         (ARM::SFI_DATA_MASK == Saved[2].getOpcode()) &&
++         "Unexpected SFI Pseudo while lowering");
++
++  unsigned Addr = Saved[2].getOperand(0).getReg();
++  int64_t  Pred = Saved[2].getOperand(2).getImm();
++  assert((ARM::SP == Addr) && "Unexpected register at stack guard");
++
++  Out.EmitBundleLock();
++  Out.EmitInstruction(Saved[1]);
++  EmitBICMask(Out, Addr, Pred, 0xC0000000);
++  Out.EmitBundleUnlock();
++}
++
++static void EmitDirectGuardCall(int I, MCInst Saved[],
++                                MCStreamer &Out) {
++  // sfi_call_preamble cond=
++  //   sfi_nops_to_force_slot3
++  assert(I == 2 && (ARM::SFI_GUARD_CALL == Saved[0].getOpcode()) &&
++         "Unexpected SFI Pseudo while lowering SFI_GUARD_CALL");
++  Out.EmitBundleAlignEnd();
++  Out.EmitBundleLock();
++  Out.EmitInstruction(Saved[1]);
++  Out.EmitBundleUnlock();
++}
++
++static void EmitIndirectGuardCall(int I, MCInst Saved[],
++                                  MCStreamer &Out) {
++  // sfi_indirect_call_preamble link cond=
++  //   sfi_nops_to_force_slot2
++  //   sfi_code_mask \link \cond
++  assert(I == 2 && (ARM::SFI_GUARD_INDIRECT_CALL == Saved[0].getOpcode()) &&
++         "Unexpected SFI Pseudo while lowering SFI_GUARD_CALL");
++  unsigned Reg = Saved[0].getOperand(0).getReg();
++  int64_t Pred = Saved[0].getOperand(2).getImm();
++  Out.EmitBundleAlignEnd();
++  Out.EmitBundleLock();
++  EmitBICMask(Out, Reg, Pred, 0xC000000F);
++  Out.EmitInstruction(Saved[1]);
++  Out.EmitBundleUnlock();
++}
++
++static void EmitIndirectGuardJmp(int I, MCInst Saved[], MCStreamer &Out) {
++  //  sfi_indirect_jump_preamble link cond=
++  //   sfi_nop_if_at_bundle_end
++  //   sfi_code_mask \link \cond
++  assert(I == 2 && (ARM::SFI_GUARD_INDIRECT_JMP == Saved[0].getOpcode()) &&
++         "Unexpected SFI Pseudo while lowering SFI_GUARD_CALL");
++  unsigned Reg = Saved[0].getOperand(0).getReg();
++  int64_t Pred = Saved[0].getOperand(2).getImm();
++
++  Out.EmitBundleLock();
++  EmitBICMask(Out, Reg, Pred, 0xC000000F);
++  Out.EmitInstruction(Saved[1]);
++  Out.EmitBundleUnlock();
++}
++
++static void EmitGuardReturn(int I, MCInst Saved[], MCStreamer &Out) {
++  // sfi_return_preamble reg cond=
++  //    sfi_nop_if_at_bundle_end
++  //    sfi_code_mask \reg \cond
++  assert(I == 2 && (ARM::SFI_GUARD_RETURN == Saved[0].getOpcode()) &&
++         "Unexpected SFI Pseudo while lowering SFI_GUARD_RETURN");
++  int64_t Pred = Saved[0].getOperand(0).getImm();
++
++  Out.EmitBundleLock();
++  EmitBICMask(Out, ARM::LR, Pred, 0xC000000F);
++  Out.EmitInstruction(Saved[1]);
++  Out.EmitBundleUnlock();
++}
++
++static void EmitGuardStore(int I, MCInst Saved[], MCStreamer &Out) {
++  // sfi_store_preamble reg cond ---->
++  //    sfi_nop_if_at_bundle_end
++  //    sfi_data_mask \reg, \cond
++  assert(I == 2 && (ARM::SFI_GUARD_STORE == Saved[0].getOpcode()) &&
++         "Unexpected SFI Pseudo while lowering SFI_GUARD_RETURN");
++  unsigned Reg = Saved[0].getOperand(0).getReg();
++  int64_t Pred = Saved[0].getOperand(2).getImm();
++
++  Out.EmitBundleLock();
++  EmitBICMask(Out, Reg, Pred, 0xC0000000);
++  Out.EmitInstruction(Saved[1]);
++  Out.EmitBundleUnlock();
++}
++
++static void EmitGuardStoreTst(int I, MCInst Saved[], MCStreamer &Out) {
++  // sfi_cstore_preamble reg -->
++  //   sfi_nop_if_at_bundle_end
++  //   sfi_data_tst \reg
++  assert(I == 2 && (ARM::SFI_GUARD_STORE_TST == Saved[0].getOpcode()) &&
++         "Unexpected SFI Pseudo while lowering");
++  unsigned Reg = Saved[0].getOperand(0).getReg();
++
++  Out.EmitBundleLock();
++  EmitTST(Out, Reg);
++  Out.EmitInstruction(Saved[1]);
++  Out.EmitBundleUnlock();
++}
++
++namespace llvm {
++// CustomExpandInstNaClARM -
++//   If Inst is a NaCl pseudo instruction, emits the substitute
++//   expansion to the MCStreamer and returns true.
++//   Otherwise, returns false.
++//
++//   NOTE: Each time this function calls Out.EmitInstruction(), it will be
++//   called again recursively to rewrite the new instruction being emitted.
++//   Care must be taken to ensure that this does not result in an infinite
++//   loop. Also, global state must be managed carefully so that it is
++//   consistent during recursive calls.
++//
++//   We need global state to keep track of the explicit prefix (PREFIX_*)
++//   instructions. Unfortunately, the assembly parser prefers to generate
++//   these instead of combined instructions. At this time, having only
++//   one explicit prefix is supported.
++
++
++bool CustomExpandInstNaClARM(const MCInst &Inst, MCStreamer &Out) {
++  const int MaxSaved = 3;
++  static MCInst Saved[MaxSaved];
++  static int SaveCount  = 0;
++  static int I = 0;
++  // This routine only executes  if RecurseGuard == 0
++  static bool RecurseGuard = false; 
++
++  // If we are emitting to .s, just emit all pseudo-instructions directly.
++  if (Out.hasRawTextSupport()) {
++    return false;
++  }
++
++  //No recursive calls allowed;
++  if (RecurseGuard) return false;
++
++  unsigned Opc = Inst.getOpcode();
++
++  DEBUG(dbgs() << "CustomExpandInstNaClARM("; Inst.dump(); dbgs() << ")\n");
++
++  // Note: SFI_NOP_IF_AT_BUNDLE_END is only emitted directly as part of
++  // a stack guard in conjunction with a SFI_DATA_MASK
++
++  // Logic:
++  // This is somewhat convoluted, but in the current model, the SFI
++  // guard pseudo instructions occur PRIOR to the actual instruction.
++  // So, the bundling/alignment operation has to refer to the FOLLOWING
++  // one or two instructions.
++  //
++  // When a SFI_* pseudo is detected, it is saved. Then, the saved SFI_*
++  // pseudo and the very next one or two instructions are used as arguments to
++  // the Emit*() functions in this file.  This is the reason why we have a
++  // doublely nested switch here.  First, to save the SFI_* pseudo, then to
++  // emit it and the next instruction
++
++  // By default, we only need to save two or three instructions
++
++  if ((I == 0) && (SaveCount == 0)) {
++    // Base State, no saved instructions.
++    // If the current instruction is a SFI instruction, set the SaveCount
++    // and fall through.
++    switch (Opc) {
++    default:
++      SaveCount = 0; // Nothing to do.
++      return false;  // Handle this Inst elsewhere.
++    case ARM::SFI_NOP_IF_AT_BUNDLE_END:
++      SaveCount = 3;
++      break;
++    case ARM::SFI_DATA_MASK:
++      SaveCount = 0; // Do nothing.
++      break;
++    case ARM::SFI_GUARD_CALL:
++    case ARM::SFI_GUARD_INDIRECT_CALL:
++    case ARM::SFI_GUARD_INDIRECT_JMP:
++    case ARM::SFI_GUARD_RETURN:
++    case ARM::SFI_GUARD_STORE:
++    case ARM::SFI_GUARD_STORE_TST:
++      SaveCount = 2;
++      break;
++    }
++  }
++
++  if (I < SaveCount) {
++    // Othewise, save the current Inst and return
++    Saved[I++] = Inst;
++    if (I < SaveCount)
++      return true;
++    // Else fall through to next stat
++  }
++
++  if (SaveCount > 0) { 
++    assert(I == SaveCount && "Bookeeping Error");
++    SaveCount = 0; // Reset for next iteration
++    // The following calls may call Out.EmitInstruction()
++    // which must not again call CustomExpandInst ...
++    // So set RecurseGuard = 1;
++    RecurseGuard = true;
++
++    switch (Saved[0].getOpcode()) {
++    default:  /* No action required */      break;
++    case ARM::SFI_NOP_IF_AT_BUNDLE_END:
++      EmitDataMask(I, Saved, Out);
++      break;
++    case ARM::SFI_DATA_MASK:
++      assert(0 && "Unexpected NOP_IF_AT_BUNDLE_END as a Saved Inst");
++      break;
++    case ARM::SFI_GUARD_CALL:
++      EmitDirectGuardCall(I, Saved, Out);
++      break;
++    case ARM::SFI_GUARD_INDIRECT_CALL:
++      EmitIndirectGuardCall(I, Saved, Out);
++      break;
++    case ARM::SFI_GUARD_INDIRECT_JMP:
++      EmitIndirectGuardJmp(I, Saved, Out);
++      break;
++    case ARM::SFI_GUARD_RETURN:
++      EmitGuardReturn(I, Saved, Out);
++      break;
++    case ARM::SFI_GUARD_STORE:
++      EmitGuardStore(I, Saved, Out);
++      break;
++    case ARM::SFI_GUARD_STORE_TST:
++      EmitGuardStoreTst(I, Saved, Out);
++      break;
++    }
++    I = 0; // Reset I for next.
++    assert(RecurseGuard && "Illegal Depth");
++    RecurseGuard = false;
++    return true;
++  }
++
++  return false;
++}
++
++} // namespace llvm
+diff -r 925eb3cf4a82 lib/Target/ARM/ARMInstrNaCl.h
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/lib/Target/ARM/ARMInstrNaCl.h	Tue Jun 07 14:19:27 2011 -0700
+@@ -0,0 +1,19 @@
++//===-- ARMInstrNaCl.h - Prototype for CustomExpandInstNaClARM ---*- C++ -*-===//
++//
++//                     The LLVM Compiler Infrastructure
++//
++// This file is distributed under the University of Illinois Open Source
++// License. See LICENSE.TXT for details.
++//
++//===----------------------------------------------------------------------===//
++
++#ifndef ARM_INSTRNACL_H
++#define ARM_INSTRNACL_H
++
++namespace llvm {
++  class MCInst;
++  class MCStreamer;
++  bool CustomExpandInstNaClARM(const MCInst &Inst, MCStreamer &Out);
++}
++
++#endif
+diff -r 925eb3cf4a82 lib/Target/ARM/ARMInstrNaCl.td
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/lib/Target/ARM/ARMInstrNaCl.td	Tue Jun 07 14:19:27 2011 -0700
+@@ -0,0 +1,145 @@
++//====- ARMInstrNaCl.td - Describe NaCl Instructions ----*- tablegen -*-===//
++//
++//                     The LLVM Compiler Infrastructure
++//
++// This file is distributed under the University of Illinois Open Source
++// License. See LICENSE.TXT for details.
++//
++//===----------------------------------------------------------------------===//
++//
++// This file describes the modifications to the X86 instruction set needed for
++// Native Client code generation.
++//
++//===----------------------------------------------------------------------===//
++
++
++//===----------------------------------------------------------------------===//
++//
++//                       Native Client Pseudo-Instructions
++//
++// These instructions implement the Native Client pseudo-instructions, such
++// as nacljmp and naclasp.
++//
++// TableGen and MC consider these to be "real" instructions. They can be
++// parsed by the AsmParser and emitted by the AsmStreamer as if they
++// were just regular instructions. They are not marked "Pseudo" because
++// this would imply isCodeGenOnly=1, which would stop them from being
++// parsed by the assembler.
++//
++// These instructions cannot be encoded (written into an object file) by the
++// MCCodeEmitter. Instead, during direct object emission, they get lowered to
++// a sequence of streamer emits. (see ARMInstrNaCl.cpp)
++// 
++// These instructions should not be used in CodeGen. They have no pattern
++// and lack CodeGen metadata. Instead, the ARMNaClRewritePass should
++// generate these instructions after CodeGen is finished.
++//
++//===----------------------------------------------------------------------===//
++
++//===----------------------------------------------------------------------===//
++// ARM Native Client "Pseudo" Instructions
++//===----------------------------------------------------------------------===//
++
++// It does not seem possible to define a single base class for both the 
++// synthetic isCodeGenOnly=1 instructions as well as the isAsmParserOnly=1 
++// versions.
++
++// These are the fixed flags:
++// AddrMode am = AddrModeNone
++// SizeFlagVal sz = SizeSpecial
++// IndexMode im = IndexModeNone
++// Domain d = GenericDomain
++// InstrItinClass = NoItinerary
++
++// The non-fixed flags need their own class 
++// InOperandList = !con(iops, (ins pred:$p)) or left alone
++// AsmString = !strconcat(opc, "${p}", asm) or left alone
++// Format f = MiscFrm/Pseudo
++// isPredicable = 0/1 
++
++/// However, it is possible to make a set of two base classes for the isAsmParserOnly=1
++/// synthetic instructions.
++
++
++/***** FIXME: ADD in isAsmParserOnly naclguard instructions ***************************
++/// required args:
++// dag outs, dag ins, string opc, string asm, string cstr, Format f, list<dag> pat
++
++class NaClSI<dag outs, dag ins, string opc, string asm, string cstr> 
++  : I<outs, ins, AddrModeNone, SizeSpecial, IndexModeNone, MiscFrm, 
++              NoItinerary, opc, asm, cstr, pat>, Requires<[IsNaCl]>;
++
++class NaClSINoP<dag outs, dag ins, string opc, string asm, string cstr> 
++  : InoP <outs, ins, AddrModeNone, SizeSpecial, IndexModeNone, MiscFrm, 
++              NoItinerary, opc, asm, cstr, pat>, Requires<[IsNaCl]>;
++
++class NaClSI<dag outs, dag ins, string opc, string asm, string cstr, Format f, list<dag> pat> 
++  : InstARM<AddrModeNone, SizeSpecial, IndexModeNone, f,
++            GenericDomain, cstr, NoItinerary>, Requires<[IsNaCl]> {
++  let OutOperandList = oops;
++  let InOperandList = iops;
++  let Pattern = pattern;
++  let AsmString = !strconcat(opc, asm);
++};
++
++
++/// For not pseudo instructionable      
++class NaClSINoP<dag outs, dag ins, string opc, string asm, string cstr, Format f, list<dag> pat> 
++  : InstARM<AddrModeNone, SizeSpecial, IndexModeNone, f,
++            GenericDomain, cstr, NoItinerary>, Requires<[IsNaCl]> {
++  let OutOperandList = oops;
++  let InOperandList = iops;
++  let Pattern = pattern;
++  let AsmString = !strconcat(opc, asm);
++};
++
++/// This is the guarded isCodeGenOnly pseudo instruction for BX_RET
++let isReturn = 1, isTerminator = 1, isBarrier = 1, isCodeGenOnly = 1,
++    // Make sure this is selected in lieu of 
++    AddedComplexity = 1 
++ in {
++  // ARMV4T and above
++  def NACL_CG_BX_RET : 
++     ARMPseudoInst<(outs), (ins), BrMiscFrm, IIC_Br, 
++                   "naclbx", "\tlr", [(ARMretflag)]>,
++     Requires<[HasV4T, IsNaCl]> {
++  }
++}
++
++
++// These are assembler only instructions 
++let isAsmParserOnly = 1 in {
++  def NACL_GUARD_STORE :
++  NaClSI<(outs GPR:$dst), (ins GPR:$a), 
++         "naclguard", "\t${dst}, ${a}", "" []>;
++
++  let Defs = [CPSR] in
++  def NACL_GUARD_STORE_TST :
++    NaClSINoP<
++  PseudoInst<(outs GPR:$dst), (ins GPR:$a), NoItinerary, []> ;
++
++
++  let Defs = [CPSR] in
++  def NACL_GUARD_STORE_TST :
++  PseudoInst<(outs GPR:$dst), (ins GPR:$a), NoItinerary, []>;
++
++  def NACL_GUARD_INDIRECT_CALL :
++  PseudoInst<(outs GPR:$dst), (ins GPR:$a, pred:$p), NoItinerary, []>;
++
++  def NACL_GUARD_INDIRECT_JMP :
++  PseudoInst<(outs GPR:$dst), (ins GPR:$a, pred:$p), NoItinerary, []>;
++
++  def NACL_GUARD_CALL :
++  PseudoInst<(outs), (ins pred:$p), NoItinerary, []>;
++
++  // NOTE: the BX_RET instruction hardcodes lr as well
++  def NACL_GUARD_RETURN :
++  PseudoInst<(outs), (ins pred:$p), NoItinerary, []>;
++
++  // Note: intention is that $src and $dst are the same register.
++  def NACL_DATA_MASK :
++  PseudoInst<(outs GPR:$dst), (ins GPR:$src, pred:$p), NoItinerary, []>;
++}
++
++
++**************************************************************************/
+diff -r 925eb3cf4a82 lib/Target/ARM/ARMSubtarget.h
+--- a/lib/Target/ARM/ARMSubtarget.h	Mon Mar 28 17:01:54 2011 -0700
++++ b/lib/Target/ARM/ARMSubtarget.h	Tue Jun 07 14:19:27 2011 -0700
+@@ -222,6 +222,9 @@
+   // @LOCALMOD
+   bool useConstPool() const { return !FlagSfiDisableCP; }
+ 
++  // @LOCALMOD
++  bool isTargetNaCl() const { return TargetTriple.getOS() == Triple::NativeClient; }
++
+   bool allowsUnalignedMem() const { return AllowsUnalignedMem; }
+ 
+   const std::string & getCPUString() const { return CPUString; }
+diff -r 925eb3cf4a82 lib/Target/ARM/CMakeLists.txt
+--- a/lib/Target/ARM/CMakeLists.txt	Mon Mar 28 17:01:54 2011 -0700
++++ b/lib/Target/ARM/CMakeLists.txt	Tue Jun 07 14:19:27 2011 -0700
+@@ -33,6 +33,7 @@
+   ARMISelDAGToDAG.cpp
+   ARMISelLowering.cpp
+   ARMInstrInfo.cpp
++  ARMInstrNaCl.cpp
+   ARMJITInfo.cpp
+   ARMMCCodeEmitter.cpp
+   ARMMCExpr.cpp
+diff -r 925eb3cf4a82 lib/Target/X86/X86AsmBackend.cpp
+--- a/lib/Target/X86/X86AsmBackend.cpp	Mon Mar 28 17:01:54 2011 -0700
++++ b/lib/Target/X86/X86AsmBackend.cpp	Tue Jun 07 14:19:27 2011 -0700
+@@ -302,13 +302,14 @@
+   }
+ 
+   // @LOCALMOD-BEGIN
++  // FIXME! NaCl should inherit from ELFX86AsmBackend!
+   unsigned getBundleSize() const {
+     return OSType == Triple::NativeClient ? 32 : 0;
+   }
+ 
+   bool CustomExpandInst(const MCInst &Inst, MCStreamer &Out) const {
+     if (OSType == Triple::NativeClient) {
+-      return CustomExpandInstNaCl(Inst, Out);
++      return CustomExpandInstNaClX86(Inst, Out);
+     }
+     return false;
+   }
+diff -r 925eb3cf4a82 lib/Target/X86/X86InstrInfo.td
+--- a/lib/Target/X86/X86InstrInfo.td	Mon Mar 28 17:01:54 2011 -0700
++++ b/lib/Target/X86/X86InstrInfo.td	Tue Jun 07 14:19:27 2011 -0700
+@@ -443,6 +443,7 @@
+ def IsWin64      : Predicate<"Subtarget->isTargetWin64()">;
+ def NotWin64     : Predicate<"!Subtarget->isTargetWin64()">;
+ // @LOCALMOD-BEGIN
++// FIXME: Lift IsNaCl to share with ARM
+ def IsNaCl       : Predicate<"Subtarget->isTargetNaCl()">, AssemblerPredicate;
+ def IsNaCl32     : Predicate<"Subtarget->isTargetNaCl32()">, AssemblerPredicate;
+ def IsNaCl64     : Predicate<"Subtarget->isTargetNaCl64()">, AssemblerPredicate;
+diff -r 925eb3cf4a82 lib/Target/X86/X86InstrNaCl.cpp
+--- a/lib/Target/X86/X86InstrNaCl.cpp	Mon Mar 28 17:01:54 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.cpp	Tue Jun 07 14:19:27 2011 -0700
+@@ -104,7 +104,7 @@
+   Out.EmitInstruction(JMPInst);
+ }
+ 
+-void EmitTrap(bool Is64Bit, MCStreamer &Out) {
++static void EmitTrap(bool Is64Bit, MCStreamer &Out) {
+   // Rewrite to:
+   //    X86-32:  mov $0, 0
+   //    X86-64:  mov $0, (%r15)
+@@ -485,7 +485,7 @@
+ }
+ 
+ namespace llvm {
+-// CustomExpandInstNaCl -
++// CustomExpandInstNaClX86 -
+ //   If Inst is a NaCl pseudo instruction, emits the substitute
+ //   expansion to the MCStreamer and returns true.
+ //   Otherwise, returns false.
+@@ -500,13 +500,13 @@
+ //   instructions. Unfortunately, the assembly parser prefers to generate
+ //   these instead of combined instructions. At this time, having only
+ //   one explicit prefix is supported.
+-bool CustomExpandInstNaCl(const MCInst &Inst, MCStreamer &Out) {
++bool CustomExpandInstNaClX86(const MCInst &Inst, MCStreamer &Out) {
+   // If we are emitting to .s, just emit all pseudo-instructions directly.
+   if (Out.hasRawTextSupport()) {
+     return false;
+   }
+   unsigned Opc = Inst.getOpcode();
+-  DEBUG(dbgs() << "CustomExpandInstNaCl("; Inst.dump(); dbgs() << ")\n");
++  DEBUG(dbgs() << "CustomExpandInstNaClX86("; Inst.dump(); dbgs() << ")\n");
+   switch (Opc) {
+   case X86::LOCK_PREFIX:
+   case X86::REP_PREFIX:
+diff -r 925eb3cf4a82 lib/Target/X86/X86InstrNaCl.h
+--- a/lib/Target/X86/X86InstrNaCl.h	Mon Mar 28 17:01:54 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.h	Tue Jun 07 14:19:27 2011 -0700
+@@ -1,4 +1,4 @@
+-//===-- X86InstrNaCl.h - Prototype for CustomExpandInstNaCl    ---*- C++ -*-===//
++//===-- X86InstrNaCl.h - Prototype for CustomExpandInstNaClX86 ---*- C++ -*-===//
+ //
+ //                     The LLVM Compiler Infrastructure
+ //
+@@ -13,7 +13,7 @@
+ namespace llvm {
+   class MCInst;
+   class MCStreamer;
+-  bool CustomExpandInstNaCl(const MCInst &Inst, MCStreamer &Out);
++  bool CustomExpandInstNaClX86(const MCInst &Inst, MCStreamer &Out);
+ }
+ 
+ #endif

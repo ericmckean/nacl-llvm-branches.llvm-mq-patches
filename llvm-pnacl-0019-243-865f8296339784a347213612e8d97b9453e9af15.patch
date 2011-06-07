@@ -1,0 +1,184 @@
+# HG changeset patch
+# User Jason Kim <jasonwkim@google.com>
+# Date 1301357236 25200
+# Branch pnacl-sfi
+# Node ID 865f8296339784a347213612e8d97b9453e9af15
+# Parent fbf21e3891a29e366e0e832bb84b84a3c5e96767
+# Parent  5fc7321392bef1d0ad3c470a913a34945df60a23
+Merge 242:5fc7321392be and 238:bb23f96ef85a
+
+ From llvm-pnacl-0019-243-865f8296339784a347213612e8d97b9453e9af15.patch
+
+diff -r fbf21e3891a2 lib/Target/ARM/ARMExpandPseudoInsts.cpp
+--- a/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Mon Mar 28 17:01:59 2011 -0700
++++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Tue Jun 07 14:19:31 2011 -0700
+@@ -853,17 +853,32 @@
+     }
+     case ARM::TPsoft: {
+       // @LOCALMOD-BEGIN
+-      // Don't add implicit uses/defs for this call, otherwise
+-      // liveness analysis passes get confused.
++      static const unsigned kNaClPageShift = 12;
++      static const unsigned kNaClTlsBaseOffset = 16;
++      // mov r0, r9, lsr #NACL_PAGESHIFT
++      AddDefaultPred(BuildMI(MBB, MBBI, MI.getDebugLoc(), TII->get(ARM::MOVs),
++                             ARM::R0)
++                       .addReg(ARM::R9)
++                       .addReg(0)
++                       .addImm(ARM_AM::getSORegOpc(ARM_AM::lsr,
++                                                   kNaClPageShift)))
++        .addReg(0);
++      // lsl r0, r0, #NACL_PAGESHIFT
++      AddDefaultPred(BuildMI(MBB, MBBI, MI.getDebugLoc(), TII->get(ARM::MOVs),
++                             ARM::R0)
++                       .addReg(ARM::R0, RegState::Kill)
++                       .addReg(0)
++                       .addImm(ARM_AM::getSORegOpc(ARM_AM::lsl,
++                                                   kNaClPageShift)))
++        .addReg(0);
++      // sub r0, r0, #16
++      AddDefaultPred(BuildMI(MBB, MBBI, MI.getDebugLoc(), TII->get(ARM::SUBri),
++                             ARM::R0)
++                       .addReg(ARM::R0, RegState::Kill)
++                       .addImm(kNaClTlsBaseOffset))
++        .addReg(0);
++      MI.eraseFromParent();
+       // @LOCALMOD-END
+-      MachineInstrBuilder MIB = 
+-        BuildMI_NoImp(MBB, MBBI, MI.getDebugLoc(), // @LOCALMOD
+-                TII->get(ARM::BL))
+-        .addExternalSymbol("__aeabi_read_tp", 0);
+-
+-      (*MIB).setMemRefs(MI.memoperands_begin(), MI.memoperands_end());
+-      TransferImpOps(MI, MIB, MIB);
+-      MI.eraseFromParent();
+       return true;
+     }
+     case ARM::t2LDRHpci:
+diff -r fbf21e3891a2 lib/Target/X86/X86ISelDAGToDAG.cpp
+--- a/lib/Target/X86/X86ISelDAGToDAG.cpp	Mon Mar 28 17:01:59 2011 -0700
++++ b/lib/Target/X86/X86ISelDAGToDAG.cpp	Tue Jun 07 14:19:31 2011 -0700
+@@ -232,8 +232,9 @@
+     inline void getAddressOperands(X86ISelAddressMode &AM, SDValue &Base, 
+                                    SDValue &Scale, SDValue &Index,
+                                    SDValue &Disp, SDValue &Segment) {
++      EVT MemOpVT = Subtarget->is64Bit() ? MVT::i64 : MVT::i32;  // @LOCALMOD
+       Base  = (AM.BaseType == X86ISelAddressMode::FrameIndexBase) ?
+-        CurDAG->getTargetFrameIndex(AM.Base_FrameIndex, TLI.getPointerTy()) :
++        CurDAG->getTargetFrameIndex(AM.Base_FrameIndex, MemOpVT) : // @LOCALMOD
+         AM.Base_Reg;
+       Scale = getI8Imm(AM.Scale);
+       Index = AM.IndexReg;
+@@ -1202,8 +1203,6 @@
+   if (MatchAddress(N, AM))
+     return false;
+ 
+-  EVT VT = N.getValueType();
+-
+   // @LOCALMOD-START
+   if (Subtarget->isTargetNaCl64()) {
+     // NaCl needs to zero the top 32-bits of the index, so we can't
+@@ -1211,7 +1210,9 @@
+     LegalizeIndexForNaCl(N, AM);
+   }
+   // @LOCALMOD-END
+-  
++
++  EVT VT = Subtarget->is64Bit() ? MVT::i64 : MVT::i32; // @LOCALMOD
++
+   if (AM.BaseType == X86ISelAddressMode::RegBase) {
+     if (!AM.Base_Reg.getNode())
+       AM.Base_Reg = CurDAG->getRegister(0, VT);
+@@ -1221,6 +1222,31 @@
+     AM.IndexReg = CurDAG->getRegister(0, VT);
+ 
+   getAddressOperands(AM, Base, Scale, Index, Disp, Segment);
++
++  // @LOCALMOD-BEGIN
++  // For Native Client 64-bit, zero-extend 32-bit pointers
++  // to 64-bits for memory operations.  Most of the time, this
++  // won't generate any additional instructions because the backend
++  // knows that operations on 32-bit registers implicitly zero-extends.
++  // If we don't do this, there are a few corner cases where LLVM might
++  // assume the upper bits won't be modified or used, but since we
++  // always clear the upper bits, this is not a good assumption.
++  // http://code.google.com/p/nativeclient/issues/detail?id=1564
++  if (Subtarget->isTargetNaCl64()) {
++    assert(Base.getValueType() == MVT::i64 && "Unexpected base operand size");
++
++    if (Index.getValueType() != MVT::i64) {
++      Index = CurDAG->getZExtOrTrunc(Index, Index.getDebugLoc(), MVT::i64);
++      // Insert the new node into the topological ordering.
++      if (Index->getNodeId() == -1 ||
++          Index->getNodeId() > N.getNode()->getNodeId()) {
++        CurDAG->RepositionNode(N.getNode(), Index.getNode());
++        Index->setNodeId(N.getNode()->getNodeId());
++      }
++    }
++  }
++  // @LOCALMOD-END
++
+   return true;
+ }
+ 
+diff -r fbf21e3891a2 lib/Target/X86/X86RegisterInfo.cpp
+--- a/lib/Target/X86/X86RegisterInfo.cpp	Mon Mar 28 17:01:59 2011 -0700
++++ b/lib/Target/X86/X86RegisterInfo.cpp	Tue Jun 07 14:19:31 2011 -0700
+@@ -310,18 +310,14 @@
+ 
+ const TargetRegisterClass *
+ X86RegisterInfo::getPointerRegClass(unsigned Kind) const {
+-  // @LOCALMOD-BEGIN
+-  bool isPTR64Bit = TM.getSubtarget<X86Subtarget>().has64BitPointers();
+-  // @LOCALMOD-END
+-
+   switch (Kind) {
+   default: llvm_unreachable("Unexpected Kind in getPointerRegClass!");
+   case 0: // Normal GPRs.
+-    if (isPTR64Bit)   // @LOCALMOD
++    if (TM.getSubtarget<X86Subtarget>().is64Bit())
+       return &X86::GR64RegClass;
+     return &X86::GR32RegClass;
+   case 1: // Normal GRPs except the stack pointer (for encoding reasons).
+-    if (isPTR64Bit)   // @LOCALMOD
++    if (TM.getSubtarget<X86Subtarget>().is64Bit())
+       return &X86::GR64_NOSPRegClass;
+     return &X86::GR32_NOSPRegClass;
+   }
+diff -r fbf21e3891a2 tools/llc/nacl_file.cpp
+--- a/tools/llc/nacl_file.cpp	Mon Mar 28 17:01:59 2011 -0700
++++ b/tools/llc/nacl_file.cpp	Tue Jun 07 14:19:31 2011 -0700
+@@ -124,7 +124,11 @@
+   }
+   entry->real_fd = fd;
+   if (has_real_size) {
+-    entry->size = real_size_opt;
++    // Let "size" be the value reported by stat. This may end up
++    // being a 64KB aligned value (for shm), but "size" should just
++    // represent how much was allocated. "real_size" will keep track
++    // of that actual end of file.
++    entry->size = stb.st_size;
+     entry->real_size = real_size_opt;
+   } else {
+     entry->size = stb.st_size;
+@@ -160,7 +164,7 @@
+     printerr("nacl_file: imc_mem_obj_create failed %d\n", fd);
+     return -1;
+   }
+-  return NaClFile_fd(pathname, fd, 0, 0);
++  return NaClFile_fd(pathname, fd, 1, 0);
+ }
+ 
+ int get_real_fd(int dd) {
+@@ -655,9 +659,8 @@
+           NaClSrpcArg **in_args,
+           NaClSrpcArg **out_args,
+           NaClSrpcClosure *done) {
+-  /* Input bitcode file.
+-   * Supplied by urlAsNaClDesc, which should get the right
+-   * size from fstat(). */
++  /* Input bitcode file. This is supplied by urlAsNaClDesc,
++   * which should get the right size from fstat(). */
+   int bitcode_fd = in_args[0]->u.hval;
+   NaClFile_fd("bitcode_combined", bitcode_fd, 0, 0);
+ 

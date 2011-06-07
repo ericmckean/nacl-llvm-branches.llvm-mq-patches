@@ -1,0 +1,162 @@
+# HG changeset patch
+# User David Sehr <sehr@google.com>
+# Date 1300462475 25200
+# Branch pnacl-sfi
+# Node ID eeaa12fb82b94aff06dd5edd2e39ba32abc12238
+# Parent b8d32347792aceecafd8e68d667fcfb7dbe17dc4
+Add intrinsics for TLS support to remove src/untrusted/stubs/crt_*.S
+BUG=http://code.google.com/p/nativeclient/issues/detail?id=1519
+TEST=none (yet)
+
+ From llvm-pnacl-0015-235-eeaa12fb82b94aff06dd5edd2e39ba32abc12238.patch
+
+diff -r b8d32347792a include/llvm/Intrinsics.td
+--- a/include/llvm/Intrinsics.td	Thu Mar 17 17:49:59 2011 -0700
++++ b/include/llvm/Intrinsics.td	Tue Jun 07 14:19:23 2011 -0700
+@@ -491,6 +491,20 @@
+                       GCCBuiltin<"__builtin_nacl_setjmp">;
+ def int_nacl_longjmp : Intrinsic<[],  [llvm_ptr_ty, llvm_i32_ty]>,
+                        GCCBuiltin<"__builtin_nacl_longjmp">;
++
++// The following intrinsics provide a replacement for interface in
++// native_client/src/untrusted/nacl/tls.h.  The intrinsic names are basically
++// the functions there without the leading underscores.
++def int_nacl_tls_alignment : Intrinsic<[llvm_i32_ty], []>,
++                             GCCBuiltin<"__builtin_nacl_tls_alignment">;
++def int_nacl_tdb_offset_in_tls : Intrinsic<[llvm_i32_ty], [llvm_i32_ty]>,
++                             GCCBuiltin<"__builtin_nacl_tdb_offset_in_tls">;
++def int_nacl_tdb_effective_payload_size :
++        Intrinsic<[llvm_i32_ty], [llvm_i32_ty]>,
++        GCCBuiltin<"__builtin_nacl_tdb_effective_payload_size">;
++def int_nacl_return_address_size :
++        Intrinsic<[llvm_i32_ty], []>,
++        GCCBuiltin<"__builtin_nacl_return_address_size">;
+ // @LOCALMOD-END
+ 
+ //===----------------------------------------------------------------------===//
+diff -r b8d32347792a lib/Target/ARM/ARMInstrInfo.td
+--- a/lib/Target/ARM/ARMInstrInfo.td	Thu Mar 17 17:49:59 2011 -0700
++++ b/lib/Target/ARM/ARMInstrInfo.td	Tue Jun 07 14:19:23 2011 -0700
+@@ -4057,7 +4057,10 @@
+                            "sfi_nops_to_force_slot2; "
+                            "sfi_code_mask r4; "
+                            "blx r4; "
+-                           "trap",                    // Bundle start
++                           // A bundle beginning is here, but we want to ensure
++                           // we halt if the function we're calling, typically
++                           // __nacl_startup, returns.
++                           "sfi_illegal_if_at_bundle_begining",
+                            [(int_nacl_elf_start R4)]>;
+ }
+ 
+@@ -4093,4 +4096,47 @@
+                        "bx lr; ",
+                        [(int_nacl_longjmp R0, R1)]>;
+ }
++
++//===========================================================================
++// The following intrinsics provide a replacement for the functions in
++// native_client/src/untrusted/stubs/tls_arm.c, which are the ARM-specific
++// versions of an interface in native_client/src/untrusted/nacl/tls.h.  The
++// intrinsic names and pattern names are basically the functions there without
++// the leading underscores.
++
++// from src/untrusted/stubs/tls_arm.c:
++// int __nacl_tls_aligment() {
++//   return (1 << 12);
++// }
++def NACL_TLS_ALIGNMENT : AXI<(outs GPR:$dst), (ins), MiscFrm, NoItinerary,
++                           "mov $dst, #4096",
++                           [(set GPR:$dst, (int_nacl_tls_alignment))]>;
++
++// from src/untrusted/stubs/tls_arm.c:
++// size_t __nacl_tdb_offset_in_tls(size_t tls_data_and_bss_size) {
++//   return 0; /* TDB is the first symbol in the TLS. */
++// }
++def NACL_TDB_OFFSET_IN_TLS :
++        AXI<(outs GPR:$dst), (ins GPR:$src), MiscFrm, NoItinerary,
++          "mov $dst, #0\t@ incoming value of $src is ignored",
++          [(set GPR:$dst, (int_nacl_tdb_offset_in_tls GPR:$src))]>;
++
++// from src/untrusted/stubs/tls_arm.c:
++// size_t __nacl_tdb_effective_payload_size(size_t tdb_size) {
++//   return 0; /* TDB is the first symbol in the TLS. */
++// }
++def NACL_TDB_EFFECTIVE_PAYLOAD_SIZE :
++        AXI<(outs GPR:$dst), (ins GPR:$src), MiscFrm, NoItinerary,
++          "mov $dst, #0\t@ incoming value of $src is ignored",
++          [(set GPR:$dst, (int_nacl_tdb_effective_payload_size GPR:$src))]>;
++
++// from src/untrusted/stubs/tls_arm.c:
++// size_t __nacl_return_address_size() {
++//   return 4;
++// }
++def NACL_RETURN_ADDRESS_SIZE :
++        AXI<(outs GPR:$dst), (ins), MiscFrm, NoItinerary,
++          "mov $dst, #4",
++          [(set GPR:$dst, (int_nacl_return_address_size))]>;
++
+ // @LOCALMOD-END
+diff -r b8d32347792a lib/Target/X86/X86InstrNaCl.td
+--- a/lib/Target/X86/X86InstrNaCl.td	Thu Mar 17 17:49:59 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Tue Jun 07 14:19:23 2011 -0700
+@@ -437,3 +437,59 @@
+                        [(int_nacl_longjmp EDI, EAX)]>,
+                        Requires<[IsNaCl64]>, TB;
+ }
++
++//===========================================================================
++// The following intrinsics provide a replacement for the functions in
++// native_client/src/untrusted/stubs/tls_arm.c, which are the X86-specific
++// versions of an interface in native_client/src/untrusted/nacl/tls.h.  The
++// intrinsic names and pattern names are basically the functions there without
++// the leading underscores.  The return address size differs between 32 and
++// 64 bit compilation, leading to the duplication in NACL_RETURN_ADDRESS_SIZE
++// templates.
++
++// from src/untrusted/stubs/tls_x86_{32,64}.c:
++// int __nacl_tls_aligment() {
++//   return 32;
++// }
++def NACL_TLS_ALIGNMENT : I<0, Pseudo, (outs GR32:$dst), (ins),
++                           "movl $$32, $dst",
++                           [(set GR32:$dst, (int_nacl_tls_alignment))]>;
++
++// from src/untrusted/stubs/tls_x86_{32,64}.c:
++// size_t __nacl_tdb_offset_in_tls(size_t tls_data_and_bss_size) {
++//  return tls_data_and_bss_size; /* TDB after TLS */
++// }
++def NACL_TDB_OFFSET_IN_TLS :
++        I<0, Pseudo, (outs GR32:$dst), (ins GR32:$src),
++          "movl $src, $dst",
++          [(set GR32:$dst, (int_nacl_tdb_offset_in_tls GR32:$src))]>;
++
++// from src/untrusted/stubs/tls_x86_{32,64}.c:
++// size_t __nacl_tdb_effective_payload_size(size_t tdb_size) {
++//   return tdb_size; /* TDB after TLS */
++// }
++def NACL_TDB_EFFECTIVE_PAYLOAD_SIZE :
++        I<0, Pseudo, (outs GR32:$dst), (ins GR32:$src),
++          "movl $src, $dst",
++          [(set GR32:$dst, (int_nacl_tdb_effective_payload_size GR32:$src))]>;
++
++// from src/untrusted/stubs/tls_x86_32.c:
++// size_t __nacl_return_address_size() {
++//   return 4;
++// }
++def NACL_RETURN_ADDRESS_SIZE32 :
++        I<0, Pseudo, (outs GR32:$dst), (ins),
++          "movl $$4, $dst",
++          [(set GR32:$dst, (int_nacl_return_address_size))]>,
++        Requires<[IsNaCl32]>;
++
++// from src/untrusted/stubs/tls_x86_64.c:
++// size_t __nacl_return_address_size() {
++//   return 8;
++// }
++def NACL_RETURN_ADDRESS_SIZE64 :
++        I<0, Pseudo, (outs GR32:$dst), (ins),
++          "movl $$8, $dst",
++          [(set GR32:$dst, (int_nacl_return_address_size))]>,
++        Requires<[IsNaCl64]>;
++

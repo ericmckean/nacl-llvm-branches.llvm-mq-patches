@@ -1,0 +1,22 @@
+# HG changeset patch
+# User David Meyer <pdox@google.com>
+# Date 1304639534 25200
+# Branch pnacl-sfi
+# Node ID 7e79e53efc08ac5760ad1d0498ef10fc6515ba93
+# Parent be3ad1b2cc321be7c96008829eb8746f780d0e40
+Add -limc_syscalls to PNaCl self-build
+
+ From llvm-pnacl-0030-254-7e79e53efc08ac5760ad1d0498ef10fc6515ba93.patch
+
+diff -r be3ad1b2cc32 Makefile.rules
+--- a/Makefile.rules	Thu May 05 14:37:22 2011 -0700
++++ b/Makefile.rules	Tue Jun 07 14:19:50 2011 -0700
+@@ -578,7 +578,7 @@
+ endif
+ 
+ ifeq ($(NACL_SANDBOX),1)
+-  LIBS += -lsrpc -lpthread -lplatform -lgio -lm -lnacl -lnosys
++  LIBS += -lsrpc -limc_syscalls -lpthread -lplatform -lgio -lm -lnacl -lnosys
+ else
+   LIBS +=
+ endif

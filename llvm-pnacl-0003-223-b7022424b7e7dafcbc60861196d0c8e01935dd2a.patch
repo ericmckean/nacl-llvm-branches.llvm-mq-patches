@@ -1,0 +1,871 @@
+# HG changeset patch
+# User Karl Schimpf <kschimpf@google.com>
+# Date 1297714975 28800
+# Branch pnacl-sfi
+# Node ID b7022424b7e7dafcbc60861196d0c8e01935dd2a
+# Parent 3697e6e0c482a02ea0b4922647d782fa12aaab7d
+Add bc_wrap command.
+
+ From llvm-pnacl-0003-223-b7022424b7e7dafcbc60861196d0c8e01935dd2a.patch
+
+diff -r 3697e6e0c482 include/llvm/Support/support_macros.h
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/include/llvm/Support/support_macros.h	Tue Jun 07 14:19:03 2011 -0700
+@@ -0,0 +1,25 @@
++// Define support macros for defining classes, etc.
++
++#ifndef LLVM_SUPPORT_SUPPORT_MACROS_H__
++#define LLVM_SUPPORT_SUPPORT_MACROS_H__
++
++// Define macro, to use within a class declaration,  to disallow constructor
++// copy. Defines copy constructor declaration under the assumption that it
++// is never defined.
++#define DISALLOW_CLASS_COPY(class_name) \
++  class_name(class_name& arg)  // Do not implement
++
++// Define macro, to use within a class declaration,  to disallow assignment.
++// Defines assignment operation declaration under the assumption that it
++// is never defined.
++#define DISALLOW_CLASS_ASSIGN(class_name) \
++  void operator=(class_name& arg)  // Do not implement
++
++// Define macro to add copy and assignment declarations to a class file,
++// for which no bodies will be defined, effectively disallowing these from
++// being defined in the class.
++#define DISALLOW_CLASS_COPY_AND_ASSIGN(class_name) \
++  DISALLOW_CLASS_COPY(class_name); \
++  DISALLOW_CLASS_ASSIGN(class_name)
++
++#endif  // LLVM_SUPPORT_SUPPORT_MACROS_H__
+diff -r 3697e6e0c482 include/llvm/Wrap/bitcode_wrapperer.h
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/include/llvm/Wrap/bitcode_wrapperer.h	Tue Jun 07 14:19:03 2011 -0700
+@@ -0,0 +1,170 @@
++// Define utility class to wrap/unwrap bitcode files. Does wrapping/unwrapping
++// in such a way that the wrappered bitcode file is still a bitcode file.
++
++#ifndef LLVM_WRAP_BITCODE_WRAPPERER_H__
++#define LLVM_WRAP_BITCODE_WRAPPERER_H__
++
++#include <stdint.h>
++#include <stddef.h>
++
++#include "llvm/Support/support_macros.h"
++#include "llvm/Wrap/wrapper_input.h"
++#include "llvm/Wrap/wrapper_output.h"
++
++// The following Must be at least 28 (7 word), so that it can hold the bitcode
++// wrapper header. The bitcode wrapper header is the following 7 words:
++//      1) 0B17C0DE - The magic number expected by llvm for wrapped bitcodes
++//      2) Version # 0 - The current version of wrapped bitcode files.
++//      3) (raw) bitcode offset.
++//      4) (raw) bitcode size.
++//      5) Size of wrapped bitcode.
++//      6) Offset of wrapped file.
++//      7) Size of wrapped file.
++static const size_t kBitcodeWrappererBufferSize = 1024;
++
++// Support class for wrapping the input bitcode file, and
++// a second input file, into an output wrappered bitcode
++// file, or to take a wrappered input bitcode file and split
++// it back up into a bitcode file and a second file.
++class BitcodeWrapperer {
++ public:
++  // Create a bitcode wrapperer using the following
++  // (initial) input and output files.
++  BitcodeWrapperer(WrapperInput* infile, WrapperOutput* outfile);
++
++  // Returns true if the input file begins with a bitcode
++  // wrapper magic number. As a side effect, _wrapper_ fields are set.
++  bool IsInputBitcodeWrapper();
++
++  // Returns true if the input file begins with a bitcode
++  // file magic number.
++  bool IsInputBitcodeFile();
++
++  // Generate a wrapped bitcode file from the input bitcode
++  // file, and wrap file into the generated wrapped bitcode
++  // file. Returns true if able to correctly generate the
++  // wrapped bitcode file.
++  bool GenerateBitcodeFileWrapper(WrapperInput* file);
++
++  // Generate a wrapped bitcode file form an existing wrapped
++  // bitcode file, and wrap file into the generated wrapped
++  // bitcode file. Returns true if able to correctly generate
++  // the wrapped bitcode file.
++  bool GenerateBitcodeWrapperWrapper(WrapperInput* file);
++
++  // Unwrap the wrapped bitcode file, to the corresponding
++  // outfile, and put the embedded file into the given file.
++  // Returns true if able to correctly generate both files.
++  bool GenerateBitcodeFile(WrapperOutput* file);
++
++  ~BitcodeWrapperer() {}
++
++ private:
++  DISALLOW_CLASS_COPY_AND_ASSIGN(BitcodeWrapperer);
++
++  // Refills the buffer with more bytes. Does this in a way
++  // such that it is maximally filled. At eof if BufferSize() == 0
++  // after call.
++  void FillBuffer();
++
++  // Returns the number of bytes in infile.
++  off_t GetInFileSize() { return _infile->Size(); }
++
++  // Returns true if we can read a word. If necessary, fills the buffer
++  // with enough characters so that there are at least a 32-bit value
++  // in the buffer. Returns false if there isn't a 32-bit value
++  // to read from the input file.
++  bool CanReadWord();
++
++  // Read a (32-bit) word from the input. Returns true
++  // if able to read the word.
++  bool ReadWord(uint32_t& word);
++
++  // Write a (32-bit) word to the output. Return true if successful
++  bool WriteWord(uint32_t word);
++
++  // Returns the i-th character in front of the cursor in the buffer.
++  uint8_t BufferLookahead(int i) { return _buffer[_cursor + i]; }
++
++  // Returns how many unread bytes are in the buffer.
++  size_t BufferSize() { return _buffer_size - _cursor; }
++
++
++  // Backs up the read cursor to the beginning of the input buffer.
++  void ResetCursor() {
++    _cursor = 0;
++  }
++
++  // Generates the header sequence for the wrapped bitcode being
++  // generated.
++  // Parameters:
++  //   offset - The offset of the wrapped raw bitcode file to be wrapped.
++  //   size - The number of bytes in the raw bitcode file to be wrapped.
++  //   file - The file to be wrapped into the bitcode file.
++  //Returns: true if successfully generated header.
++  bool WriteBitcodeWrapperHeader(uint32_t offset, uint32_t size,
++                                 WrapperInput* file);
++
++  // Build a wrapped bitcode file, embedding the given file. Use
++  // The given offset and file size as the sizes to put into
++  // the bitcoder wrapper header.
++  bool GenerateBitcodeWrapper(WrapperInput* file,
++                              uint32_t offset,
++                              uint32_t size);
++
++  // Copies size bytes of infile to outfile, using the buffer.
++  bool BufferCopyInToOut(uint32_t size);
++
++  // Discards the old infile and replaces it with the given file.
++  void ReplaceInFile(WrapperInput* new_infile);
++
++  // Discards the old outfile and replaces it with the given file.
++  void ReplaceOutFile(WrapperOutput* new_outfile);
++
++  // Moves to the given position in the input file. Returns false
++  // if unsuccessful.
++  bool Seek(uint32_t pos);
++
++  // Clear the buffer of all contents.
++  void ClearBuffer();
++
++  // The (current) input file being processed. Can be either
++  // a bitcode file, a wrappered bitcode file, or a secondary
++  // file to be wrapped.
++  WrapperInput* _infile;
++
++  // The (current) output file being generated. Can be either
++  // a bitcode file, a wrappered bitcode file, or a secondary
++  // unwrapped file.
++  WrapperOutput* _outfile;
++
++  // A buffer of bytes read from the input file.
++  uint8_t _buffer[kBitcodeWrappererBufferSize];
++
++  // The number of bytes that were read from the input file
++  // into the buffer.
++  size_t _buffer_size;
++
++  // The index to the current read point within the buffer.
++  size_t _cursor;
++
++  // True when eof of input is reached.
++  bool _in_at_eof;
++
++  // The 32-bit value defining the offset of the raw wrapped bitcode.
++  uint32_t _wrapper_bc_offset;
++
++  // The 32-bit value defining the size of the raw wrapped bitcode.
++  uint32_t _wrapper_bc_size;
++
++  // The 32-bit value defining the size of the wrapped bitcode file.
++  uint32_t _wrapper_bc_file_size;
++
++  // The 32-bit value defining the offset of the wrapped file.
++  uint32_t _wrapper_file_offset;
++
++  // The 32-bit value defining the size of the wrapped file.
++  uint32_t _wrapper_file_size;
++};
++
++#endif  // LLVM_WRAP_BITCODE_WRAPPERER_H__
+diff -r 3697e6e0c482 include/llvm/Wrap/file_wrapper_input.h
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/include/llvm/Wrap/file_wrapper_input.h	Tue Jun 07 14:19:03 2011 -0700
+@@ -0,0 +1,42 @@
++// Defines utility allowing files for bitcode input wrapping.
++
++#ifndef FILE_WRAPPER_INPUT_H__
++#define FILE_WRAPPER_INPUT_H__
++
++#include <stdio.h>
++
++#include "llvm/Support/support_macros.h"
++#include "llvm/Wrap/wrapper_input.h"
++
++// Define a class to wrap named files.
++class FileWrapperInput : public WrapperInput {
++ public:
++  FileWrapperInput(const char* _name);
++  ~FileWrapperInput();
++  // Tries to read the requested number of bytes into the buffer. Returns the
++  // actual number of bytes read.
++  virtual size_t Read(uint8_t* buffer, size_t wanted);
++  // Returns true if at end of file. Note: May return false
++  // until Read is called, and returns 0.
++  virtual bool AtEof();
++  // Returns the size of the file (in bytes).
++  virtual off_t Size();
++  // Moves to the given offset within the file. Returns
++  // false if unable to move to that position.
++  virtual bool Seek(uint32_t pos);
++ private:
++  // The name of the file.
++  const char* _name;
++  // True once eof has been encountered.
++  bool _at_eof;
++  // True if size has been computed.
++  bool _size_found;
++  // The size of the file.
++  off_t _size;
++  // The corresponding (opened) file.
++  FILE* _file;
++ private:
++  DISALLOW_CLASS_COPY_AND_ASSIGN(FileWrapperInput);
++};
++
++#endif // FILE_WRAPPER_INPUT_H__
+diff -r 3697e6e0c482 include/llvm/Wrap/file_wrapper_output.h
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/include/llvm/Wrap/file_wrapper_output.h	Tue Jun 07 14:19:03 2011 -0700
+@@ -0,0 +1,29 @@
++// Defines utility allowing files for bitcode output wrapping.
++
++#ifndef FILE_WRAPPER_OUTPUT_H__
++#define FILE_WRAPPER_OUTPUT_H__
++
++#include <stdio.h>
++
++#include "llvm/Support/support_macros.h"
++#include "llvm/Wrap/wrapper_output.h"
++
++// Define a class to wrap named files. */
++class FileWrapperOutput : public WrapperOutput {
++ public:
++  FileWrapperOutput(const char* name);
++  ~FileWrapperOutput();
++  // Writes a single byte, returning false if unable to write.
++  virtual bool Write(uint8_t byte);
++  // Writes the specified number of bytes in the buffer to
++  // output. Returns false if unable to write.
++  virtual bool Write(const uint8_t* buffer, size_t buffer_size);
++ private:
++  // The name of the file
++  const char* _name;
++  // The corresponding (opened) file.
++  FILE* _file;
++ private:
++  DISALLOW_CLASS_COPY_AND_ASSIGN(FileWrapperOutput);
++};
++#endif  // FILE_WRAPPER_OUTPUT_H__
+diff -r 3697e6e0c482 include/llvm/Wrap/wrapper_input.h
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/include/llvm/Wrap/wrapper_input.h	Tue Jun 07 14:19:03 2011 -0700
+@@ -0,0 +1,33 @@
++// Define a generic interface to a file/memory region that contains
++// a bitcode file, a wrapped bitcode file, or a data file to wrap.
++
++#ifndef LLVM_WRAP_WRAPPER_INPUT_H__
++#define LLVM_WRAP_WRAPPER_INPUT_H__
++
++#include <stdint.h>
++#include <sys/types.h>
++
++#include "llvm/Support/support_macros.h"
++
++// The following is a generic interface to a file/memory region that contains
++// a bitcode file, a wrapped bitcode file, or data file to wrap.
++class WrapperInput {
++ public:
++  WrapperInput() {}
++  ~WrapperInput() {}
++  // Tries to read the requested number of bytes into the buffer. Returns the
++  // actual number of bytes read.
++  virtual size_t Read(uint8_t* buffer, size_t wanted) = 0;
++  // Returns true if at end of input. Note: May return false until
++  // Read is called, and returns 0.
++  virtual bool AtEof() = 0;
++  // Returns the size of the input (in bytes).
++  virtual off_t Size() = 0;
++  // Moves to the given offset within the input region. Returns false
++  // if unable to move to that position.
++  virtual bool Seek(uint32_t pos) = 0;
++ private:
++  DISALLOW_CLASS_COPY_AND_ASSIGN(WrapperInput);
++};
++
++#endif  // LLVM_WRAP_WRAPPER_INPUT_H__
+diff -r 3697e6e0c482 include/llvm/Wrap/wrapper_output.h
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/include/llvm/Wrap/wrapper_output.h	Tue Jun 07 14:19:03 2011 -0700
+@@ -0,0 +1,29 @@
++// Defines a generic interface to a file/memory region that
++// contains a generated wrapped bitcode file, bitcode file,
++// or data file.
++
++#ifndef LLVM_WRAP_WRAPPER_OUTPUT_H__
++#define LLVM_WRAP_WRAPPER_OUTPUT_H__
++
++#include <stdint.h>
++#include <stddef.h>
++
++#include "llvm/Support/support_macros.h"
++
++// The following is a generic interface to a file/memory region
++// that contains a generated bitcode file, wrapped bitcode file,
++// or a data file.
++class WrapperOutput {
++ public:
++  WrapperOutput() {}
++  ~WrapperOutput() {}
++  // Writes a single byte, returning false if unable to write.
++  virtual bool Write(uint8_t byte) = 0;
++  // Writes the specified number of bytes in the buffer to
++  // output. Returns false if unable to write.
++  virtual bool Write(const uint8_t* buffer, size_t buffer_size);
++ private:
++  DISALLOW_CLASS_COPY_AND_ASSIGN(WrapperOutput);
++};
++
++#endif  // LLVM_WRAP_WRAPPER_OUTPUT_H__
+diff -r 3697e6e0c482 lib/Makefile
+--- a/lib/Makefile	Fri Feb 11 11:30:31 2011 -0800
++++ b/lib/Makefile	Tue Jun 07 14:19:03 2011 -0700
+@@ -11,7 +11,7 @@
+ include $(LEVEL)/Makefile.config
+ 
+ PARALLEL_DIRS := VMCore AsmParser Bitcode Archive Analysis Transforms CodeGen \
+-                Target ExecutionEngine Linker MC CompilerDriver Object
++                Target ExecutionEngine Linker MC CompilerDriver Object Wrap
+ 
+ ifeq ($(NACL_SANDBOX),1)
+   PARALLEL_DIRS := $(filter-out Archive ExecutionEngine Linker CompilerDriver, \
+diff -r 3697e6e0c482 lib/Wrap/Makefile
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/lib/Wrap/Makefile	Tue Jun 07 14:19:03 2011 -0700
+@@ -0,0 +1,14 @@
++##===- lib/Linker/Makefile ---------------------------------*- Makefile -*-===##
++#
++#                     The LLVM Compiler Infrastructure
++#
++# This file is distributed under the University of Illinois Open Source
++# License. See LICENSE.TXT for details.
++#
++##===----------------------------------------------------------------------===##
++
++LEVEL = ../..
++LIBRARYNAME = LLVMWrap
++BUILD_ARCHIVE := 1
++
++include $(LEVEL)/Makefile.common
+diff -r 3697e6e0c482 lib/Wrap/bitcode_wrapperer.cpp
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/lib/Wrap/bitcode_wrapperer.cpp	Tue Jun 07 14:19:03 2011 -0700
+@@ -0,0 +1,278 @@
++#include "llvm/Wrap/bitcode_wrapperer.h"
++
++#include <stdio.h>
++#include <sys/stat.h>
++
++// The number of bytes in a 32 bit integer.
++static const uint32_t kWordSize = 4;
++
++// The number of header words.
++static const uint32_t kHeaderWords = 7;
++
++// The number of bytes in a header block.
++static const uint32_t kHeaderSize = kHeaderWords * kWordSize;
++
++// The magic number that must exist for bitcode wrappers.
++static const uint32_t kWrapperMagicNumber = 0x0B17C0DE;
++
++// The version number associated with a wrapper file.
++// Note: llvm currently only allows the value 0. When this changes,
++// we should consider making this a command line option.
++static const uint32_t kWrapperVersionNumber = 0;
++
++BitcodeWrapperer::BitcodeWrapperer(WrapperInput* infile, WrapperOutput* outfile)
++    : _infile(infile),
++      _outfile(outfile),
++      _buffer_size(0),
++      _cursor(0),
++      _in_at_eof(false),
++      _wrapper_bc_offset(0),
++      _wrapper_bc_size(0),
++      _wrapper_bc_file_size(0),
++      _wrapper_file_offset(0),
++      _wrapper_file_size(0)
++{}
++
++void BitcodeWrapperer::ReplaceInFile(WrapperInput* new_infile) {
++  _infile = new_infile;
++  _buffer_size = 0;
++  _cursor = 0;
++  _in_at_eof = false;
++  _wrapper_bc_offset = 0;
++  _wrapper_bc_size = 0;
++  _wrapper_bc_file_size = 0;
++  _wrapper_file_offset = 0;
++  _wrapper_file_size = 0;
++}
++
++void BitcodeWrapperer::ReplaceOutFile(WrapperOutput* new_outfile) {
++  _outfile = new_outfile;
++}
++
++void BitcodeWrapperer::ClearBuffer() {
++  _buffer_size = 0;
++  _cursor = 0;
++  _in_at_eof = false;
++}
++
++bool BitcodeWrapperer::Seek(uint32_t pos) {
++  if (_infile->Seek(pos)) {
++    ClearBuffer();
++    return true;
++  }
++  return false;
++}
++
++bool BitcodeWrapperer::CanReadWord() {
++  if (BufferSize() < kWordSize) {
++    FillBuffer();
++    return BufferSize() >= kWordSize;
++  } else {
++    return true;
++  }
++}
++
++void BitcodeWrapperer::FillBuffer() {
++  if (_cursor > 0) {
++    // Before filling, move any remaining bytes to the
++    // front of the buffer. This allows us to assume
++    // that after the call to FillBuffer, readable
++    // text is contiguous.
++    if (_cursor < _buffer_size) {
++      size_t i = 0;
++      while (_cursor < _buffer_size) {
++        _buffer[i++] = _buffer[_cursor++];
++      }
++      _cursor = 0;
++      _buffer_size = i;
++    }
++  } else {
++    // Assume the buffer contents have been used,
++    // and we want to completely refill it.
++    _buffer_size = 0;
++  }
++
++  // Now fill in remaining space.
++  size_t needed = kBitcodeWrappererBufferSize - _buffer_size;
++
++  while (kBitcodeWrappererBufferSize > _buffer_size) {
++    int actually_read = _infile->Read(_buffer, needed);
++    if (_infile->AtEof()) {
++      _in_at_eof = true;
++    }
++    if (actually_read) {
++      _buffer_size += actually_read;
++      needed -= actually_read;
++    } else if (_in_at_eof) {
++      break;
++    }
++  }
++}
++
++bool BitcodeWrapperer::ReadWord(uint32_t& word) {
++  if (!CanReadWord()) return false;
++  word = (((uint32_t) BufferLookahead(0)) << 0)
++      | (((uint32_t) BufferLookahead(1)) << 8)
++      | (((uint32_t) BufferLookahead(2)) << 16)
++      | (((uint32_t) BufferLookahead(3)) << 24);
++  _cursor += kWordSize;
++  return true;
++}
++
++bool BitcodeWrapperer::WriteWord(uint32_t value) {
++  uint8_t buffer[kWordSize];
++  buffer[3] = (value >> 24) & 0xFF;
++  buffer[2] = (value >> 16) & 0xFF;
++  buffer[1] = (value >> 8)  & 0xFF;
++  buffer[0] = (value >> 0)  & 0xFF;
++  return _outfile->Write(buffer, kWordSize);
++}
++
++bool BitcodeWrapperer::IsInputBitcodeWrapper() {
++  ResetCursor();
++  // First make sure that there are enough words (wrapper header)
++  // to peek at.
++  if (BufferSize() < kHeaderSize) {
++    FillBuffer();
++    if (BufferSize() < kHeaderSize) return false;
++  }
++
++  // Now make sure the magic number is right.
++  uint32_t first_word;
++  if ((!ReadWord(first_word)) ||
++      (kWrapperMagicNumber != first_word)) return false;
++
++  // Make sure the version is right.
++  uint32_t second_word;
++  if ((!ReadWord(second_word)) ||
++      (kWrapperVersionNumber != second_word)) return false;
++
++  // Make sure that the offset and size (for llvm) is defined.
++  // along with our own added words defining the offset and size
++  // of the added wrapped file.
++  uint32_t bc_offset;
++  uint32_t bc_size;
++  uint32_t bc_file_size;
++  uint32_t file_offset;
++  uint32_t file_size;
++  if (ReadWord(bc_offset) &&
++      ReadWord(bc_size) &&
++      ReadWord(bc_file_size) &&
++      ReadWord(file_offset) &&
++      ReadWord(file_size)) {
++    // Before returning, save the extracted values.
++    _wrapper_bc_offset = bc_offset;
++    _wrapper_bc_size = bc_size;
++    _wrapper_bc_file_size = bc_file_size;
++    _wrapper_file_offset = file_offset;
++    _wrapper_file_size = file_size;
++    return true;
++  }
++  // If reached, unable to read wrapped header.
++  return false;
++}
++
++bool BitcodeWrapperer::IsInputBitcodeFile() {
++  ResetCursor();
++  // First make sure that there are four bytes to peek at.
++  if (BufferSize() < kWordSize) {
++    FillBuffer();
++    if (BufferSize() < kWordSize) return false;
++  }
++  // If reached, Check if first 4 bytes match bitcode
++  // file magic number.
++  return (BufferLookahead(0) == 'B') &&
++      (BufferLookahead(1) == 'C') &&
++      (BufferLookahead(2) == 0xc0) &&
++      (BufferLookahead(3) == 0xde);
++}
++
++bool BitcodeWrapperer::BufferCopyInToOut(uint32_t size) {
++  while (size > 0) {
++    // Be sure buffer is non-empty before writing.
++    if (0 == _buffer_size) {
++      FillBuffer();
++      if (0 == _buffer_size) {
++        return false;
++      }
++    }
++    // copy the buffer to the output file.
++    size_t block = (_buffer_size < size) ? _buffer_size : size;
++    if (!_outfile->Write(_buffer, block)) return false;
++    size -= block;
++    _buffer_size = 0;
++  }
++  // Be sure that there isn't more bytes on the input stream.
++  FillBuffer();
++  return _buffer_size == 0;
++}
++
++bool BitcodeWrapperer::WriteBitcodeWrapperHeader(uint32_t offset,
++                                                 uint32_t size,
++                                                 WrapperInput* file) {
++  return
++      // Note: This writes out the 4 word header required by llvm wrapped
++      // bitcode.
++      WriteWord(kWrapperMagicNumber) &&
++      WriteWord(kWrapperVersionNumber) &&
++      WriteWord(offset) &&
++      WriteWord(size) &&
++      // Save size of input bitcode file, since the size passed in may be
++      // smaller than the bitcode file (this happens when we wrap multiple
++      // files into a bitcode file). Note: We follow the assumption of llvm,
++      // which wants bitcode (and hence wrapped bitcode) to be limitted to
++      // values that fit in 32 bits.
++      WriteWord(GetInFileSize()) &&
++      // Place wrapped file right after bitcode file. Note: We follow the
++      // assumption of llvm, which wants bitcode (and hence wrapped bitcode)
++      // to be limitted to values that fit in 32 bits.
++      WriteWord(kHeaderSize + GetInFileSize()) &&
++      WriteWord(file->Size());
++}
++
++bool BitcodeWrapperer::GenerateBitcodeWrapper(WrapperInput* file,
++                                              uint32_t offset,
++                                              uint32_t size) {
++  ResetCursor();
++  if (WriteBitcodeWrapperHeader(offset, size, file) &&
++      BufferCopyInToOut(GetInFileSize())) {
++    ReplaceInFile(file);
++    off_t file_size = GetInFileSize();
++    if (BufferCopyInToOut(file_size) &&
++        _buffer_size == 0) {
++      // Deal with silly fact that llvm expects bitcode files to
++      // be multipes of 4 bytes. Note: we assume that the header
++      // and the original input are already a multiple of 4, so
++      // we only need to fill based on the size of the wrapped file.
++      off_t dangling = GetInFileSize() & 3;
++      if (dangling > 0) {
++        return _outfile->Write((const uint8_t*) "\0\0\0\0", 4 - dangling);
++      }
++    }
++  }
++  // If reached, something went wrong.
++  return false;
++}
++
++bool BitcodeWrapperer::GenerateBitcodeFileWrapper(WrapperInput* file) {
++  // Begin wrapped bitcode right after header!
++  return GenerateBitcodeWrapper(file, kHeaderSize,
++                                (uint32_t) _infile->Size());
++}
++
++bool BitcodeWrapperer::GenerateBitcodeWrapperWrapper(WrapperInput* file) {
++  // Begin wrapped code at position of wrapped bitcode.
++  return GenerateBitcodeWrapper(file, kHeaderSize + _wrapper_bc_offset,
++                                _wrapper_bc_size);
++}
++
++bool BitcodeWrapperer::GenerateBitcodeFile(WrapperOutput* file) {
++  if (_wrapper_bc_offset < kHeaderSize) return false;
++  if (Seek(kHeaderSize) &&
++      BufferCopyInToOut(_wrapper_bc_file_size)) {
++    ReplaceOutFile(file);
++    return Seek(_wrapper_file_offset) &&
++        BufferCopyInToOut(_wrapper_file_size);
++  }
++  return false;
++}
+diff -r 3697e6e0c482 lib/Wrap/file_wrapper_input.cpp
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/lib/Wrap/file_wrapper_input.cpp	Tue Jun 07 14:19:03 2011 -0700
+@@ -0,0 +1,48 @@
++#include <sys/stat.h>
++#include <stdlib.h>
++
++#include "llvm/Wrap/file_wrapper_input.h"
++
++FileWrapperInput::FileWrapperInput(const char* name) :
++    _name(name), _at_eof(false), _size_found(false), _size(0) {
++  _file = fopen(name, "rb");
++  if (NULL == _file) {
++    fprintf(stderr, "Unable to open: %s\n", name);
++    exit(1);
++  }
++}
++
++FileWrapperInput::~FileWrapperInput() {
++  fclose(_file);
++}
++
++size_t FileWrapperInput::Read(uint8_t* buffer, size_t wanted) {
++  size_t found = fread((char*) buffer, 1, wanted, _file);
++  if (feof(_file) || ferror(_file)) {
++    _at_eof = true;
++  }
++  return found;
++}
++
++bool FileWrapperInput::AtEof() {
++  return _at_eof;
++}
++
++off_t FileWrapperInput::Size() {
++  if (_size_found) return _size;
++  struct stat st;
++  if (0 == stat(_name, &st)) {
++    _size_found = true;
++    _size = st.st_size;
++    return _size;
++  } else {
++    fprintf(stderr, "Unable to compute file size: %s\n", _name);
++    exit(1);
++  }
++  // NOT REACHABLE.
++  return 0;
++}
++
++bool FileWrapperInput::Seek(uint32_t pos) {
++  return 0 == fseek(_file, (long) pos, SEEK_SET);
++}
+diff -r 3697e6e0c482 lib/Wrap/file_wrapper_output.cpp
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/lib/Wrap/file_wrapper_output.cpp	Tue Jun 07 14:19:03 2011 -0700
+@@ -0,0 +1,28 @@
++#include <stdlib.h>
++
++#include "llvm/Wrap/file_wrapper_output.h"
++
++FileWrapperOutput::FileWrapperOutput(const char* name)
++    : _name(name) {
++  _file = fopen(name, "wb");
++  if (NULL == _file) {
++    fprintf(stderr, "Unable to open: %s\n", name);
++    exit(1);
++  }
++}
++
++FileWrapperOutput::~FileWrapperOutput() {
++  fclose(_file);
++}
++
++bool FileWrapperOutput::Write(uint8_t byte) {
++  return EOF != fputc(byte, _file);
++}
++
++bool FileWrapperOutput::Write(const uint8_t* buffer, size_t buffer_size) {
++  if (buffer_size > 0) {
++    return buffer_size == fwrite(buffer, 1, buffer_size, _file);
++  } else {
++    return true;
++  }
++}
+diff -r 3697e6e0c482 lib/Wrap/wrapper_output.cpp
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/lib/Wrap/wrapper_output.cpp	Tue Jun 07 14:19:03 2011 -0700
+@@ -0,0 +1,9 @@
++#include "llvm/Wrap/wrapper_output.h"
++
++bool WrapperOutput::Write(const uint8_t* buffer, size_t buffer_size) {
++  // Default implementation that uses the byte write routine.
++  for (size_t i = 0; i < buffer_size; ++i) {
++    if (!Write(buffer[i])) return false;
++  }
++  return true;
++}
+diff -r 3697e6e0c482 tools/Makefile
+--- a/tools/Makefile	Fri Feb 11 11:30:31 2011 -0800
++++ b/tools/Makefile	Tue Jun 07 14:19:03 2011 -0700
+@@ -24,7 +24,7 @@
+                  llvm-prof llvm-link \
+                  lli llvm-extract llvm-mc \
+                  bugpoint llvm-bcanalyzer llvm-stub \
+-                 llvmc llvm-diff macho-dump llvm-objdump
++                 llvmc llvm-diff macho-dump llvm-objdump bc-wrap
+ 
+ # Let users override the set of tools to build from the command line.
+ ifdef ONLY_TOOLS
+diff -r 3697e6e0c482 tools/bc-wrap/Makefile
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/tools/bc-wrap/Makefile	Tue Jun 07 14:19:03 2011 -0700
+@@ -0,0 +1,20 @@
++#===- tools/bc-wrap/Makefile -----------------------------------*- Makefile -*-===##
++# 
++#                     The LLVM Compiler Infrastructure
++#
++# This file is distributed under the University of Illinois Open Source
++# License. See LICENSE.TXT for details.
++# 
++##===----------------------------------------------------------------------===##
++
++LEVEL = ../..
++TOOLNAME = bc-wrap
++
++# Include this here so we can get the configuration of the targets
++# that have been configured for construction. We have to do this 
++# early so we can set up LINK_COMPONENTS before including Makefile.rules
++include $(LEVEL)/Makefile.config
++
++LINK_COMPONENTS := $(TARGETS_TO_BUILD) Wrap
++
++include $(LLVM_SRC_ROOT)/Makefile.rules
+diff -r 3697e6e0c482 tools/bc-wrap/bc_wrap.cpp
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/tools/bc-wrap/bc_wrap.cpp	Tue Jun 07 14:19:03 2011 -0700
+@@ -0,0 +1,60 @@
++/************************
++ * Utility to wrap a .bc file.
++ */
++
++#include <string.h>
++
++#include "llvm/Wrap/bitcode_wrapperer.h"
++#include "llvm/Wrap/file_wrapper_input.h"
++#include "llvm/Wrap/file_wrapper_output.h"
++
++static bool k_unwrap_bc = false;
++
++static void usage(int argc, const char* argv[]) {
++  fprintf(stderr, "usage: %s [-u] in.bc file out.bc\n\n", argv[0]);
++  fprintf(stderr, "\tWraps (unwraps) file into (out of) bitcode file\n");
++}
++
++static int GrokFlags(int argc, const char* argv[]) {
++  if (argc == 0) return 0;
++  int new_argc = 1;
++  for (int i = 1; i < argc; ++i) {
++    const char* arg = argv[i];
++    if (0 == strcmp("-u", arg)) {
++      k_unwrap_bc = true;
++    } else {
++      argv[new_argc++] = argv[i];
++    }
++  }
++  return new_argc;
++}
++
++int main(const int argc, const char* argv[]) {
++  bool success = false;
++  int new_argc = GrokFlags(argc, argv);
++  if (new_argc != 4) {
++    usage(argc, argv);
++  } else if (k_unwrap_bc) {
++    FileWrapperInput inbc(argv[1]);
++    FileWrapperOutput file(argv[2]);
++    FileWrapperOutput outbc(argv[3]);
++    BitcodeWrapperer wrapperer(&inbc, &outbc);
++    if (wrapperer.IsInputBitcodeWrapper()) {
++      success = wrapperer.GenerateBitcodeFile(&file);
++    }
++  } else {
++    FileWrapperInput inbc(argv[1]);
++    FileWrapperInput file(argv[2]);
++    FileWrapperOutput outbc(argv[3]);
++    BitcodeWrapperer wrapperer(&inbc, &outbc);
++    if (wrapperer.IsInputBitcodeWrapper()) {
++      success = wrapperer.GenerateBitcodeWrapperWrapper(&file);
++    } else if (wrapperer.IsInputBitcodeFile()) {
++      success = wrapperer.GenerateBitcodeFileWrapper(&file);
++    }
++  }
++  if (success) return 0;
++  fprintf(stderr, "error: Unable to generate a proper %s bitcode file!\n",
++          (k_unwrap_bc ? "unwrapped" : "wrapped"));
++  return 1;
++}

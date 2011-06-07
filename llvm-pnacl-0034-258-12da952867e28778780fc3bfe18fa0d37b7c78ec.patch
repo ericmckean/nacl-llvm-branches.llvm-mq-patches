@@ -1,0 +1,55 @@
+# HG changeset patch
+# User Jason Kim <jasonwkim@google.com>
+# Date 1305675891 25200
+# Branch pnacl-sfi
+# Node ID 12da952867e28778780fc3bfe18fa0d37b7c78ec
+# Parent e1e1d50663d676137d994d8ef8772c2a2ccc1f1c
+Fix http://code.google.com/p/nativeclient/issues/detail?id=1814
+
+It looks like the issue was the lack of support for FlagSfiZeroMask support
+on ARM/MC/ELF/.o
+
+Why is FlagSfiZeroMask even necessary???
+
+ From llvm-pnacl-0034-258-12da952867e28778780fc3bfe18fa0d37b7c78ec.patch
+
+diff -r e1e1d50663d6 lib/Target/ARM/ARMInstrNaCl.cpp
+--- a/lib/Target/ARM/ARMInstrNaCl.cpp	Mon May 16 17:52:22 2011 -0400
++++ b/lib/Target/ARM/ARMInstrNaCl.cpp	Tue Jun 07 14:19:57 2011 -0700
+@@ -20,6 +20,10 @@
+ 
+ using namespace llvm;
+ 
++namespace llvm {
++  extern cl::opt<bool> FlagSfiZeroMask;
++}
++
+ /// Two helper functions for emitting the actual guard instructions
+ 
+ static void EmitBICMask(MCStreamer &Out,
+@@ -29,7 +33,11 @@
+   BICInst.setOpcode(ARM::BICri);
+   BICInst.addOperand(MCOperand::CreateReg(Addr)); // rD
+   BICInst.addOperand(MCOperand::CreateReg(Addr)); // rS
+-  BICInst.addOperand(MCOperand::CreateImm(Mask)); // imm
++  if (FlagSfiZeroMask) {
++    BICInst.addOperand(MCOperand::CreateImm(0)); // imm
++  } else {
++    BICInst.addOperand(MCOperand::CreateImm(Mask)); // imm
++  }
+   BICInst.addOperand(MCOperand::CreateImm(Pred));  // predicate
+   BICInst.addOperand(MCOperand::CreateReg(ARM::CPSR)); // CPSR
+   BICInst.addOperand(MCOperand::CreateReg(0)); // flag out
+@@ -42,7 +50,11 @@
+   MCInst TSTInst;
+   TSTInst.setOpcode(ARM::TSTri);
+   TSTInst.addOperand(MCOperand::CreateReg(Reg));  // rS
+-  TSTInst.addOperand(MCOperand::CreateImm(Mask)); // imm
++  if (FlagSfiZeroMask) {
++    TSTInst.addOperand(MCOperand::CreateImm(0)); // imm
++  } else {
++    TSTInst.addOperand(MCOperand::CreateImm(Mask)); // imm
++  }
+   TSTInst.addOperand(MCOperand::CreateImm((int64_t)ARMCC::AL)); // Always
+   TSTInst.addOperand(MCOperand::CreateImm(0)); // flag out
+ }

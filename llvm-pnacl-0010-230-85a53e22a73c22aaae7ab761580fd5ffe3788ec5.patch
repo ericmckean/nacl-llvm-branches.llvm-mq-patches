@@ -1,0 +1,351 @@
+# HG changeset patch
+# User Jason Kim <jasonwkim@google.com>
+# Date 1298504194 28800
+# Branch pnacl-sfi
+# Node ID 85a53e22a73c22aaae7ab761580fd5ffe3788ec5
+# Parent 1eab39472b0fece98517c87c925243323c96142c
+http://llvm.org/viewvc/llvm-project?view=rev&revision=124996
+
+For downporting of ARM/MC/ELF work
+
+
+Teach ARM/MC/ELF about gcc compatible reloc output to get past odd linkage
+failures with relocations.
+
+The code committed is a first cut at compatibility for emitted relocations in
+ELF .o.
+
+Why do this? because existing ARM tools like emitting relocs symbols as
+explicit relocations, not as section-offset relocs.
+
+Result is that with these changes,
+1) relocs are now substantially identical what to gcc outputs.
+2) larger apps (including many spec2k tests) compile, cross-link, and pass
+
+Added reminder fixme to tests for future conversion to .s form.
+
+ From llvm-pnacl-0010-230-85a53e22a73c22aaae7ab761580fd5ffe3788ec5.patch
+
+diff -r 1eab39472b0f lib/MC/ELFObjectWriter.cpp
+--- a/lib/MC/ELFObjectWriter.cpp	Wed Feb 23 15:36:34 2011 -0800
++++ b/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:19:15 2011 -0700
+@@ -30,6 +30,7 @@
+ #include "llvm/Support/ErrorHandling.h"
+ #include "llvm/Support/ELF.h"
+ #include "llvm/Target/TargetAsmBackend.h"
++#include "llvm/ADT/StringSwitch.h"
+ 
+ #include "../Target/X86/X86FixupKinds.h"
+ #include "../Target/ARM/ARMFixupKinds.h"
+@@ -189,6 +190,14 @@
+                                   const MCValue &Target,
+                                   const MCFragment &F) const;
+ 
++    // For arch-specific emission of explicit reloc symbol
++    virtual const MCSymbol *ExplicitRelSym(const MCAssembler &Asm,
++                                           const MCValue &Target,
++                                           const MCFragment &F,
++                                           bool IsBSS) const {
++      return NULL;
++    }
++
+     bool is64Bit() const { return TargetObjectWriter->is64Bit(); }
+     bool hasRelocationAddend() const {
+       return TargetObjectWriter->hasRelocationAddend();
+@@ -412,6 +421,11 @@
+ 
+     virtual void WriteEFlags();
+   protected:
++    virtual const MCSymbol *ExplicitRelSym(const MCAssembler &Asm,
++                                           const MCValue &Target,
++                                           const MCFragment &F,
++                                           bool IsBSS) const;
++
+     virtual unsigned GetRelocType(const MCValue &Target, const MCFixup &Fixup,
+                                   bool IsPCRel, bool IsRelocWithSymbol,
+                                   int64_t Addend);
+@@ -730,7 +744,7 @@
+   const SectionKind secKind = Section.getKind();
+ 
+   if (secKind.isBSS())
+-    return NULL;
++    return ExplicitRelSym(Asm, Target, F, true);
+ 
+   if (secKind.isThreadLocal()) {
+     if (Renamed)
+@@ -764,7 +778,7 @@
+     return &Symbol;
+   }
+ 
+-  return NULL;
++  return ExplicitRelSym(Asm, Target, F, false);
+ }
+ 
+ 
+@@ -1529,6 +1543,34 @@
+   // @LOCALMOD-END
+ }
+ 
++// In ARM, _MergedGlobals and other most symbols get emitted directly.
++// I.e. not as an offset to a section symbol.
++// This code is a first-cut approximation of what ARM/gcc does.
++
++const MCSymbol *ARMELFObjectWriter::ExplicitRelSym(const MCAssembler &Asm,
++                                                   const MCValue &Target,
++                                                   const MCFragment &F,
++                                                   bool IsBSS) const {
++  const MCSymbol &Symbol = Target.getSymA()->getSymbol();
++  bool EmitThisSym = false;
++
++  if (IsBSS) {
++    EmitThisSym = StringSwitch<bool>(Symbol.getName())
++      .Case("_MergedGlobals", true)
++      .Default(false);
++  } else {
++    EmitThisSym = StringSwitch<bool>(Symbol.getName())
++      .Case("_MergedGlobals", true)
++      .StartsWith(".L.str", true)
++      .Default(false);
++  }
++  if (EmitThisSym)
++    return &Symbol;
++  if (! Symbol.isTemporary())
++    return &Symbol;
++  return NULL;
++}
++
+ unsigned ARMELFObjectWriter::GetRelocType(const MCValue &Target,
+                                           const MCFixup &Fixup,
+                                           bool IsPCRel,
+diff -r 1eab39472b0f test/MC/ARM/elf-reloc-01.ll
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/test/MC/ARM/elf-reloc-01.ll	Tue Jun 07 14:19:15 2011 -0700
+@@ -0,0 +1,71 @@
++;; RUN: llc -mtriple=armv7-linux-gnueabi -O3  \
++;; RUN:    -mcpu=cortex-a8 -mattr=-neon -mattr=+vfp2  -arm-reserve-r9  \
++;; RUN:    -filetype=obj %s -o - | \
++;; RUN:   elf-dump --dump-section-data | FileCheck -check-prefix=OBJ %s
++
++;; FIXME: This file needs to be in .s form!
++;; The args to llc are there to constrain the codegen only.
++;; 
++;; Ensure no regression on ARM/gcc compatibility for 
++;; emitting explicit symbol relocs for nonexternal symbols 
++;; versus section symbol relocs (with offset) - 
++;;
++;; Default llvm behavior is to emit as section symbol relocs nearly
++;; everything that is not an undefined external. Unfortunately, this 
++;; diverges from what codesourcery ARM/gcc does!
++;;
++;; Tests that reloc to _MergedGlobals show up as explicit symbol reloc
++
++
++target triple = "armv7-none-linux-gnueabi"
++
++@var_tls = thread_local global i32 1
++@var_tls_double = thread_local global double 1.000000e+00
++@var_static = internal global i32 1
++@var_static_double = internal global double 1.000000e+00
++@var_global = global i32 1
++@var_global_double = global double 1.000000e+00
++
++declare i32 @mystrlen(i8* nocapture %s) nounwind  
++
++declare void @myhextochar(i32 %n, i8* nocapture %buffer)
++
++declare void @__aeabi_read_tp() nounwind 
++
++declare void @__nacl_read_tp() nounwind  
++
++define i32 @main(i32 %argc, i8** nocapture %argv) nounwind {
++entry:
++  switch i32 %argc, label %bb3 [
++    i32 555, label %bb
++    i32 6666, label %bb2
++  ]
++
++bb:                                               ; preds = %entry
++  volatile store i32 11, i32* @var_tls, align 4
++  volatile store double 2.200000e+01, double* @var_tls_double, align 8
++  volatile store i32 33, i32* @var_static, align 4
++  volatile store double 4.400000e+01, double* @var_static_double, align 8
++  volatile store i32 55, i32* @var_global, align 4
++  volatile store double 6.600000e+01, double* @var_global_double, align 8
++  br label %bb3
++
++bb2:                                              ; preds = %entry
++  ret i32 add (i32 add (i32 add (i32 ptrtoint (i32* @var_tls to i32), i32 add (i32 ptrtoint (i32* @var_static to i32), i32 ptrtoint (i32* @var_global to i32))), i32 ptrtoint (double* @var_tls_double to i32)), i32 add (i32 ptrtoint (double* @var_static_double to i32), i32 ptrtoint (double* @var_global_double to i32)))
++
++bb3:                                              ; preds = %bb, %entry
++  tail call void @exit(i32 55) noreturn nounwind
++  unreachable
++}
++
++declare void @exit(i32) noreturn nounwind
++
++
++;; OBJ:         Symbol 0x00000002
++;; OBJ-NEXT:    '_MergedGlobals'
++;; OBJ-NEXT:    'st_value', 0x00000010
++
++;; OBJ:          Relocation 0x00000001
++;; OBJ-NEXT:     'r_offset', 
++;; OBJ-NEXT:     'r_sym', 0x00000002
++;; OBJ-NEXT:     'r_type', 0x0000002b
+diff -r 1eab39472b0f test/MC/ARM/elf-reloc-02.ll
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/test/MC/ARM/elf-reloc-02.ll	Tue Jun 07 14:19:15 2011 -0700
+@@ -0,0 +1,51 @@
++;; RUN: llc -mtriple=armv7-linux-gnueabi -O3  \
++;; RUN:    -mcpu=cortex-a8 -mattr=-neon -mattr=+vfp2  -arm-reserve-r9  \
++;; RUN:    -filetype=obj %s -o - | \
++;; RUN:   elf-dump --dump-section-data | FileCheck -check-prefix=OBJ %s
++
++;; FIXME: This file needs to be in .s form!
++;; The args to llc are there to constrain the codegen only.
++;; 
++;; Ensure no regression on ARM/gcc compatibility for 
++;; emitting explicit symbol relocs for nonexternal symbols 
++;; versus section symbol relocs (with offset) - 
++;;
++;; Default llvm behavior is to emit as section symbol relocs nearly
++;; everything that is not an undefined external. Unfortunately, this 
++;; diverges from what codesourcery ARM/gcc does!
++;;
++;; Tests that reloc to .L.str* show up as explicit symbols
++
++target triple = "armv7-none-linux-gnueabi"
++
++@.str = private constant [7 x i8] c"@null\0A\00", align 4
++@.str1 = private constant [8 x i8] c"@write\0A\00", align 4
++@.str2 = private constant [13 x i8] c"hello worldn\00", align 4
++@.str3 = private constant [7 x i8] c"@exit\0A\00", align 4
++
++declare i32 @mystrlen(i8* nocapture %s) nounwind readonly 
++
++declare void @myhextochar(i32 %n, i8* nocapture %buffer) nounwind 
++
++define i32 @main() nounwind {
++entry:
++  %0 = tail call i32 (...)* @write(i32 1, i8* getelementptr inbounds ([7 x i8]* @.str, i32 0, i32 0), i32 6) nounwind
++  %1 = tail call i32 (...)* @write(i32 1, i8* getelementptr inbounds ([8 x i8]* @.str1, i32 0, i32 0), i32 7) nounwind
++  %2 = tail call i32 (...)* @write(i32 1, i8* getelementptr inbounds ([13 x i8]* @.str2, i32 0, i32 0), i32 12) nounwind
++  %3 = tail call i32 (...)* @write(i32 1, i8* getelementptr inbounds ([7 x i8]* @.str3, i32 0, i32 0), i32 6) nounwind
++  tail call void @exit(i32 55) noreturn nounwind
++  unreachable
++}
++
++declare i32 @write(...)
++
++declare void @exit(i32) noreturn nounwind
++
++
++;; OBJ:          Symbol 0x00000002
++;; OBJ-NEXT:    '.L.str'
++
++;; OBJ:        Relocation 0x00000000
++;; OBJ-NEXT:    'r_offset', 
++;; OBJ-NEXT:    'r_sym', 0x00000002
++;; OBJ-NEXT:    'r_type', 0x0000002b
+diff -r 1eab39472b0f test/MC/ARM/elf-reloc-03.ll
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/test/MC/ARM/elf-reloc-03.ll	Tue Jun 07 14:19:15 2011 -0700
+@@ -0,0 +1,98 @@
++;; RUN: llc -mtriple=armv7-linux-gnueabi -O3  \
++;; RUN:    -mcpu=cortex-a8 -mattr=-neon -mattr=+vfp2  -arm-reserve-r9  \
++;; RUN:    -filetype=obj %s -o - | \
++;; RUN:   elf-dump --dump-section-data | FileCheck -check-prefix=OBJ %s
++
++;; FIXME: This file needs to be in .s form!
++;; The args to llc are there to constrain the codegen only.
++;; 
++;; Ensure no regression on ARM/gcc compatibility for 
++;; emitting explicit symbol relocs for nonexternal symbols 
++;; versus section symbol relocs (with offset) - 
++;;
++;; Default llvm behavior is to emit as section symbol relocs nearly
++;; everything that is not an undefined external. Unfortunately, this 
++;; diverges from what codesourcery ARM/gcc does!
++;;
++;; Verifies that internal constants appear as explict symbol relocs
++
++
++target triple = "armv7-none-linux-gnueabi"
++
++@startval = global i32 5
++@vtable = internal constant [10 x i32 (...)*] [i32 (...)* bitcast (i32 ()* @foo0 to i32 (...)*), i32 (...)* bitcast (i32 ()* @foo1 to i32 (...)*), i32 (...)* bitcast (i32 ()* @foo2 to i32 (...)*), i32 (...)* bitcast (i32 ()* @foo3 to i32 (...)*), i32 (...)* bitcast (i32 ()* @foo4 to i32 (...)*), i32 (...)* bitcast (i32 ()* @foo5 to i32 (...)*), i32 (...)* bitcast (i32 ()* @foo6 to i32 (...)*), i32 (...)* bitcast (i32 ()* @foo7 to i32 (...)*), i32 (...)* bitcast (i32 ()* @foo8 to i32 (...)*), i32 (...)* bitcast (i32 ()* @foo9 to i32 (...)*)]
++
++declare i32 @mystrlen(i8* nocapture %s) nounwind readonly 
++
++declare void @myhextochar(i32 %n, i8* nocapture %buffer) nounwind 
++
++define internal i32 @foo0() nounwind readnone {
++entry:
++  ret i32 0
++}
++
++define internal i32 @foo1() nounwind readnone {
++entry:
++  ret i32 1
++}
++
++define internal i32 @foo2() nounwind readnone {
++entry:
++  ret i32 2
++}
++
++define internal i32 @foo3() nounwind readnone {
++entry:
++  ret i32 3
++}
++
++define internal i32 @foo4() nounwind readnone {
++entry:
++  ret i32 4
++}
++
++define internal i32 @foo5() nounwind readnone {
++entry:
++  ret i32 55
++}
++
++define internal i32 @foo6() nounwind readnone {
++entry:
++  ret i32 6
++}
++
++define internal i32 @foo7() nounwind readnone {
++entry:
++  ret i32 7
++}
++
++define internal i32 @foo8() nounwind readnone {
++entry:
++  ret i32 8
++}
++
++define internal i32 @foo9() nounwind readnone {
++entry:
++  ret i32 9
++}
++
++define i32 @main() nounwind {
++entry:
++  %0 = load i32* @startval, align 4
++  %1 = getelementptr inbounds [10 x i32 (...)*]* @vtable, i32 0, i32 %0
++  %2 = load i32 (...)** %1, align 4
++  %3 = tail call i32 (...)* %2() nounwind
++  tail call void @exit(i32 %3) noreturn nounwind
++  unreachable
++}
++
++declare void @exit(i32) noreturn nounwind
++
++
++;; OBJ:      Symbol 0x0000000c
++;; OBJ-NEXT:    'vtable'
++
++;; OBJ:           Relocation 0x00000001
++;; OBJ-NEXT:     'r_offset', 
++;; OBJ-NEXT:     'r_sym', 0x0000000c
++;; OBJ-NEXT:     'r_type', 0x0000002b

@@ -1,0 +1,207 @@
+# HG changeset patch
+# User David Meyer <pdox@google.com>
+# Date 1304020837 25200
+# Branch pnacl-sfi
+# Node ID 04b41cdd08e9ed62e34d108e2fd9cc8b04ed610c
+# Parent ae6e84183d0c59b11dce7d9e7142184e85b6a1ce
+Add declarations for functions used by intrinsics
+
+ From llvm-pnacl-0028-252-04b41cdd08e9ed62e34d108e2fd9cc8b04ed610c.patch
+
+diff -r ae6e84183d0c include/llvm/CodeGen/IntrinsicLowering.h
+--- a/include/llvm/CodeGen/IntrinsicLowering.h	Wed Apr 27 16:07:18 2011 -0700
++++ b/include/llvm/CodeGen/IntrinsicLowering.h	Tue Jun 07 14:19:47 2011 -0700
+@@ -16,6 +16,7 @@
+ #ifndef LLVM_CODEGEN_INTRINSICLOWERING_H
+ #define LLVM_CODEGEN_INTRINSICLOWERING_H
+ 
++#include "llvm/ADT/StringSet.h" // @LOCALMOD
+ #include "llvm/Intrinsics.h"
+ 
+ namespace llvm {
+@@ -26,12 +27,23 @@
+   class IntrinsicLowering {
+     const TargetData& TD;
+ 
+-    
++    static StringSet<> FuncNames; // @LOCALMOD
++
+     bool Warned;
+   public:
+     explicit IntrinsicLowering(const TargetData &td) :
+       TD(td), Warned(false) {}
+ 
++    /// @LOCALMOD-BEGIN
++    /// GetFuncNames - Get the names of all functions which may
++    /// be called by an intrinsic.
++    static const StringSet<> &GetFuncNames();
++
++    /// IsCalledByIntrinsic - Returns true if a function may be called
++    /// by an intrinsic.
++    static bool IsCalledByIntrinsic(const StringRef &FuncName);
++    /// @LOCALMOD-END
++
+     /// AddPrototypes - This method, if called, causes all of the prototypes
+     /// that might be needed by an intrinsic lowering implementation to be
+     /// inserted into the module specified.
+diff -r ae6e84183d0c lib/CodeGen/IntrinsicLowering.cpp
+--- a/lib/CodeGen/IntrinsicLowering.cpp	Wed Apr 27 16:07:18 2011 -0700
++++ b/lib/CodeGen/IntrinsicLowering.cpp	Tue Jun 07 14:19:47 2011 -0700
+@@ -92,8 +92,48 @@
+ #  define setjmp_undefined_for_msvc
+ #endif
+ 
++// @LOCALMOD-BEGIN
++StringSet<> IntrinsicLowering::FuncNames;
++const StringSet<> &IntrinsicLowering::GetFuncNames() {
++  static const char *NamesRaw[] =
++    { "abort", "memcpy", "memset", "memmove",
++      "sqrtf", "sqrt", "sqrtl",
++      "sinf", "sin", "sinl",
++      "cosf", "cos", "cosl",
++      "powf", "pow", "powl",
++      "logf", "log", "logl",
++      "log2f", "log2", "log2l",
++      "log10f", "log10", "log10l",
++      "expf", "exp", "expl",
++      "exp2f", "exp2", "exp2l",
++      "__nacl_read_tp", NULL };
++
++  if (FuncNames.empty()) {
++    for (unsigned i=0; NamesRaw[i]; ++i)
++      FuncNames.insert(NamesRaw[i]);
++  }
++  return FuncNames;
++}
++
++bool IntrinsicLowering::IsCalledByIntrinsic(const StringRef &FuncName) {
++  return IntrinsicLowering::GetFuncNames().count(FuncName) > 0;
++}
++// @LOCALMOD-END
++
+ void IntrinsicLowering::AddPrototypes(Module &M) {
+   LLVMContext &Context = M.getContext();
++
++  // @LOCALMOD-BEGIN
++  // It's not easy to determine from the bitcode module exactly when
++  // __nacl_read_tp will be generated. To be safe, always
++  // assert that __nacl_read_tp exists.
++  // Insert a correctly-typed definition now.
++  {
++    const Type *RetTy = Type::getInt8PtrTy(M.getContext());
++    M.getOrInsertFunction("__nacl_read_tp", RetTy, (Type*)0);
++  }
++  // @LOCALMOD-END
++
+   for (Module::iterator I = M.begin(), E = M.end(); I != E; ++I)
+     if (I->isDeclaration() && !I->use_empty())
+       switch (I->getIntrinsicID()) {
+diff -r ae6e84183d0c tools/gold/gold-plugin.cpp
+--- a/tools/gold/gold-plugin.cpp	Wed Apr 27 16:07:18 2011 -0700
++++ b/tools/gold/gold-plugin.cpp	Tue Jun 07 14:19:47 2011 -0700
+@@ -400,39 +400,6 @@
+     }
+   }
+ 
+-  // @LOCALMOD-BEGIN
+-  // Preserve symbols which may be referenced due to the lowering
+-  // of an intrinsic.
+-  //
+-  // This list includes the functions which are used in:
+-  //   lib/CodeGen/IntrinsicLowering.cpp
+-  //
+-  // NaCl also produces calls to __nacl_read_tp in:
+-  //   lib/Target/X86/X86NaClRewritePass.cpp
+-  //
+-  // TODO(pdox): It would be nice if there was a way to
+-  //             avoid hard-coding this list here.
+-  // See: http://code.google.com/p/nativeclient/issues/detail?id=821
+-  const char *IntrinsicSymbols[] =
+-    { "abort", "memcpy", "memset", "memmove",
+-      "sqrtf", "sqrt", "sqrtl",
+-      "sinf", "sin", "sinl",
+-      "cosf", "cos", "cosl",
+-      "powf", "pow", "powl",
+-      "logf", "log", "logl",
+-      "log2f", "log2", "log2l",
+-      "log10f", "log10", "log10l",
+-      "expf", "exp", "expl",
+-      "exp2f", "exp2", "exp2l",
+-      "__nacl_read_tp", NULL };
+-  for (unsigned i = 0; IntrinsicSymbols[i] != NULL; ++i) {
+-    lto_codegen_add_must_preserve_symbol(cg, IntrinsicSymbols[i]);
+-    anySymbolsPreserved = true;
+-    if (options::generate_api_file)
+-      api_file << IntrinsicSymbols[i] << "\n";
+-  }
+-  // @LOCALMOD-END
+-
+   if (options::generate_api_file)
+     api_file.close();
+ 
+diff -r ae6e84183d0c tools/lto/LTOCodeGenerator.cpp
+--- a/tools/lto/LTOCodeGenerator.cpp	Wed Apr 27 16:07:18 2011 -0700
++++ b/tools/lto/LTOCodeGenerator.cpp	Tue Jun 07 14:19:47 2011 -0700
+@@ -25,6 +25,7 @@
+ #include "llvm/ADT/Triple.h"
+ #include "llvm/Analysis/Passes.h"
+ #include "llvm/Bitcode/ReaderWriter.h"
++#include "llvm/CodeGen/IntrinsicLowering.h" // @LOCALMOD
+ #include "llvm/MC/MCAsmInfo.h"
+ #include "llvm/MC/MCContext.h"
+ #include "llvm/Target/Mangler.h"
+@@ -75,6 +76,16 @@
+ {
+     InitializeAllTargets();
+     InitializeAllAsmPrinters();
++
++    // @LOCALMOD-BEGIN
++    // Preserve symbols which may be referenced due to the lowering
++    // of an intrinsic.
++    const llvm::StringSet<> &IntrinsicSymbols = IntrinsicLowering::GetFuncNames();
++    for (llvm::StringSet<>::const_iterator it = IntrinsicSymbols.begin(),
++         ie = IntrinsicSymbols.end(); it != ie; ++it) {
++      _mustPreserveSymbols[it->getKey().str().c_str()] = 1;
++    }
++    // @LOCALMOD-END
+ }
+ 
+ LTOCodeGenerator::~LTOCodeGenerator()
+diff -r ae6e84183d0c tools/lto/LTOModule.cpp
+--- a/tools/lto/LTOModule.cpp	Wed Apr 27 16:07:18 2011 -0700
++++ b/tools/lto/LTOModule.cpp	Tue Jun 07 14:19:47 2011 -0700
+@@ -34,6 +34,7 @@
+ #include "llvm/Target/TargetMachine.h"
+ #include "llvm/Target/TargetRegistry.h"
+ #include "llvm/Target/TargetSelect.h"
++#include "llvm/CodeGen/IntrinsicLowering.h" // @LOCALMOD
+ 
+ using namespace llvm;
+ 
+@@ -133,6 +134,13 @@
+   Features.getDefaultSubtargetFeatures("" /* cpu */, llvm::Triple(Triple));
+   std::string FeatureStr = Features.getString();
+   TargetMachine *target = march->createTargetMachine(Triple, FeatureStr);
++
++  // @LOCALMOD-BEGIN
++  // Add declarations for functions which may be used by intrinsics.
++  IntrinsicLowering IL(*target->getTargetData());
++  IL.AddPrototypes(*m);
++  // @LOCALMOD-END
++
+   return new LTOModule(m.take(), target);
+ }
+ 
+@@ -379,8 +387,10 @@
+   // @LOCALMOD-BEGIN
+   // Bitcode modules may have declarations for functions or globals
+   // which are unused. Ignore them here so that gold does not mistake
+-  // them for undefined symbols.
+-  if (decl->use_empty())
++  // them for undefined symbols. But don't ignore declarations for
++  // functions which are potentially used by intrinsics.
++  if (decl->use_empty() &&
++      !IntrinsicLowering::IsCalledByIntrinsic(decl->getName()))
+     return;
+   // @LOCALMOD-END
+ 

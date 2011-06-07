@@ -1,0 +1,139 @@
+# HG changeset patch
+# User -r124899
+# Date 1298504194 28800
+# Branch pnacl-sfi
+# Node ID 0337a0cbbcaf3199d3585caa58099601525fad8f
+# Parent 5b5a3ed2ab2cb306a5dbb10a06304c678e26ebd3
+Just what it says - for ARM/MC/ELF
+http://llvm.org/viewvc/llvm-project?view=rev&revision=124899
+
+
+Teach ARM/MC/ELF about EF_ARM_EABI_VERSION. The magic number is set to
+5 to match the current doc.
+Added FIXME reminder Make it really configurable later.
+NOTE:
+NaCl requires an special ELF e_flags. So does ARM.
+PNaCl lib/MC/ELFObjectwriter.cpp had a @LOCALMOD to deal with the NaCl specific e_flags which conflicted with the necessary update to ARM. This required the merged version to have the @LOCALMOD@ as well to handle both cases.
+
+ From llvm-pnacl-0006-226-0337a0cbbcaf3199d3585caa58099601525fad8f.patch
+
+diff -r 5b5a3ed2ab2c include/llvm/Support/ELF.h
+--- a/include/llvm/Support/ELF.h	Tue Feb 22 17:59:22 2011 -0500
++++ b/include/llvm/Support/ELF.h	Tue Jun 07 14:19:08 2011 -0700
+@@ -306,6 +306,10 @@
+   R_MICROBLAZE_COPY           = 21
+ };
+ 
++
++// ARM Specific e_flags
++enum { EF_ARM_EABIMASK = 0xFF000000U };
++
+ // ELF Relocation types for ARM
+ // Meets 2.08 ABI Specs.
+ 
+diff -r 5b5a3ed2ab2c lib/MC/ELFObjectWriter.cpp
+--- a/lib/MC/ELFObjectWriter.cpp	Tue Feb 22 17:59:22 2011 -0500
++++ b/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:19:08 2011 -0700
+@@ -276,6 +276,20 @@
+ 
+     virtual void WriteHeader(uint64_t SectionDataSize, unsigned NumberOfSections);
+ 
++    /// Default e_flags = 0
++    virtual void WriteEFlags() { 
++      // @LOCALMOD-BEGIN
++      switch (TargetObjectWriter->getOSType()) {
++      case Triple::NativeClient:
++        Write32(ELF::EF_NACL_ALIGN_32);
++        break;
++      default:
++        Write32(0);   // e_flags = whatever the target wants
++        break;
++      }
++      // @LOCALMOD-END
++    }
++
+     virtual void WriteSymbolEntry(MCDataFragment *SymtabF, MCDataFragment *ShndxF,
+                           uint64_t name, uint8_t info,
+                           uint64_t value, uint64_t size,
+@@ -387,11 +401,16 @@
+ 
+   class ARMELFObjectWriter : public ELFObjectWriter {
+   public:
++    // FIXME: MCAssembler can't yet return the Subtarget,
++    enum { DefaultEABIVersion = 0x05000000U };
++
+     ARMELFObjectWriter(MCELFObjectTargetWriter *MOTW,
+                        raw_ostream &_OS,
+                        bool IsLittleEndian);
+ 
+     virtual ~ARMELFObjectWriter();
++
++    virtual void WriteEFlags();
+   protected:
+     virtual unsigned GetRelocType(const MCValue &Target, const MCFixup &Fixup,
+                                   bool IsPCRel, bool IsRelocWithSymbol,
+@@ -474,16 +493,8 @@
+   WriteWord(SectionDataSize + (is64Bit() ? sizeof(ELF::Elf64_Ehdr) :
+             sizeof(ELF::Elf32_Ehdr)));  // e_shoff = sec hdr table off in bytes
+ 
+-  // @LOCALMOD-BEGIN
+-  switch (TargetObjectWriter->getOSType()) {
+-  case Triple::NativeClient:
+-    Write32(ELF::EF_NACL_ALIGN_32);
+-    break;
+-  default:
+-    Write32(0);   // e_flags = whatever the target wants
+-    break;
+-  }
+-  // @LOCALMOD-END
++   // e_flags = whatever the target wants
++  WriteEFlags();
+ 
+   // e_ehsize = ELF header size
+   Write16(is64Bit() ? sizeof(ELF::Elf64_Ehdr) : sizeof(ELF::Elf32_Ehdr));
+@@ -1495,7 +1506,6 @@
+ 
+ /// START OF SUBCLASSES for ELFObjectWriter
+ //===- ARMELFObjectWriter -------------------------------------------===//
+-
+ ARMELFObjectWriter::ARMELFObjectWriter(MCELFObjectTargetWriter *MOTW,
+                                        raw_ostream &_OS,
+                                        bool IsLittleEndian)
+@@ -1505,6 +1515,20 @@
+ ARMELFObjectWriter::~ARMELFObjectWriter()
+ {}
+ 
++// FIXME: get the real EABI Version from the Triple.
++void ARMELFObjectWriter::WriteEFlags() {
++  // @LOCALMOD-BEGIN
++  unsigned e_flag = ELF::EF_ARM_EABIMASK & DefaultEABIVersion;
++  switch (TargetObjectWriter->getOSType()) {
++  case Triple::NativeClient:
++    e_flag |= ELF::EF_NACL_ALIGN_32;
++    break;
++  default: break;
++  }
++  Write32(e_flag);
++  // @LOCALMOD-END
++}
++
+ unsigned ARMELFObjectWriter::GetRelocType(const MCValue &Target,
+                                           const MCFixup &Fixup,
+                                           bool IsPCRel,
+diff -r 5b5a3ed2ab2c test/MC/ARM/elf-eflags-eabi.s
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/test/MC/ARM/elf-eflags-eabi.s	Tue Jun 07 14:19:08 2011 -0700
+@@ -0,0 +1,13 @@
++@ RUN: llvm-mc %s -triple=armv7-linux-gnueabi -filetype=obj -o - | \
++@ RUN:    elf-dump --dump-section-data  | FileCheck -check-prefix=OBJ %s
++	.syntax unified
++	.text
++	.globl	barf
++	.align	2
++	.type	barf,%function
++barf:                                   @ @barf
++@ BB#0:                                 @ %entry
++        b foo
++
++@@@ make sure the EF_ARM_EABIMASK comes out OK
++@OBJ:    'e_flags', 0x05000000
