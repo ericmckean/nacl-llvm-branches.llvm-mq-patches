@@ -3,7 +3,7 @@
 # Date 1303412567 25200
 # Branch pnacl-sfi
 # Node ID 6960fea5debd1c1c8aac5f0af79c5551d677b091
-# Parent 5fae15831c958c1302cc1c4dd1e48ab7720ea8e5
+# Parent debfb0cb14e82a6c5118dbebb5d1a1c57b6f0963
 Address the last bit of relocation flag related divergence betweeen
 LLVM and binutils.
 
@@ -38,9 +38,9 @@ TEST=utman.sh test-arm-pic
 
  From .hg/patches/llvm-pnacl-0024-248-6960fea5debd1c1c8aac5f0af79c5551d677b091.patch.stripped
 
-diff -r 5fae15831c95 lib/MC/ELFObjectWriter.cpp
+diff -r debfb0cb14e8 lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Fri Apr 15 18:11:24 2011 -0400
-+++ b/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:28:40 2011 -0700
++++ b/lib/MC/ELFObjectWriter.cpp	Wed Jun 08 16:38:52 2011 -0700
 @@ -31,13 +31,25 @@
  #include "llvm/Support/ELF.h"
  #include "llvm/Target/TargetAsmBackend.h"
