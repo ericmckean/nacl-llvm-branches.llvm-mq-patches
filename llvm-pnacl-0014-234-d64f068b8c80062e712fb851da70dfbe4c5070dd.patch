@@ -3,16 +3,16 @@
 # Date 1300409399 25200
 # Branch pnacl-sfi
 # Node ID d64f068b8c80062e712fb851da70dfbe4c5070dd
-# Parent 2e80b19d45cd06e1002c03f692f711ae848ab6e8
+# Parent 05f40c0b6d0704363a4ee602adcd7a9b523bd97b
 Tweaks to LLVM for self-build
 
  From llvm-pnacl-0014-234-d64f068b8c80062e712fb851da70dfbe4c5070dd.patch
 
  From .hg/patches/llvm-pnacl-0014-234-d64f068b8c80062e712fb851da70dfbe4c5070dd.patch.stripped
 
-diff -r 2e80b19d45cd lib/Target/SubtargetFeature.cpp
+diff -r 05f40c0b6d07 lib/Target/SubtargetFeature.cpp
 --- a/lib/Target/SubtargetFeature.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/lib/Target/SubtargetFeature.cpp	Wed Jun 08 16:18:51 2011 -0700
++++ b/lib/Target/SubtargetFeature.cpp	Wed Jun 08 17:20:07 2011 -0700
 @@ -380,5 +380,11 @@
        AddFeature("64bit");
        AddFeature("altivec");
@@ -25,9 +25,18 @@ diff -r 2e80b19d45cd lib/Target/SubtargetFeature.cpp
 +// @LOCALMOD-END
    }
  }
-diff -r 2e80b19d45cd lib/Target/X86/X86InstrControl.td
+diff -r 05f40c0b6d07 lib/Target/X86/X86InstrControl.td
 --- a/lib/Target/X86/X86InstrControl.td	Mon Mar 07 11:48:02 2011 -0800
-+++ b/lib/Target/X86/X86InstrControl.td	Wed Jun 08 16:18:51 2011 -0700
++++ b/lib/Target/X86/X86InstrControl.td	Wed Jun 08 17:20:07 2011 -0700
+@@ -115,7 +115,7 @@
+                           (ins i32imm:$off, i16imm:$seg),
+                           "ljmp{l}\t{$seg, $off|$off, $seg}", []>;
+   def FARJMP64   : RI<0xFF, MRM5m, (outs), (ins opaque80mem:$dst),
+-                      "ljmp{q}\t{*}$dst", Requires<[NotNaCl]>;
++                      "ljmp{q}\t{*}$dst", []>, Requires<[NotNaCl]>;
+ 
+   def FARJMP16m  : I<0xFF, MRM5m, (outs), (ins opaque32mem:$dst),
+                      "ljmp{w}\t{*}$dst", []>, OpSize;
 @@ -148,11 +148,11 @@
                             "call{l}\t$dst", []>,
                        Requires<[In32BitMode, NotNaCl]>;
@@ -61,9 +70,9 @@ diff -r 2e80b19d45cd lib/Target/X86/X86InstrControl.td
  
  // Tail call stuff.
  
-diff -r 2e80b19d45cd lib/Target/X86/X86InstrNaCl.td
+diff -r 05f40c0b6d07 lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Mon Mar 07 11:48:02 2011 -0800
-+++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jun 08 16:18:51 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jun 08 17:20:07 2011 -0700
 @@ -61,7 +61,7 @@
  
  let isCall = 1, isAsmParserOnly = 1 in {
@@ -100,9 +109,9 @@ diff -r 2e80b19d45cd lib/Target/X86/X86InstrNaCl.td
                                  Requires<[IsNaCl64]>;
  
      def NACL_CG_CALL64r       : I<0, Pseudo, (outs), (ins GR32:$dst, variable_ops),
-diff -r 2e80b19d45cd tools/gold/gold-plugin.cpp
+diff -r 05f40c0b6d07 tools/gold/gold-plugin.cpp
 --- a/tools/gold/gold-plugin.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/tools/gold/gold-plugin.cpp	Wed Jun 08 16:18:51 2011 -0700
++++ b/tools/gold/gold-plugin.cpp	Wed Jun 08 17:20:07 2011 -0700
 @@ -62,6 +62,7 @@
    };
  
@@ -138,9 +147,9 @@ diff -r 2e80b19d45cd tools/gold/gold-plugin.cpp
          switch (tv->tv_u.tv_val) {
            case LDPO_REL:  // .o
            case LDPO_DYN:  // .so
-diff -r 2e80b19d45cd tools/llc/llc.cpp
+diff -r 05f40c0b6d07 tools/llc/llc.cpp
 --- a/tools/llc/llc.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/tools/llc/llc.cpp	Wed Jun 08 16:18:51 2011 -0700
++++ b/tools/llc/llc.cpp	Wed Jun 08 17:20:07 2011 -0700
 @@ -299,6 +299,11 @@
    if (MCPU.size() || MAttrs.size()) {
      SubtargetFeatures Features;
@@ -153,9 +162,9 @@ diff -r 2e80b19d45cd tools/llc/llc.cpp
      for (unsigned i = 0; i != MAttrs.size(); ++i)
        Features.AddFeature(MAttrs[i]);
      FeaturesStr = Features.getString();
-diff -r 2e80b19d45cd tools/llc/nacl_file.cpp
+diff -r 05f40c0b6d07 tools/llc/nacl_file.cpp
 --- a/tools/llc/nacl_file.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/tools/llc/nacl_file.cpp	Wed Jun 08 16:18:51 2011 -0700
++++ b/tools/llc/nacl_file.cpp	Wed Jun 08 17:20:07 2011 -0700
 @@ -37,8 +37,8 @@
  #define printerr(...)                           \
    fprintf(stderr, __VA_ARGS__)
