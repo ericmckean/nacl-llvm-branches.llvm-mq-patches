@@ -13,7 +13,7 @@ http://codereview.chromium.org/6546003/
 
 diff -r 30e7268b1060 tools/llc/nacl_file.cpp
 --- a/tools/llc/nacl_file.cpp	Mon Feb 14 12:22:55 2011 -0800
-+++ b/tools/llc/nacl_file.cpp	Thu Jun 09 15:17:53 2011 -0700
++++ b/tools/llc/nacl_file.cpp	Thu Jun 09 15:47:07 2011 -0700
 @@ -55,7 +55,7 @@
    char *filename;
    int real_fd;

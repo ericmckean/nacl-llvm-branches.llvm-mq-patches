@@ -3,7 +3,7 @@
 # Date 1303412567 25200
 # Branch pnacl-sfi
 # Node ID 6960fea5debd1c1c8aac5f0af79c5551d677b091
-# Parent debfb0cb14e82a6c5118dbebb5d1a1c57b6f0963
+# Parent b9937dd1d4d1bd90f1ccd246c7fefd4b720f26c1
 Address the last bit of relocation flag related divergence betweeen
 LLVM and binutils.
 
@@ -38,9 +38,9 @@ TEST=utman.sh test-arm-pic
 
  From .hg/patches/llvm-pnacl-0024-248-6960fea5debd1c1c8aac5f0af79c5551d677b091.patch.stripped
 
-diff -r debfb0cb14e8 lib/MC/ELFObjectWriter.cpp
+diff -r b9937dd1d4d1 lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Fri Apr 15 18:11:24 2011 -0400
-+++ b/lib/MC/ELFObjectWriter.cpp	Wed Jun 08 16:38:52 2011 -0700
++++ b/lib/MC/ELFObjectWriter.cpp	Thu Jun 09 16:07:47 2011 -0700
 @@ -31,13 +31,25 @@
  #include "llvm/Support/ELF.h"
  #include "llvm/Target/TargetAsmBackend.h"
@@ -181,12 +181,7 @@ diff -r debfb0cb14e8 lib/MC/ELFObjectWriter.cpp
      if (const MCSymbolRefExpr *RefB = Target.getSymB()) {
        const MCSymbol &SymbolB = RefB->getSymbol();
        MCSymbolData &SDB = Asm.getSymbolData(SymbolB);
-@@ -1547,31 +1575,94 @@
- // In ARM, _MergedGlobals and other most symbols get emitted directly.
- // I.e. not as an offset to a section symbol.
- // This code is a first-cut approximation of what ARM/gcc does.
--
-+int long RelCount=0, PCRelCount=0, NonPCRelCount=0;
+@@ -1542,27 +1570,85 @@
  const MCSymbol *ARMELFObjectWriter::ExplicitRelSym(const MCAssembler &Asm,
                                                     const MCValue &Target,
                                                     const MCFragment &F,
@@ -195,7 +190,6 @@ diff -r debfb0cb14e8 lib/MC/ELFObjectWriter.cpp
 +                                                   bool IsPCRel) const {
    const MCSymbol &Symbol = Target.getSymA()->getSymbol();
    bool EmitThisSym = false;
-+  // @LOCALMOD-BEGIN-TODO-UPSTREAM
 +  // Nearly the entire function need to be redone.
 +  const MCSectionELF &Section =
 +    static_cast<const MCSectionELF&>(Symbol.getSection());
@@ -207,11 +201,7 @@ diff -r debfb0cb14e8 lib/MC/ELFObjectWriter.cpp
 +  bool InNormalSection = true;
 +  unsigned RelocType = 0;
 +  RelocType = GetRelocTypeInner(Target, Fixup, IsPCRel);
- 
--  if (IsBSS) {
--    EmitThisSym = StringSwitch<bool>(Symbol.getName())
--      .Case("_MergedGlobals", true)
--      .Default(false);
++ 
 +  DEBUG(dbgs() << "considering symbol "
 +        << RelCount << "/"
 +        << Section.getSectionName() << "/"
@@ -223,7 +213,16 @@ diff -r debfb0cb14e8 lib/MC/ELFObjectWriter.cpp
 +        << Symbol.isVariable() << "/" << Symbol.isTemporary()
 +        << " Counts:" << PCRelCount << "/" << NonPCRelCount << "\n";
 +        ++RelCount);
-+
+ 
+-  if (IsBSS) {
+-    EmitThisSym = StringSwitch<bool>(Symbol.getName())
+-      .Case("_MergedGlobals", true)
+-      .Default(false);
+-  } else {
+-    EmitThisSym = StringSwitch<bool>(Symbol.getName())
+-      .Case("_MergedGlobals", true)
+-      .StartsWith(".L.str", true)
+-      .Default(false);
 +  if (IsPCRel || ForceARMElfPIC) { ++PCRelCount;
 +    switch (RelocType) {
 +    default:
@@ -250,11 +249,7 @@ diff -r debfb0cb14e8 lib/MC/ELFObjectWriter.cpp
 +      EmitThisSym = false;
 +      break;
 +    }
-   } else {
--    EmitThisSym = StringSwitch<bool>(Symbol.getName())
--      .Case("_MergedGlobals", true)
--      .StartsWith(".L.str", true)
--      .Default(false);
++   } else {
 +    NonPCRelCount++;
 +    InNormalSection =
 +      StringSwitch<bool>(Section.getSectionName())
@@ -276,28 +271,22 @@ diff -r debfb0cb14e8 lib/MC/ELFObjectWriter.cpp
 +  if (! Symbol.isTemporary() && InNormalSection) {
      return &Symbol;
 +  }
-+  // @LOCALMOD-END
    return NULL;
  }
  
-+// @LOCALMOD-BEGIN-TO-BE-UPSTREAMED
-+// Need to examine the Fixup when determining whether to 
-+// emit the relocation as an explicit symbol or as a section relative
-+// offset
- unsigned ARMELFObjectWriter::GetRelocType(const MCValue &Target,
-                                           const MCFixup &Fixup,
-                                           bool IsPCRel,
-@@ -1580,6 +1671,20 @@
++
+ // FIXME: get the real EABI Version from the Triple.
+ void ARMELFObjectWriter::WriteEFlags() {
+   // @LOCALMOD-BEGIN
+@@ -1585,6 +1671,18 @@
    MCSymbolRefExpr::VariantKind Modifier = Target.isAbsolute() ?
      MCSymbolRefExpr::VK_None : Target.getSymA()->getKind();
  
 +  unsigned Type = GetRelocTypeInner(Target, Fixup, IsPCRel);
 +
-+  if (RelocNeedsGOT(Modifier))
-+    NeedsGOT = true;
-+  
 +  return Type;
 +}
++// @LOCALMOD-END-TO-BE-UPSTREAMED
 +
 +unsigned ARMELFObjectWriter::GetRelocTypeInner(const MCValue &Target,
 +                                               const MCFixup &Fixup,
@@ -308,7 +297,7 @@ diff -r debfb0cb14e8 lib/MC/ELFObjectWriter.cpp
    unsigned Type = 0;
    if (IsPCRel) {
      switch ((unsigned)Fixup.getKind()) {
-@@ -1588,7 +1693,7 @@
+@@ -1593,7 +1691,7 @@
        switch (Modifier) {
        default: llvm_unreachable("Unsupported Modifier");
        case MCSymbolRefExpr::VK_None:
@@ -317,7 +306,7 @@ diff -r debfb0cb14e8 lib/MC/ELFObjectWriter.cpp
          break;
        case MCSymbolRefExpr::VK_ARM_TLSGD:
          assert(0 && "unimplemented");
-@@ -1609,7 +1714,15 @@
+@@ -1614,7 +1712,15 @@
        }
        break;
      case ARM::fixup_arm_condbranch:
@@ -334,16 +323,3 @@ diff -r debfb0cb14e8 lib/MC/ELFObjectWriter.cpp
        break;
      case ARM::fixup_arm_movt_hi16:
      case ARM::fixup_arm_movt_hi16_pcrel:
-@@ -1684,11 +1797,9 @@
-     }
-   }
- 
--  if (RelocNeedsGOT(Modifier))
--    NeedsGOT = true;
--  
-   return Type;
- }
-+// @LOCALMOD-END-TO-BE-UPSTREAMED
- 
- //===- MBlazeELFObjectWriter -------------------------------------------===//
- 

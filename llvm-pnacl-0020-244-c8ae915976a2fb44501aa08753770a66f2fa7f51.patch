@@ -3,7 +3,7 @@
 # Date 1301583364 14400
 # Branch pnacl-sfi
 # Node ID c8ae915976a2fb44501aa08753770a66f2fa7f51
-# Parent ea62ee3aa18b8cea942e43cfa12628c5d10e3220
+# Parent da676f13303ab7d07c994dbad11e7865f33c1175
 Added functionality to llvm-ld to make it suitable as and abi checker for pexe.
 
 For now this checks whether the pexe makes calls to external functions and intrinsics that are not deemed appropriate.
@@ -26,9 +26,9 @@ BUG= http://code.google.com/p/nativeclient/issues/detail?id=1562
 
  From .hg/patches/llvm-pnacl-0020-244-c8ae915976a2fb44501aa08753770a66f2fa7f51.patch.stripped
 
-diff -r ea62ee3aa18b lib/Linker/LinkArchives.cpp
+diff -r da676f13303a lib/Linker/LinkArchives.cpp
 --- a/lib/Linker/LinkArchives.cpp	Mon Mar 28 17:07:16 2011 -0700
-+++ b/lib/Linker/LinkArchives.cpp	Wed Jun 08 16:38:48 2011 -0700
++++ b/lib/Linker/LinkArchives.cpp	Thu Jun 09 15:47:17 2011 -0700
 @@ -17,10 +17,24 @@
  #include "llvm/ADT/SetOperations.h"
  #include "llvm/Bitcode/Archive.h"
@@ -66,9 +66,9 @@ diff -r ea62ee3aa18b lib/Linker/LinkArchives.cpp
    // If the program doesn't define a main, try pulling one in from a .a file.
    // This is needed for programs where the main function is defined in an
    // archive, such f2c'd programs.
-diff -r ea62ee3aa18b tools/Makefile
+diff -r da676f13303a tools/Makefile
 --- a/tools/Makefile	Mon Mar 28 17:07:16 2011 -0700
-+++ b/tools/Makefile	Wed Jun 08 16:38:48 2011 -0700
++++ b/tools/Makefile	Thu Jun 09 15:47:17 2011 -0700
 @@ -15,13 +15,10 @@
  # NOTE: The tools are organized into five groups of four consisting of one
  # large and three small executables. This is done to minimize memory load
@@ -85,9 +85,9 @@ diff -r ea62ee3aa18b tools/Makefile
                   lli llvm-extract llvm-mc \
                   bugpoint llvm-bcanalyzer llvm-stub \
                   llvmc llvm-diff macho-dump llvm-objdump bc-wrap
-diff -r ea62ee3aa18b tools/llc/llc.cpp
+diff -r da676f13303a tools/llc/llc.cpp
 --- a/tools/llc/llc.cpp	Mon Mar 28 17:07:16 2011 -0700
-+++ b/tools/llc/llc.cpp	Wed Jun 08 16:38:48 2011 -0700
++++ b/tools/llc/llc.cpp	Thu Jun 09 15:47:17 2011 -0700
 @@ -40,6 +40,10 @@
  #include "llvm/Target/TargetSelect.h"
  #include <memory>
@@ -109,9 +109,9 @@ diff -r ea62ee3aa18b tools/llc/llc.cpp
    // Build up all of the passes that we want to do to the module.
    PassManager PM;
  
-diff -r ea62ee3aa18b tools/llvm-ld/llvm-ld.cpp
+diff -r da676f13303a tools/llvm-ld/llvm-ld.cpp
 --- a/tools/llvm-ld/llvm-ld.cpp	Mon Mar 28 17:07:16 2011 -0700
-+++ b/tools/llvm-ld/llvm-ld.cpp	Wed Jun 08 16:38:48 2011 -0700
++++ b/tools/llvm-ld/llvm-ld.cpp	Thu Jun 09 15:47:17 2011 -0700
 @@ -40,6 +40,11 @@
  #include "llvm/Config/config.h"
  #include <memory>

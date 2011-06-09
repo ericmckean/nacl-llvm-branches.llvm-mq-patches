@@ -14,7 +14,7 @@ http://codereview.chromium.org/6469099/
 
 diff -r 0ad2de7dacf3 lib/Target/X86/X86FrameLowering.h
 --- a/lib/Target/X86/X86FrameLowering.h	Fri Feb 18 12:34:39 2011 -0800
-+++ b/lib/Target/X86/X86FrameLowering.h	Thu Jun 09 15:22:13 2011 -0700
++++ b/lib/Target/X86/X86FrameLowering.h	Thu Jun 09 15:47:07 2011 -0700
 @@ -64,4 +64,4 @@
  } // End llvm namespace
  
@@ -23,7 +23,7 @@ diff -r 0ad2de7dacf3 lib/Target/X86/X86FrameLowering.h
 +
 diff -r 0ad2de7dacf3 lib/Target/X86/X86InstrNaCl.cpp
 --- a/lib/Target/X86/X86InstrNaCl.cpp	Fri Feb 18 12:34:39 2011 -0800
-+++ b/lib/Target/X86/X86InstrNaCl.cpp	Thu Jun 09 15:22:13 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.cpp	Thu Jun 09 15:47:07 2011 -0700
 @@ -20,6 +20,11 @@
  
  using namespace llvm;

@@ -12,7 +12,7 @@ Sandbox arbitrary moves to RBP
 
 diff -r fc0aa11b576a lib/Target/X86/X86NaClRewritePass.cpp
 --- a/lib/Target/X86/X86NaClRewritePass.cpp	Wed Feb 02 19:05:20 2011 -0800
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Thu Jun 09 15:17:50 2011 -0700
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Thu Jun 09 15:47:04 2011 -0700
 @@ -296,12 +296,41 @@
      return false;
  

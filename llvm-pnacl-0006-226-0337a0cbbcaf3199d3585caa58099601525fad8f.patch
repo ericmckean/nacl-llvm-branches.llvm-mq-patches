@@ -21,7 +21,7 @@ PNaCl lib/MC/ELFObjectwriter.cpp had a @LOCALMOD to deal with the NaCl specific 
 
 diff -r b3e566425b6c include/llvm/Support/ELF.h
 --- a/include/llvm/Support/ELF.h	Tue Feb 22 17:59:22 2011 -0500
-+++ b/include/llvm/Support/ELF.h	Thu Jun 09 15:25:25 2011 -0700
++++ b/include/llvm/Support/ELF.h	Thu Jun 09 15:47:08 2011 -0700
 @@ -310,6 +310,10 @@
  // ARM Specific e_flags
  enum { EF_ARM_EABIMASK = 0xFF000000U };
@@ -35,7 +35,7 @@ diff -r b3e566425b6c include/llvm/Support/ELF.h
  
 diff -r b3e566425b6c lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Tue Feb 22 17:59:22 2011 -0500
-+++ b/lib/MC/ELFObjectWriter.cpp	Thu Jun 09 15:25:25 2011 -0700
++++ b/lib/MC/ELFObjectWriter.cpp	Thu Jun 09 15:47:08 2011 -0700
 @@ -1563,6 +1563,20 @@
    return NULL;
  }
