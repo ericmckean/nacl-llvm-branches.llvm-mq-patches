@@ -3,40 +3,10 @@
 # Date 1298504194 28800
 # Branch pnacl-sfi
 # Node ID 2c354d09798c4c01137f160a5054d94a4e0d614a
-# Parent f9c26b96b58f53c8e211b013825992c0cb91058f
+# Parent 2a35725c44f2e70b72e9acf7f7057ecc6a674dc2
 Cherrypick arm-mc-elf-r125025-lowercase.patch for .ARM.attributes. Stupid lowercase vs upppercase nonsense.
 
  From llvm-pnacl-0011-231-2c354d09798c4c01137f160a5054d94a4e0d614a.patch
 
  From .hg/patches/llvm-pnacl-0011-231-2c354d09798c4c01137f160a5054d94a4e0d614a.patch.stripped
 
-diff -r f9c26b96b58f lib/Target/ARM/ARMAsmPrinter.cpp
---- a/lib/Target/ARM/ARMAsmPrinter.cpp	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/Target/ARM/ARMAsmPrinter.cpp	Thu Jun 09 15:47:09 2011 -0700
-@@ -93,7 +93,7 @@
-     void EmitTextAttribute(unsigned Attribute, StringRef String) {
-       switch (Attribute) {
-       case ARMBuildAttrs::CPU_name:
--        Streamer.EmitRawText(StringRef("\t.cpu ") + String);
-+        Streamer.EmitRawText(StringRef("\t.cpu ") + LowercaseString(String));
-         break;
-       default: assert(0 && "Unsupported Text attribute in ASM Mode"); break;
-       }
-@@ -133,7 +133,7 @@
- 
-     void EmitTextAttribute(unsigned Attribute, StringRef String) {
-       Contents += Attribute;
--      Contents += String;
-+      Contents += UppercaseString(String);
-       Contents += 0;
-     }
- 
-@@ -556,7 +556,7 @@
- 
-   if (CPUString == "cortex-a8" ||
-       Subtarget->isCortexA8()) {
--    AttrEmitter->EmitTextAttribute(ARMBuildAttrs::CPU_name, "CORTEX-A8");
-+    AttrEmitter->EmitTextAttribute(ARMBuildAttrs::CPU_name, "cortex-a8");
-     AttrEmitter->EmitAttribute(ARMBuildAttrs::CPU_arch, ARMBuildAttrs::v7);
-     AttrEmitter->EmitAttribute(ARMBuildAttrs::CPU_arch_profile,
-                                ARMBuildAttrs::ApplicationProfile);

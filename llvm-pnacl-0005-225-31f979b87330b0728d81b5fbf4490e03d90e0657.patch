@@ -3,7 +3,7 @@
 # Date 1298415562 18000
 # Branch pnacl-sfi
 # Node ID 31f979b87330b0728d81b5fbf4490e03d90e0657
-# Parent 0ad2de7dacf309101149acc3ec8dcf1be8bdeade
+# Parent 38f7c54994c718531d1519f54fae54c9e4fa8c50
 Add flag for changing x86 mask
 
 http://codereview.chromium.org/6469099/
@@ -12,18 +12,18 @@ http://codereview.chromium.org/6469099/
 
  From .hg/patches/llvm-pnacl-0005-225-31f979b87330b0728d81b5fbf4490e03d90e0657.patch.stripped
 
-diff -r 0ad2de7dacf3 lib/Target/X86/X86FrameLowering.h
+diff -r 38f7c54994c7 lib/Target/X86/X86FrameLowering.h
 --- a/lib/Target/X86/X86FrameLowering.h	Fri Feb 18 12:34:39 2011 -0800
-+++ b/lib/Target/X86/X86FrameLowering.h	Thu Jun 09 15:47:07 2011 -0700
++++ b/lib/Target/X86/X86FrameLowering.h	Thu Jun 09 18:35:44 2011 -0700
 @@ -64,4 +64,4 @@
  } // End llvm namespace
  
  #endif
 -y
 +
-diff -r 0ad2de7dacf3 lib/Target/X86/X86InstrNaCl.cpp
+diff -r 38f7c54994c7 lib/Target/X86/X86InstrNaCl.cpp
 --- a/lib/Target/X86/X86InstrNaCl.cpp	Fri Feb 18 12:34:39 2011 -0800
-+++ b/lib/Target/X86/X86InstrNaCl.cpp	Thu Jun 09 15:47:07 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.cpp	Thu Jun 09 18:35:44 2011 -0700
 @@ -20,6 +20,11 @@
  
  using namespace llvm;
