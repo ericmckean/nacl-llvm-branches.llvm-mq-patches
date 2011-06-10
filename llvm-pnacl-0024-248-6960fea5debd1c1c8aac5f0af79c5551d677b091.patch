@@ -3,7 +3,7 @@
 # Date 1303412567 25200
 # Branch pnacl-sfi
 # Node ID 6960fea5debd1c1c8aac5f0af79c5551d677b091
-# Parent b9937dd1d4d1bd90f1ccd246c7fefd4b720f26c1
+# Parent b096326279629dfe9e4a3943258adbc2830b2abc
 Address the last bit of relocation flag related divergence betweeen
 LLVM and binutils.
 
@@ -38,22 +38,22 @@ TEST=utman.sh test-arm-pic
 
  From .hg/patches/llvm-pnacl-0024-248-6960fea5debd1c1c8aac5f0af79c5551d677b091.patch.stripped
 
-diff -r b9937dd1d4d1 lib/MC/ELFObjectWriter.cpp
+diff -r b09632627962 lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Fri Apr 15 18:11:24 2011 -0400
-+++ b/lib/MC/ELFObjectWriter.cpp	Thu Jun 09 16:07:47 2011 -0700
-@@ -31,13 +31,25 @@
++++ b/lib/MC/ELFObjectWriter.cpp	Thu Jun 09 17:20:00 2011 -0700
+@@ -31,6 +31,8 @@
  #include "llvm/Support/ELF.h"
  #include "llvm/Target/TargetAsmBackend.h"
  #include "llvm/ADT/StringSwitch.h"
--
 +#include "llvm/Support/CommandLine.h"
++#include "llvm/ADT/Statistic.h"
+ 
  #include "../Target/X86/X86FixupKinds.h"
  #include "../Target/ARM/ARMFixupKinds.h"
- 
+@@ -38,6 +40,16 @@
  #include <vector>
  using namespace llvm;
  
-+//@LOCALMOD-BEGIN-TO-BE-UPSTREAMED
 +#undef  DEBUG_TYPE
 +#define DEBUG_TYPE "reloc-info"
 +
@@ -63,7 +63,6 @@ diff -r b9937dd1d4d1 lib/MC/ELFObjectWriter.cpp
 +ForceARMElfPIC("arm-elf-force-pic", cl::Hidden, cl::init(false),
 +               cl::desc("Force ELF emitter to emit PIC style relocations"));
 +}
-+//@LOCALMOD-END
 +
  static unsigned GetType(const MCSymbolData &SD) {
    uint32_t Type = (SD.getFlags() & (0xf << ELF_STT_Shift)) >> ELF_STT_Shift;
@@ -181,7 +180,16 @@ diff -r b9937dd1d4d1 lib/MC/ELFObjectWriter.cpp
      if (const MCSymbolRefExpr *RefB = Target.getSymB()) {
        const MCSymbol &SymbolB = RefB->getSymbol();
        MCSymbolData &SDB = Asm.getSymbolData(SymbolB);
-@@ -1542,27 +1570,85 @@
+@@ -1546,32 +1574,93 @@
+ 
+ // In ARM, _MergedGlobals and other most symbols get emitted directly.
+ // I.e. not as an offset to a section symbol.
+-// This code is a first-cut approximation of what ARM/gcc does.
++// This code is an approximation of what ARM/gcc does.
++
++STATISTIC(PCRelCount, "Total number of PIC Relocations");
++STATISTIC(NonPCRelCount, "Total number of non-PIC relocations");
+ 
  const MCSymbol *ARMELFObjectWriter::ExplicitRelSym(const MCAssembler &Asm,
                                                     const MCValue &Target,
                                                     const MCFragment &F,
@@ -190,20 +198,23 @@ diff -r b9937dd1d4d1 lib/MC/ELFObjectWriter.cpp
 +                                                   bool IsPCRel) const {
    const MCSymbol &Symbol = Target.getSymA()->getSymbol();
    bool EmitThisSym = false;
-+  // Nearly the entire function need to be redone.
+ 
+-  if (IsBSS) {
+-    EmitThisSym = StringSwitch<bool>(Symbol.getName())
+-      .Case("_MergedGlobals", true)
+-      .Default(false);
 +  const MCSectionELF &Section =
 +    static_cast<const MCSectionELF&>(Symbol.getSection());
-+  const SectionKind secKind = Section.getKind();
-+  const MCSymbolRefExpr::VariantKind Kind = Target.getSymA()->getKind();
-+  MCSymbolRefExpr::VariantKind Kind2; 
-+  Kind2 = Target.getSymB() ?  Target.getSymB()->getKind() :
-+    MCSymbolRefExpr::VK_None;
 +  bool InNormalSection = true;
 +  unsigned RelocType = 0;
 +  RelocType = GetRelocTypeInner(Target, Fixup, IsPCRel);
-+ 
-+  DEBUG(dbgs() << "considering symbol "
-+        << RelCount << "/"
++
++  DEBUG(
++      const MCSymbolRefExpr::VariantKind Kind = Target.getSymA()->getKind();
++      MCSymbolRefExpr::VariantKind Kind2;
++      Kind2 = Target.getSymB() ?  Target.getSymB()->getKind() :
++        MCSymbolRefExpr::VK_None;
++      dbgs() << "considering symbol "
 +        << Section.getSectionName() << "/"
 +        << Symbol.getName() << "/"
 +        << " Rel:" << (unsigned)RelocType
@@ -211,19 +222,9 @@ diff -r b9937dd1d4d1 lib/MC/ELFObjectWriter.cpp
 +        << " Tmp:"
 +        << Symbol.isAbsolute() << "/" << Symbol.isDefined() << "/"
 +        << Symbol.isVariable() << "/" << Symbol.isTemporary()
-+        << " Counts:" << PCRelCount << "/" << NonPCRelCount << "\n";
-+        ++RelCount);
- 
--  if (IsBSS) {
--    EmitThisSym = StringSwitch<bool>(Symbol.getName())
--      .Case("_MergedGlobals", true)
--      .Default(false);
--  } else {
--    EmitThisSym = StringSwitch<bool>(Symbol.getName())
--      .Case("_MergedGlobals", true)
--      .StartsWith(".L.str", true)
--      .Default(false);
-+  if (IsPCRel || ForceARMElfPIC) { ++PCRelCount;
++        << " Counts:" << PCRelCount << "/" << NonPCRelCount << "\n");
++
++  if (IsPCRel) { ++PCRelCount;
 +    switch (RelocType) {
 +    default:
 +      // Most relocation types are emitted as explicit symbols
@@ -237,7 +238,7 @@ diff -r b9937dd1d4d1 lib/MC/ELFObjectWriter.cpp
 +      break;
 +    case ELF::R_ARM_ABS32:
 +      // But things get strange with R_ARM_ABS32
-+      // In this case, most things that go in .rodata show up 
++      // In this case, most things that go in .rodata show up
 +      // as section relative relocations
 +      InNormalSection =
 +        StringSwitch<bool>(Section.getSectionName())
@@ -249,7 +250,11 @@ diff -r b9937dd1d4d1 lib/MC/ELFObjectWriter.cpp
 +      EmitThisSym = false;
 +      break;
 +    }
-+   } else {
+   } else {
+-    EmitThisSym = StringSwitch<bool>(Symbol.getName())
+-      .Case("_MergedGlobals", true)
+-      .StartsWith(".L.str", true)
+-      .Default(false);
 +    NonPCRelCount++;
 +    InNormalSection =
 +      StringSwitch<bool>(Section.getSectionName())
@@ -274,30 +279,35 @@ diff -r b9937dd1d4d1 lib/MC/ELFObjectWriter.cpp
    return NULL;
  }
  
-+
- // FIXME: get the real EABI Version from the Triple.
- void ARMELFObjectWriter::WriteEFlags() {
-   // @LOCALMOD-BEGIN
-@@ -1585,6 +1671,18 @@
++// Need to examine the Fixup when determining whether to 
++// emit the relocation as an explicit symbol or as a section relative
++// offset
+ unsigned ARMELFObjectWriter::GetRelocType(const MCValue &Target,
+                                           const MCFixup &Fixup,
+                                           bool IsPCRel,
+@@ -1580,6 +1669,21 @@
    MCSymbolRefExpr::VariantKind Modifier = Target.isAbsolute() ?
      MCSymbolRefExpr::VK_None : Target.getSymA()->getKind();
  
 +  unsigned Type = GetRelocTypeInner(Target, Fixup, IsPCRel);
 +
++  if (RelocNeedsGOT(Modifier))
++    NeedsGOT = true;
++  
 +  return Type;
 +}
 +// @LOCALMOD-END-TO-BE-UPSTREAMED
 +
 +unsigned ARMELFObjectWriter::GetRelocTypeInner(const MCValue &Target,
 +                                               const MCFixup &Fixup,
-+                                               bool IsPCRel) const {
++                                               bool IsPCRel) const  {
 +  MCSymbolRefExpr::VariantKind Modifier = Target.isAbsolute() ?
 +    MCSymbolRefExpr::VK_None : Target.getSymA()->getKind();
 +
    unsigned Type = 0;
    if (IsPCRel) {
      switch ((unsigned)Fixup.getKind()) {
-@@ -1593,7 +1691,7 @@
+@@ -1588,7 +1692,7 @@
        switch (Modifier) {
        default: llvm_unreachable("Unsupported Modifier");
        case MCSymbolRefExpr::VK_None:
@@ -306,7 +316,7 @@ diff -r b9937dd1d4d1 lib/MC/ELFObjectWriter.cpp
          break;
        case MCSymbolRefExpr::VK_ARM_TLSGD:
          assert(0 && "unimplemented");
-@@ -1614,7 +1712,15 @@
+@@ -1609,7 +1713,15 @@
        }
        break;
      case ARM::fixup_arm_condbranch:
@@ -323,3 +333,13 @@ diff -r b9937dd1d4d1 lib/MC/ELFObjectWriter.cpp
        break;
      case ARM::fixup_arm_movt_hi16:
      case ARM::fixup_arm_movt_hi16_pcrel:
+@@ -1684,9 +1796,6 @@
+     }
+   }
+ 
+-  if (RelocNeedsGOT(Modifier))
+-    NeedsGOT = true;
+-
+   return Type;
+ }
+ 

@@ -19,29 +19,14 @@ PNaCl lib/MC/ELFObjectwriter.cpp had a @LOCALMOD to deal with the NaCl specific 
 
  From .hg/patches/llvm-pnacl-0006-226-0337a0cbbcaf3199d3585caa58099601525fad8f.patch.stripped
 
-diff -r b3e566425b6c include/llvm/Support/ELF.h
---- a/include/llvm/Support/ELF.h	Tue Feb 22 17:59:22 2011 -0500
-+++ b/include/llvm/Support/ELF.h	Thu Jun 09 15:47:08 2011 -0700
-@@ -310,6 +310,10 @@
- // ARM Specific e_flags
- enum { EF_ARM_EABIMASK = 0xFF000000U };
- 
-+
-+// ARM Specific e_flags
-+enum { EF_ARM_EABIMASK = 0xFF000000U };
-+
- // ELF Relocation types for ARM
- // Meets 2.08 ABI Specs.
- 
 diff -r b3e566425b6c lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Tue Feb 22 17:59:22 2011 -0500
-+++ b/lib/MC/ELFObjectWriter.cpp	Thu Jun 09 15:47:08 2011 -0700
-@@ -1563,6 +1563,20 @@
-   return NULL;
- }
++++ b/lib/MC/ELFObjectWriter.cpp	Thu Jun 09 16:53:37 2011 -0700
+@@ -1532,7 +1532,16 @@
  
-+// FIXME: get the real EABI Version from the Triple.
-+void ARMELFObjectWriter::WriteEFlags() {
+ // FIXME: get the real EABI Version from the Triple.
+ void ARMELFObjectWriter::WriteEFlags() {
+-  Write32(ELF::EF_ARM_EABIMASK & DefaultEABIVersion);
 +  // @LOCALMOD-BEGIN
 +  unsigned e_flag = ELF::EF_ARM_EABIMASK & DefaultEABIVersion;
 +  switch (TargetObjectWriter->getOSType()) {
@@ -52,8 +37,6 @@ diff -r b3e566425b6c lib/MC/ELFObjectWriter.cpp
 +  }
 +  Write32(e_flag);
 +  // @LOCALMOD-END
-+}
-+
- unsigned ARMELFObjectWriter::GetRelocType(const MCValue &Target,
-                                           const MCFixup &Fixup,
-                                           bool IsPCRel,
+ }
+ 
+ // In ARM, _MergedGlobals and other most symbols get emitted directly.
