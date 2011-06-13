@@ -3,16 +3,16 @@
 # Date 1306870429 25200
 # Branch pnacl-sfi
 # Node ID 5ff14599085746ac871ec2acdaaddb82a716bbd2
-# Parent f3d959a9316417c8ee89036cdbab82bcf94abdad
+# Parent bcb17b4d45bddb4908c36d264d7442a11763aaa1
 Refactor TLS support (issue 7078016)
 
  From llvm-pnacl-0038-262-5ff14599085746ac871ec2acdaaddb82a716bbd2.patch
 
  From .hg/patches/llvm-pnacl-0038-262-5ff14599085746ac871ec2acdaaddb82a716bbd2.patch.stripped
 
-diff -r f3d959a93164 lib/CodeGen/SelectionDAG/TargetLowering.cpp
+diff -r bcb17b4d45bd lib/CodeGen/SelectionDAG/TargetLowering.cpp
 --- a/lib/CodeGen/SelectionDAG/TargetLowering.cpp	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/CodeGen/SelectionDAG/TargetLowering.cpp	Thu Jun 09 16:08:32 2011 -0700
++++ b/lib/CodeGen/SelectionDAG/TargetLowering.cpp	Mon Jun 13 11:07:22 2011 -0700
 @@ -26,12 +26,21 @@
  #include "llvm/CodeGen/MachineFunction.h"
  #include "llvm/CodeGen/SelectionDAG.h"
@@ -44,10 +44,10 @@ diff -r f3d959a93164 lib/CodeGen/SelectionDAG/TargetLowering.cpp
      if (isLocal || isHidden)
        return TLSModel::LocalDynamic;
      else
-diff -r f3d959a93164 lib/Target/X86/X86ISelLowering.cpp
+diff -r bcb17b4d45bd lib/Target/X86/X86ISelLowering.cpp
 --- a/lib/Target/X86/X86ISelLowering.cpp	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Thu Jun 09 16:08:32 2011 -0700
-@@ -6158,7 +6158,7 @@
++++ b/lib/Target/X86/X86ISelLowering.cpp	Mon Jun 13 11:07:22 2011 -0700
+@@ -6399,7 +6399,7 @@
  static SDValue
  GetTLSADDR(SelectionDAG &DAG, SDValue Chain, GlobalAddressSDNode *GA,
             SDValue *InFlag, const EVT PtrVT, unsigned ReturnReg,
@@ -56,7 +56,7 @@ diff -r f3d959a93164 lib/Target/X86/X86ISelLowering.cpp
    MachineFrameInfo *MFI = DAG.getMachineFunction().getFrameInfo();
    SDVTList NodeTys = DAG.getVTList(MVT::Other, MVT::Glue);
    DebugLoc dl = GA->getDebugLoc();
-@@ -6166,12 +6166,16 @@
+@@ -6407,12 +6407,16 @@
                                             GA->getValueType(0),
                                             GA->getOffset(),
                                             OperandFlags);
@@ -75,7 +75,7 @@ diff -r f3d959a93164 lib/Target/X86/X86ISelLowering.cpp
    }
  
    // TLSADDR will be codegen'ed as call. Inform MFI that function has calls.
-@@ -6206,16 +6210,28 @@
+@@ -6447,16 +6451,28 @@
  // @LOCALMOD-START
  // Lower ISD::GlobalTLSAddress using the "general dynamic" model, NaCl 64 bit.
  static SDValue
@@ -112,7 +112,7 @@ diff -r f3d959a93164 lib/Target/X86/X86ISelLowering.cpp
  }
  // @LOCALMOD-END
  
-@@ -6223,38 +6239,16 @@
+@@ -6464,38 +6480,16 @@
  // "local exec" model.
  static SDValue LowerToTLSExecModel(GlobalAddressSDNode *GA, SelectionDAG &DAG,
                                     const EVT PtrVT, TLSModel::Model model,
@@ -159,7 +159,7 @@ diff -r f3d959a93164 lib/Target/X86/X86ISelLowering.cpp
  
    unsigned char OperandFlags = 0;
    // Most TLS accesses are not RIP relative, even on x86-64.  One exception is
-@@ -6305,23 +6299,21 @@
+@@ -6546,23 +6540,21 @@
      TLSModel::Model model
        = getTLSModel(GV, getTargetMachine().getRelocationModel());
  
@@ -189,7 +189,7 @@ diff -r f3d959a93164 lib/Target/X86/X86ISelLowering.cpp
      }
    } else if (Subtarget->isTargetDarwin()) {
      // Darwin only has one model of TLS.  Lower to that.
-@@ -9103,8 +9095,9 @@
+@@ -9344,8 +9336,9 @@
    case X86ISD::FRSQRT:             return "X86ISD::FRSQRT";
    case X86ISD::FRCP:               return "X86ISD::FRCP";
    case X86ISD::TLSADDR:            return "X86ISD::TLSADDR";
@@ -200,9 +200,9 @@ diff -r f3d959a93164 lib/Target/X86/X86ISelLowering.cpp
    case X86ISD::EH_RETURN:          return "X86ISD::EH_RETURN";
    case X86ISD::TC_RETURN:          return "X86ISD::TC_RETURN";
    case X86ISD::FNSTCW16m:          return "X86ISD::FNSTCW16m";
-diff -r f3d959a93164 lib/Target/X86/X86ISelLowering.h
+diff -r bcb17b4d45bd lib/Target/X86/X86ISelLowering.h
 --- a/lib/Target/X86/X86ISelLowering.h	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.h	Thu Jun 09 16:08:32 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.h	Mon Jun 13 11:07:22 2011 -0700
 @@ -181,15 +181,18 @@
        // TLSADDR - Thread Local Storage.
        TLSADDR,
@@ -227,9 +227,9 @@ diff -r f3d959a93164 lib/Target/X86/X86ISelLowering.h
        // EH_RETURN - Exception Handling helpers.
        EH_RETURN,
  
-diff -r f3d959a93164 lib/Target/X86/X86InstrInfo.td
+diff -r bcb17b4d45bd lib/Target/X86/X86InstrInfo.td
 --- a/lib/Target/X86/X86InstrInfo.td	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86InstrInfo.td	Thu Jun 09 16:08:32 2011 -0700
++++ b/lib/Target/X86/X86InstrInfo.td	Mon Jun 13 11:07:22 2011 -0700
 @@ -191,6 +191,14 @@
  def X86tlsaddr : SDNode<"X86ISD::TLSADDR", SDT_X86TLSADDR,
                          [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]>;
@@ -245,9 +245,9 @@ diff -r f3d959a93164 lib/Target/X86/X86InstrInfo.td
  def X86ehret : SDNode<"X86ISD::EH_RETURN", SDT_X86EHRET,
                          [SDNPHasChain]>;
  
-diff -r f3d959a93164 lib/Target/X86/X86InstrNaCl.td
+diff -r bcb17b4d45bd lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Thu Jun 09 16:08:32 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Mon Jun 13 11:07:22 2011 -0700
 @@ -17,11 +17,6 @@
  // NaCl specific DAG Nodes.
  //
@@ -324,9 +324,9 @@ diff -r f3d959a93164 lib/Target/X86/X86InstrNaCl.td
  
  let usesCustomInserter = 1, Defs = [EFLAGS] in
  def NACL_CG_VAARG_64 : I<0, Pseudo,
-diff -r f3d959a93164 lib/Target/X86/X86NaClRewritePass.cpp
+diff -r bcb17b4d45bd lib/Target/X86/X86NaClRewritePass.cpp
 --- a/lib/Target/X86/X86NaClRewritePass.cpp	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Thu Jun 09 16:08:32 2011 -0700
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Mon Jun 13 11:07:22 2011 -0700
 @@ -556,17 +556,6 @@
      return true;
    }

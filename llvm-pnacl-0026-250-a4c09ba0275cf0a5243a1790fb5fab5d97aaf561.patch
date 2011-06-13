@@ -3,7 +3,7 @@
 # Date 1303766025 25200
 # Branch pnacl-sfi
 # Node ID a4c09ba0275cf0a5243a1790fb5fab5d97aaf561
-# Parent 38d1b90530b8ccfdf78e6ec401f8b1812ee39f37
+# Parent 36eab348908ac3c07a9f52e391cad2f8cbbe47f4
 Use __nacl_read_tp instead of non-standard version of __tls_get_addr.
 
 http://codereview.chromium.org/6882124/
@@ -12,10 +12,10 @@ http://codereview.chromium.org/6882124/
 
  From .hg/patches/llvm-pnacl-0026-250-a4c09ba0275cf0a5243a1790fb5fab5d97aaf561.patch.stripped
 
-diff -r 38d1b90530b8 lib/Target/X86/X86ISelLowering.cpp
+diff -r 36eab348908a lib/Target/X86/X86ISelLowering.cpp
 --- a/lib/Target/X86/X86ISelLowering.cpp	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Thu Jun 09 16:08:22 2011 -0700
-@@ -6204,11 +6204,18 @@
++++ b/lib/Target/X86/X86ISelLowering.cpp	Mon Jun 13 11:07:12 2011 -0700
+@@ -6445,11 +6445,18 @@
  }
  
  // @LOCALMOD-START
@@ -37,7 +37,7 @@ diff -r 38d1b90530b8 lib/Target/X86/X86ISelLowering.cpp
  }
  // @LOCALMOD-END
  
-@@ -6216,16 +6223,38 @@
+@@ -6457,16 +6464,38 @@
  // "local exec" model.
  static SDValue LowerToTLSExecModel(GlobalAddressSDNode *GA, SelectionDAG &DAG,
                                     const EVT PtrVT, TLSModel::Model model,
@@ -84,7 +84,7 @@ diff -r 38d1b90530b8 lib/Target/X86/X86ISelLowering.cpp
  
    unsigned char OperandFlags = 0;
    // Most TLS accesses are not RIP relative, even on x86-64.  One exception is
-@@ -6276,14 +6305,14 @@
+@@ -6517,14 +6546,14 @@
      TLSModel::Model model
        = getTLSModel(GV, getTargetMachine().getRelocationModel());
  
@@ -104,7 +104,7 @@ diff -r 38d1b90530b8 lib/Target/X86/X86ISelLowering.cpp
          if (Subtarget->is64Bit())
            return LowerToTLSGeneralDynamicModel64(GA, DAG, getPointerTy());
          return LowerToTLSGeneralDynamicModel32(GA, DAG, getPointerTy());
-@@ -6291,7 +6320,8 @@
+@@ -6532,7 +6561,8 @@
        case TLSModel::InitialExec:
        case TLSModel::LocalExec:
          return LowerToTLSExecModel(GA, DAG, getPointerTy(), model,
@@ -114,7 +114,7 @@ diff -r 38d1b90530b8 lib/Target/X86/X86ISelLowering.cpp
      }
    } else if (Subtarget->isTargetDarwin()) {
      // Darwin only has one model of TLS.  Lower to that.
-@@ -9070,6 +9100,7 @@
+@@ -9311,6 +9341,7 @@
    case X86ISD::FRCP:               return "X86ISD::FRCP";
    case X86ISD::TLSADDR:            return "X86ISD::TLSADDR";
    case X86ISD::TLSCALL:            return "X86ISD::TLSCALL";
@@ -122,9 +122,9 @@ diff -r 38d1b90530b8 lib/Target/X86/X86ISelLowering.cpp
    case X86ISD::EH_RETURN:          return "X86ISD::EH_RETURN";
    case X86ISD::TC_RETURN:          return "X86ISD::TC_RETURN";
    case X86ISD::FNSTCW16m:          return "X86ISD::FNSTCW16m";
-diff -r 38d1b90530b8 lib/Target/X86/X86ISelLowering.h
+diff -r 36eab348908a lib/Target/X86/X86ISelLowering.h
 --- a/lib/Target/X86/X86ISelLowering.h	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.h	Thu Jun 09 16:08:22 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.h	Mon Jun 13 11:07:12 2011 -0700
 @@ -185,6 +185,11 @@
        // thunk at the address from an earlier relocation.
        TLSCALL,
@@ -137,9 +137,9 @@ diff -r 38d1b90530b8 lib/Target/X86/X86ISelLowering.h
        // EH_RETURN - Exception Handling helpers.
        EH_RETURN,
  
-diff -r 38d1b90530b8 lib/Target/X86/X86InstrNaCl.td
+diff -r 36eab348908a lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Thu Jun 09 16:08:22 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Mon Jun 13 11:07:12 2011 -0700
 @@ -14,6 +14,15 @@
  
  
@@ -211,9 +211,9 @@ diff -r 38d1b90530b8 lib/Target/X86/X86InstrNaCl.td
                           [(X86tlsaddr tls32addr:$sym)]>,
                           Requires<[IsNaCl64]>;
  
-diff -r 38d1b90530b8 lib/Target/X86/X86NaClRewritePass.cpp
+diff -r 36eab348908a lib/Target/X86/X86NaClRewritePass.cpp
 --- a/lib/Target/X86/X86NaClRewritePass.cpp	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Thu Jun 09 16:08:22 2011 -0700
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Mon Jun 13 11:07:12 2011 -0700
 @@ -556,6 +556,17 @@
      return true;
    }

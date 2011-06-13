@@ -3,16 +3,16 @@
 # Date 1303945638 25200
 # Branch pnacl-sfi
 # Node ID 9ab92e74a444cb4b575f475486766c8879af1f5b
-# Parent f4f7d9d9887ac0514fb8b677ea56ae63bd1b668b
+# Parent cf3a3166f92ca54b72b7c8aac2e5a0ae77b7de93
 Preserve intrinsic symbols and ignore unused declarations
 
  From llvm-pnacl-0027-251-9ab92e74a444cb4b575f475486766c8879af1f5b.patch
 
  From .hg/patches/llvm-pnacl-0027-251-9ab92e74a444cb4b575f475486766c8879af1f5b.patch.stripped
 
-diff -r f4f7d9d9887a tools/gold/gold-plugin.cpp
+diff -r cf3a3166f92c tools/gold/gold-plugin.cpp
 --- a/tools/gold/gold-plugin.cpp	Mon Apr 25 14:13:45 2011 -0700
-+++ b/tools/gold/gold-plugin.cpp	Thu Jun 09 16:08:23 2011 -0700
++++ b/tools/gold/gold-plugin.cpp	Mon Jun 13 11:07:13 2011 -0700
 @@ -62,7 +62,6 @@
    };
  
@@ -21,7 +21,7 @@ diff -r f4f7d9d9887a tools/gold/gold-plugin.cpp
    std::string output_name = "";
    std::list<claimed_file> Modules;
    std::vector<sys::Path> Cleanup;
-@@ -92,14 +91,7 @@
+@@ -93,14 +92,7 @@
        return;
      llvm::StringRef opt = opt_;
  
@@ -37,7 +37,7 @@ diff -r f4f7d9d9887a tools/gold/gold-plugin.cpp
        generate_api_file = true;
      } else if (opt.startswith("mcpu=")) {
        mcpu = opt.substr(strlen("mcpu="));
-@@ -167,10 +159,6 @@
+@@ -170,10 +162,6 @@
          output_name = tv->tv_u.tv_string;
          break;
        case LDPT_LINKER_OUTPUT:
@@ -48,7 +48,7 @@ diff -r f4f7d9d9887a tools/gold/gold-plugin.cpp
          switch (tv->tv_u.tv_val) {
            case LDPO_REL:  // .o
            case LDPO_DYN:  // .so
-@@ -412,6 +400,39 @@
+@@ -431,6 +419,39 @@
      }
    }
  
@@ -88,10 +88,10 @@ diff -r f4f7d9d9887a tools/gold/gold-plugin.cpp
    if (options::generate_api_file)
      api_file.close();
  
-diff -r f4f7d9d9887a tools/lto/LTOModule.cpp
+diff -r cf3a3166f92c tools/lto/LTOModule.cpp
 --- a/tools/lto/LTOModule.cpp	Mon Apr 25 14:13:45 2011 -0700
-+++ b/tools/lto/LTOModule.cpp	Thu Jun 09 16:08:23 2011 -0700
-@@ -380,6 +380,14 @@
++++ b/tools/lto/LTOModule.cpp	Mon Jun 13 11:07:13 2011 -0700
+@@ -393,6 +393,14 @@
    if (decl->getName().startswith("llvm."))
      return;
  
