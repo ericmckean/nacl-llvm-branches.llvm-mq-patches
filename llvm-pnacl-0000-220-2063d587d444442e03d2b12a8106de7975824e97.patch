@@ -6696,7 +6696,7 @@ diff -r ec2629925600 lib/Target/X86/X86InstrControl.td
                            "ljmp{l}\t{$seg, $off|$off, $seg}", []>;
    def FARJMP64   : RI<0xFF, MRM5m, (outs), (ins opaque80mem:$dst),
 -                      "ljmp{q}\t{*}$dst", []>;
-+                      "ljmp{q}\t{*}$dst" []>, Requires<[NotNaCl]>;
++                      "ljmp{q}\t{*}$dst", []>, Requires<[NotNaCl]>;
  
    def FARJMP16m  : I<0xFF, MRM5m, (outs), (ins opaque32mem:$dst),
                       "ljmp{w}\t{*}$dst", []>, OpSize;
