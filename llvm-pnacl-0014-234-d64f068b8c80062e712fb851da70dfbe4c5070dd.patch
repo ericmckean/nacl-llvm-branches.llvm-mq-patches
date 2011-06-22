@@ -28,15 +28,6 @@ diff -r 18115ee93621 lib/Target/SubtargetFeature.cpp
 diff -r 18115ee93621 lib/Target/X86/X86InstrControl.td
 --- a/lib/Target/X86/X86InstrControl.td	Mon Mar 07 11:48:02 2011 -0800
 +++ b/lib/Target/X86/X86InstrControl.td	Thu Jun 09 18:39:24 2011 -0700
-@@ -115,7 +115,7 @@
-                           (ins i32imm:$off, i16imm:$seg),
-                           "ljmp{l}\t{$seg, $off|$off, $seg}", []>;
-   def FARJMP64   : RI<0xFF, MRM5m, (outs), (ins opaque80mem:$dst),
--                      "ljmp{q}\t{*}$dst", Requires<[NotNaCl]>;
-+                      "ljmp{q}\t{*}$dst", []>, Requires<[NotNaCl]>;
- 
-   def FARJMP16m  : I<0xFF, MRM5m, (outs), (ins opaque32mem:$dst),
-                      "ljmp{w}\t{*}$dst", []>, OpSize;
 @@ -148,11 +148,11 @@
                             "call{l}\t$dst", []>,
                        Requires<[In32BitMode, NotNaCl]>;
