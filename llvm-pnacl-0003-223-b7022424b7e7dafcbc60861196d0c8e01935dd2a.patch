@@ -12,7 +12,7 @@ Add bc_wrap command.
 
 diff -r 6856cbf0d599 include/llvm/Support/support_macros.h
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/include/llvm/Support/support_macros.h	Thu Jun 23 16:53:01 2011 -0700
++++ b/include/llvm/Support/support_macros.h	Fri Jun 24 14:05:40 2011 -0700
 @@ -0,0 +1,25 @@
 +// Define support macros for defining classes, etc.
 +
@@ -41,7 +41,7 @@ diff -r 6856cbf0d599 include/llvm/Support/support_macros.h
 +#endif  // LLVM_SUPPORT_SUPPORT_MACROS_H__
 diff -r 6856cbf0d599 include/llvm/Wrap/bitcode_wrapperer.h
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/include/llvm/Wrap/bitcode_wrapperer.h	Thu Jun 23 16:53:01 2011 -0700
++++ b/include/llvm/Wrap/bitcode_wrapperer.h	Fri Jun 24 14:05:40 2011 -0700
 @@ -0,0 +1,170 @@
 +// Define utility class to wrap/unwrap bitcode files. Does wrapping/unwrapping
 +// in such a way that the wrappered bitcode file is still a bitcode file.
@@ -215,7 +215,7 @@ diff -r 6856cbf0d599 include/llvm/Wrap/bitcode_wrapperer.h
 +#endif  // LLVM_WRAP_BITCODE_WRAPPERER_H__
 diff -r 6856cbf0d599 include/llvm/Wrap/file_wrapper_input.h
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/include/llvm/Wrap/file_wrapper_input.h	Thu Jun 23 16:53:01 2011 -0700
++++ b/include/llvm/Wrap/file_wrapper_input.h	Fri Jun 24 14:05:40 2011 -0700
 @@ -0,0 +1,42 @@
 +// Defines utility allowing files for bitcode input wrapping.
 +
@@ -261,7 +261,7 @@ diff -r 6856cbf0d599 include/llvm/Wrap/file_wrapper_input.h
 +#endif // FILE_WRAPPER_INPUT_H__
 diff -r 6856cbf0d599 include/llvm/Wrap/file_wrapper_output.h
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/include/llvm/Wrap/file_wrapper_output.h	Thu Jun 23 16:53:01 2011 -0700
++++ b/include/llvm/Wrap/file_wrapper_output.h	Fri Jun 24 14:05:40 2011 -0700
 @@ -0,0 +1,29 @@
 +// Defines utility allowing files for bitcode output wrapping.
 +
@@ -294,7 +294,7 @@ diff -r 6856cbf0d599 include/llvm/Wrap/file_wrapper_output.h
 +#endif  // FILE_WRAPPER_OUTPUT_H__
 diff -r 6856cbf0d599 include/llvm/Wrap/wrapper_input.h
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/include/llvm/Wrap/wrapper_input.h	Thu Jun 23 16:53:01 2011 -0700
++++ b/include/llvm/Wrap/wrapper_input.h	Fri Jun 24 14:05:40 2011 -0700
 @@ -0,0 +1,33 @@
 +// Define a generic interface to a file/memory region that contains
 +// a bitcode file, a wrapped bitcode file, or a data file to wrap.
@@ -331,7 +331,7 @@ diff -r 6856cbf0d599 include/llvm/Wrap/wrapper_input.h
 +#endif  // LLVM_WRAP_WRAPPER_INPUT_H__
 diff -r 6856cbf0d599 include/llvm/Wrap/wrapper_output.h
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/include/llvm/Wrap/wrapper_output.h	Thu Jun 23 16:53:01 2011 -0700
++++ b/include/llvm/Wrap/wrapper_output.h	Fri Jun 24 14:05:40 2011 -0700
 @@ -0,0 +1,29 @@
 +// Defines a generic interface to a file/memory region that
 +// contains a generated wrapped bitcode file, bitcode file,
@@ -364,7 +364,7 @@ diff -r 6856cbf0d599 include/llvm/Wrap/wrapper_output.h
 +#endif  // LLVM_WRAP_WRAPPER_OUTPUT_H__
 diff -r 6856cbf0d599 lib/Makefile
 --- a/lib/Makefile	Fri Feb 11 11:30:31 2011 -0800
-+++ b/lib/Makefile	Thu Jun 23 16:53:01 2011 -0700
++++ b/lib/Makefile	Fri Jun 24 14:05:40 2011 -0700
 @@ -11,7 +11,7 @@
  include $(LEVEL)/Makefile.config
  
@@ -376,7 +376,7 @@ diff -r 6856cbf0d599 lib/Makefile
    PARALLEL_DIRS := $(filter-out Archive ExecutionEngine Linker CompilerDriver, \
 diff -r 6856cbf0d599 lib/Wrap/Makefile
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Wrap/Makefile	Thu Jun 23 16:53:01 2011 -0700
++++ b/lib/Wrap/Makefile	Fri Jun 24 14:05:40 2011 -0700
 @@ -0,0 +1,14 @@
 +##===- lib/Linker/Makefile ---------------------------------*- Makefile -*-===##
 +#
@@ -394,7 +394,7 @@ diff -r 6856cbf0d599 lib/Wrap/Makefile
 +include $(LEVEL)/Makefile.common
 diff -r 6856cbf0d599 lib/Wrap/bitcode_wrapperer.cpp
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Wrap/bitcode_wrapperer.cpp	Thu Jun 23 16:53:01 2011 -0700
++++ b/lib/Wrap/bitcode_wrapperer.cpp	Fri Jun 24 14:05:40 2011 -0700
 @@ -0,0 +1,278 @@
 +#include "llvm/Wrap/bitcode_wrapperer.h"
 +
@@ -676,7 +676,7 @@ diff -r 6856cbf0d599 lib/Wrap/bitcode_wrapperer.cpp
 +}
 diff -r 6856cbf0d599 lib/Wrap/file_wrapper_input.cpp
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Wrap/file_wrapper_input.cpp	Thu Jun 23 16:53:01 2011 -0700
++++ b/lib/Wrap/file_wrapper_input.cpp	Fri Jun 24 14:05:40 2011 -0700
 @@ -0,0 +1,48 @@
 +#include <sys/stat.h>
 +#include <stdlib.h>
@@ -728,7 +728,7 @@ diff -r 6856cbf0d599 lib/Wrap/file_wrapper_input.cpp
 +}
 diff -r 6856cbf0d599 lib/Wrap/file_wrapper_output.cpp
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Wrap/file_wrapper_output.cpp	Thu Jun 23 16:53:01 2011 -0700
++++ b/lib/Wrap/file_wrapper_output.cpp	Fri Jun 24 14:05:40 2011 -0700
 @@ -0,0 +1,28 @@
 +#include <stdlib.h>
 +
@@ -760,7 +760,7 @@ diff -r 6856cbf0d599 lib/Wrap/file_wrapper_output.cpp
 +}
 diff -r 6856cbf0d599 lib/Wrap/wrapper_output.cpp
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Wrap/wrapper_output.cpp	Thu Jun 23 16:53:01 2011 -0700
++++ b/lib/Wrap/wrapper_output.cpp	Fri Jun 24 14:05:40 2011 -0700
 @@ -0,0 +1,9 @@
 +#include "llvm/Wrap/wrapper_output.h"
 +
@@ -773,19 +773,19 @@ diff -r 6856cbf0d599 lib/Wrap/wrapper_output.cpp
 +}
 diff -r 6856cbf0d599 tools/Makefile
 --- a/tools/Makefile	Fri Feb 11 11:30:31 2011 -0800
-+++ b/tools/Makefile	Thu Jun 23 16:53:01 2011 -0700
++++ b/tools/Makefile	Fri Jun 24 14:05:40 2011 -0700
 @@ -28,7 +28,7 @@
                   llvm-prof llvm-link \
                   lli llvm-extract llvm-mc \
                   bugpoint llvm-bcanalyzer llvm-stub \
 -                 llvmc llvm-diff macho-dump llvm-objdump \
-+                 llvmc llvm-diff macho-dump llvm-objdump bc-wrap
++                 llvmc llvm-diff macho-dump llvm-objdump bc-wrap \
  	         llvm-rtdyld
  
  # Let users override the set of tools to build from the command line.
 diff -r 6856cbf0d599 tools/bc-wrap/Makefile
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/tools/bc-wrap/Makefile	Thu Jun 23 16:53:01 2011 -0700
++++ b/tools/bc-wrap/Makefile	Fri Jun 24 14:05:40 2011 -0700
 @@ -0,0 +1,20 @@
 +#===- tools/bc-wrap/Makefile -----------------------------------*- Makefile -*-===##
 +# 
@@ -809,7 +809,7 @@ diff -r 6856cbf0d599 tools/bc-wrap/Makefile
 +include $(LLVM_SRC_ROOT)/Makefile.rules
 diff -r 6856cbf0d599 tools/bc-wrap/bc_wrap.cpp
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/tools/bc-wrap/bc_wrap.cpp	Thu Jun 23 16:53:01 2011 -0700
++++ b/tools/bc-wrap/bc_wrap.cpp	Fri Jun 24 14:05:40 2011 -0700
 @@ -0,0 +1,60 @@
 +/************************
 + * Utility to wrap a .bc file.
