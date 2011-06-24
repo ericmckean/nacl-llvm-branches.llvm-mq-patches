@@ -3,7 +3,7 @@
 # Date 1305582742 14400
 # Branch pnacl-sfi
 # Node ID 7726f48f8a4d33ec0dbe24680242833f4a415d0e
-# Parent e6abf38250ead7b6c592a68ae54f004050e0fd22
+# Parent 308bd77fbc45e5a0f5f512881efaed21cae71129
 Prune the functionality of nacl_file.cc to what is actually needed by the llc tool.
 Also, cleanup some debug code accidentally left behind by a previous commit.
 
@@ -18,9 +18,9 @@ tools/llvm/utman.sh install-translators srpc
 
  From .hg/patches/llvm-pnacl-0033-257-7726f48f8a4d33ec0dbe24680242833f4a415d0e.patch.stripped
 
-diff -r e6abf38250ea tools/llc/Makefile
+diff -r 308bd77fbc45 tools/llc/Makefile
 --- a/tools/llc/Makefile	Fri May 13 15:44:03 2011 -0400
-+++ b/tools/llc/Makefile	Wed Jun 22 13:15:59 2011 -0700
++++ b/tools/llc/Makefile	Fri Jun 24 14:23:49 2011 -0700
 @@ -17,9 +17,5 @@
  
  LINK_COMPONENTS := $(TARGETS_TO_BUILD) bitreader asmparser
@@ -31,9 +31,9 @@ diff -r e6abf38250ea tools/llc/Makefile
 -
  include $(LLVM_SRC_ROOT)/Makefile.rules
  
-diff -r e6abf38250ea tools/llc/llc.cpp
+diff -r 308bd77fbc45 tools/llc/llc.cpp
 --- a/tools/llc/llc.cpp	Fri May 13 15:44:03 2011 -0400
-+++ b/tools/llc/llc.cpp	Wed Jun 22 13:15:59 2011 -0700
++++ b/tools/llc/llc.cpp	Fri Jun 24 14:23:49 2011 -0700
 @@ -40,17 +40,24 @@
  #include "llvm/Target/TargetSelect.h"
  #include <memory>
@@ -161,9 +161,9 @@ diff -r e6abf38250ea tools/llc/llc.cpp
  
    return 0;
  }
-diff -r e6abf38250ea tools/llc/nacl_file.cpp
+diff -r 308bd77fbc45 tools/llc/nacl_file.cpp
 --- a/tools/llc/nacl_file.cpp	Fri May 13 15:44:03 2011 -0400
-+++ b/tools/llc/nacl_file.cpp	Wed Jun 22 13:15:59 2011 -0700
++++ b/tools/llc/nacl_file.cpp	Fri Jun 24 14:23:49 2011 -0700
 @@ -17,603 +17,152 @@
  
  #if defined(__native_client__) && defined(NACL_SRPC)

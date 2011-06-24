@@ -3,7 +3,7 @@
 # Date 1303412567 25200
 # Branch pnacl-sfi
 # Node ID 6960fea5debd1c1c8aac5f0af79c5551d677b091
-# Parent b3d7c05382bc01f4db78300b148055c0edf67371
+# Parent 6d5a0653d5ff9faf5671e5d121db17adf401e158
 Address the last bit of relocation flag related divergence betweeen
 LLVM and binutils.
 
@@ -38,9 +38,9 @@ TEST=utman.sh test-arm-pic
 
  From .hg/patches/llvm-pnacl-0024-248-6960fea5debd1c1c8aac5f0af79c5551d677b091.patch.stripped
 
-diff -r b3d7c05382bc lib/MC/ELFObjectWriter.cpp
+diff -r 6d5a0653d5ff lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Fri Apr 15 18:11:24 2011 -0400
-+++ b/lib/MC/ELFObjectWriter.cpp	Wed Jun 22 13:33:35 2011 -0700
++++ b/lib/MC/ELFObjectWriter.cpp	Fri Jun 24 14:23:42 2011 -0700
 @@ -25,6 +25,8 @@
  #include "llvm/Support/ELF.h"
  #include "llvm/Target/TargetAsmBackend.h"
@@ -130,7 +130,7 @@ diff -r b3d7c05382bc lib/MC/ELFObjectWriter.cpp
      if (const MCSymbolRefExpr *RefB = Target.getSymB()) {
        const MCSymbol &SymbolB = RefB->getSymbol();
        MCSymbolData &SDB = Asm.getSymbolData(SymbolB);
-@@ -1159,32 +1176,93 @@
+@@ -1262,32 +1279,93 @@
  
  // In ARM, _MergedGlobals and other most symbols get emitted directly.
  // I.e. not as an offset to a section symbol.
@@ -235,7 +235,7 @@ diff -r b3d7c05382bc lib/MC/ELFObjectWriter.cpp
  unsigned ARMELFObjectWriter::GetRelocType(const MCValue &Target,
                                            const MCFixup &Fixup,
                                            bool IsPCRel,
-@@ -1193,6 +1271,21 @@
+@@ -1296,6 +1374,21 @@
    MCSymbolRefExpr::VariantKind Modifier = Target.isAbsolute() ?
      MCSymbolRefExpr::VK_None : Target.getSymA()->getKind();
  
@@ -257,7 +257,7 @@ diff -r b3d7c05382bc lib/MC/ELFObjectWriter.cpp
    unsigned Type = 0;
    if (IsPCRel) {
      switch ((unsigned)Fixup.getKind()) {
-@@ -1201,7 +1294,7 @@
+@@ -1304,7 +1397,7 @@
        switch (Modifier) {
        default: llvm_unreachable("Unsupported Modifier");
        case MCSymbolRefExpr::VK_None:
@@ -266,7 +266,7 @@ diff -r b3d7c05382bc lib/MC/ELFObjectWriter.cpp
          break;
        case MCSymbolRefExpr::VK_ARM_TLSGD:
          assert(0 && "unimplemented");
-@@ -1222,7 +1315,15 @@
+@@ -1325,7 +1418,15 @@
        }
        break;
      case ARM::fixup_arm_condbranch:
@@ -283,7 +283,7 @@ diff -r b3d7c05382bc lib/MC/ELFObjectWriter.cpp
        break;
      case ARM::fixup_arm_movt_hi16:
      case ARM::fixup_arm_movt_hi16_pcrel:
-@@ -1297,9 +1398,6 @@
+@@ -1400,9 +1501,6 @@
      }
    }
  
@@ -293,10 +293,10 @@ diff -r b3d7c05382bc lib/MC/ELFObjectWriter.cpp
    return Type;
  }
  
-diff -r b3d7c05382bc lib/MC/ELFObjectWriter.h
+diff -r 6d5a0653d5ff lib/MC/ELFObjectWriter.h
 --- a/lib/MC/ELFObjectWriter.h	Fri Apr 15 18:11:24 2011 -0400
-+++ b/lib/MC/ELFObjectWriter.h	Wed Jun 22 13:33:35 2011 -0700
-@@ -137,16 +137,21 @@
++++ b/lib/MC/ELFObjectWriter.h	Fri Jun 24 14:23:42 2011 -0700
+@@ -139,16 +139,21 @@
  
      unsigned ShstrtabIndex;
  
@@ -321,7 +321,7 @@ diff -r b3d7c05382bc lib/MC/ELFObjectWriter.h
        return NULL;
      }
  
-@@ -154,7 +159,7 @@
+@@ -156,7 +161,7 @@
      bool hasRelocationAddend() const {
        return TargetObjectWriter->hasRelocationAddend();
      }
@@ -330,7 +330,7 @@ diff -r b3d7c05382bc lib/MC/ELFObjectWriter.h
    public:
      ELFObjectWriter(MCELFObjectTargetWriter *MOTW,
                      raw_ostream &_OS, bool IsLittleEndian)
-@@ -373,14 +378,21 @@
+@@ -388,14 +393,21 @@
  
      virtual void WriteEFlags();
    protected:
