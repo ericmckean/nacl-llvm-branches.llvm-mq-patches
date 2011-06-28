@@ -3,7 +3,7 @@
 # Date 1298504194 28800
 # Branch pnacl-sfi
 # Node ID 2c354d09798c4c01137f160a5054d94a4e0d614a
-# Parent bc03bcac920fc6f2304973468493a94a28588976
+# Parent 635dea2030af796e8a00c0f90a0fb912acbadc90
 Cherrypick arm-mc-elf-r125025-lowercase.patch for .ARM.attributes. Stupid lowercase vs upppercase nonsense.
 
  From llvm-pnacl-0011-231-2c354d09798c4c01137f160a5054d94a4e0d614a.patch

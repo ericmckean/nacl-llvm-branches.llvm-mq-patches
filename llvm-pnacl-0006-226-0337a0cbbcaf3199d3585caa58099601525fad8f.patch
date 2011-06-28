@@ -3,7 +3,7 @@
 # Date 1298504194 28800
 # Branch pnacl-sfi
 # Node ID 0337a0cbbcaf3199d3585caa58099601525fad8f
-# Parent 4e54b4800e618995990400c826734a5c4b54b6c6
+# Parent f7d57db80adb96764d4363a7d8b97a21f3d514b3
 Just what it says - for ARM/MC/ELF
 http://llvm.org/viewvc/llvm-project?view=rev&revision=124899
 
@@ -19,9 +19,9 @@ PNaCl lib/MC/ELFObjectwriter.cpp had a @LOCALMOD to deal with the NaCl specific 
 
  From .hg/patches/llvm-pnacl-0006-226-0337a0cbbcaf3199d3585caa58099601525fad8f.patch.stripped
 
-diff -r 4e54b4800e61 lib/MC/ELFObjectWriter.cpp
+diff -r f7d57db80adb lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Tue Feb 22 17:59:22 2011 -0500
-+++ b/lib/MC/ELFObjectWriter.cpp	Fri Jun 24 14:06:51 2011 -0700
++++ b/lib/MC/ELFObjectWriter.cpp	Tue Jun 28 10:55:54 2011 -0700
 @@ -1248,7 +1248,16 @@
  
  // FIXME: get the real EABI Version from the Triple.

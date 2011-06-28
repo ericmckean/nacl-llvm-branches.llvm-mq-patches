@@ -3,16 +3,16 @@
 # Date 1306870429 25200
 # Branch pnacl-sfi
 # Node ID 5ff14599085746ac871ec2acdaaddb82a716bbd2
-# Parent 5b3491892ccd0d402b31809b8d16bafdea653473
+# Parent 1d5519d5961778fe9dc05cc458f3af9bc94cedc1
 Refactor TLS support (issue 7078016)
 
  From llvm-pnacl-0038-262-5ff14599085746ac871ec2acdaaddb82a716bbd2.patch
 
  From .hg/patches/llvm-pnacl-0038-262-5ff14599085746ac871ec2acdaaddb82a716bbd2.patch.stripped
 
-diff -r 5b3491892ccd lib/CodeGen/SelectionDAG/TargetLowering.cpp
+diff -r 1d5519d59617 lib/CodeGen/SelectionDAG/TargetLowering.cpp
 --- a/lib/CodeGen/SelectionDAG/TargetLowering.cpp	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/CodeGen/SelectionDAG/TargetLowering.cpp	Fri Jun 24 14:23:53 2011 -0700
++++ b/lib/CodeGen/SelectionDAG/TargetLowering.cpp	Tue Jun 28 10:56:14 2011 -0700
 @@ -26,12 +26,21 @@
  #include "llvm/CodeGen/MachineFunction.h"
  #include "llvm/CodeGen/SelectionDAG.h"
@@ -44,9 +44,9 @@ diff -r 5b3491892ccd lib/CodeGen/SelectionDAG/TargetLowering.cpp
      if (isLocal || isHidden)
        return TLSModel::LocalDynamic;
      else
-diff -r 5b3491892ccd lib/Target/X86/X86ISelLowering.cpp
+diff -r 1d5519d59617 lib/Target/X86/X86ISelLowering.cpp
 --- a/lib/Target/X86/X86ISelLowering.cpp	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Fri Jun 24 14:23:53 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.cpp	Tue Jun 28 10:56:14 2011 -0700
 @@ -6468,7 +6468,7 @@
  static SDValue
  GetTLSADDR(SelectionDAG &DAG, SDValue Chain, GlobalAddressSDNode *GA,
@@ -189,7 +189,7 @@ diff -r 5b3491892ccd lib/Target/X86/X86ISelLowering.cpp
      }
    } else if (Subtarget->isTargetDarwin()) {
      // Darwin only has one model of TLS.  Lower to that.
-@@ -9413,8 +9405,9 @@
+@@ -9415,8 +9407,9 @@
    case X86ISD::FRSQRT:             return "X86ISD::FRSQRT";
    case X86ISD::FRCP:               return "X86ISD::FRCP";
    case X86ISD::TLSADDR:            return "X86ISD::TLSADDR";
@@ -200,9 +200,9 @@ diff -r 5b3491892ccd lib/Target/X86/X86ISelLowering.cpp
    case X86ISD::EH_RETURN:          return "X86ISD::EH_RETURN";
    case X86ISD::TC_RETURN:          return "X86ISD::TC_RETURN";
    case X86ISD::FNSTCW16m:          return "X86ISD::FNSTCW16m";
-diff -r 5b3491892ccd lib/Target/X86/X86ISelLowering.h
+diff -r 1d5519d59617 lib/Target/X86/X86ISelLowering.h
 --- a/lib/Target/X86/X86ISelLowering.h	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.h	Fri Jun 24 14:23:53 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.h	Tue Jun 28 10:56:14 2011 -0700
 @@ -181,15 +181,18 @@
        // TLSADDR - Thread Local Storage.
        TLSADDR,
@@ -227,9 +227,9 @@ diff -r 5b3491892ccd lib/Target/X86/X86ISelLowering.h
        // EH_RETURN - Exception Handling helpers.
        EH_RETURN,
  
-diff -r 5b3491892ccd lib/Target/X86/X86InstrInfo.td
+diff -r 1d5519d59617 lib/Target/X86/X86InstrInfo.td
 --- a/lib/Target/X86/X86InstrInfo.td	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86InstrInfo.td	Fri Jun 24 14:23:53 2011 -0700
++++ b/lib/Target/X86/X86InstrInfo.td	Tue Jun 28 10:56:14 2011 -0700
 @@ -191,6 +191,14 @@
  def X86tlsaddr : SDNode<"X86ISD::TLSADDR", SDT_X86TLSADDR,
                          [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]>;
@@ -245,9 +245,9 @@ diff -r 5b3491892ccd lib/Target/X86/X86InstrInfo.td
  def X86ehret : SDNode<"X86ISD::EH_RETURN", SDT_X86EHRET,
                          [SDNPHasChain]>;
  
-diff -r 5b3491892ccd lib/Target/X86/X86InstrNaCl.td
+diff -r 1d5519d59617 lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Fri Jun 24 14:23:53 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Tue Jun 28 10:56:14 2011 -0700
 @@ -17,11 +17,6 @@
  // NaCl specific DAG Nodes.
  //
@@ -324,9 +324,9 @@ diff -r 5b3491892ccd lib/Target/X86/X86InstrNaCl.td
  
  let usesCustomInserter = 1, Defs = [EFLAGS] in
  def NACL_CG_VAARG_64 : I<0, Pseudo,
-diff -r 5b3491892ccd lib/Target/X86/X86NaClRewritePass.cpp
+diff -r 1d5519d59617 lib/Target/X86/X86NaClRewritePass.cpp
 --- a/lib/Target/X86/X86NaClRewritePass.cpp	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Fri Jun 24 14:23:53 2011 -0700
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Tue Jun 28 10:56:14 2011 -0700
 @@ -556,17 +556,6 @@
      return true;
    }

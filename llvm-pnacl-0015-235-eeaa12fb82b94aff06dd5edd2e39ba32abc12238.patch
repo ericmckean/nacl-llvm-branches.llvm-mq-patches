@@ -3,7 +3,7 @@
 # Date 1300462475 25200
 # Branch pnacl-sfi
 # Node ID eeaa12fb82b94aff06dd5edd2e39ba32abc12238
-# Parent 893f3acf7184ec7aabfcf3b67a206807197a534a
+# Parent 244909ed3cf9502f6cb113a533622661f806ef82
 Add intrinsics for TLS support to remove src/untrusted/stubs/crt_*.S
 BUG=http://code.google.com/p/nativeclient/issues/detail?id=1519
 TEST=none (yet)
@@ -12,9 +12,9 @@ TEST=none (yet)
 
  From .hg/patches/llvm-pnacl-0015-235-eeaa12fb82b94aff06dd5edd2e39ba32abc12238.patch.stripped
 
-diff -r 893f3acf7184 include/llvm/Intrinsics.td
+diff -r 244909ed3cf9 include/llvm/Intrinsics.td
 --- a/include/llvm/Intrinsics.td	Thu Mar 17 17:49:59 2011 -0700
-+++ b/include/llvm/Intrinsics.td	Fri Jun 24 14:06:54 2011 -0700
++++ b/include/llvm/Intrinsics.td	Tue Jun 28 10:55:57 2011 -0700
 @@ -491,6 +491,20 @@
                        GCCBuiltin<"__builtin_nacl_setjmp">;
  def int_nacl_longjmp : Intrinsic<[],  [llvm_ptr_ty, llvm_i32_ty]>,
@@ -36,10 +36,10 @@ diff -r 893f3acf7184 include/llvm/Intrinsics.td
  // @LOCALMOD-END
  
  //===----------------------------------------------------------------------===//
-diff -r 893f3acf7184 lib/Target/ARM/ARMInstrInfo.td
+diff -r 244909ed3cf9 lib/Target/ARM/ARMInstrInfo.td
 --- a/lib/Target/ARM/ARMInstrInfo.td	Thu Mar 17 17:49:59 2011 -0700
-+++ b/lib/Target/ARM/ARMInstrInfo.td	Fri Jun 24 14:06:54 2011 -0700
-@@ -3784,7 +3784,10 @@
++++ b/lib/Target/ARM/ARMInstrInfo.td	Tue Jun 28 10:55:57 2011 -0700
+@@ -3799,7 +3799,10 @@
                             "sfi_nops_to_force_slot2; "
                             "sfi_code_mask r4; "
                             "blx r4; "
@@ -51,7 +51,7 @@ diff -r 893f3acf7184 lib/Target/ARM/ARMInstrInfo.td
                             [(int_nacl_elf_start R4)]>;
  }
  
-@@ -3820,6 +3823,49 @@
+@@ -3835,6 +3838,49 @@
                         "bx lr; ",
                         [(int_nacl_longjmp R0, R1)]>;
  }
@@ -101,9 +101,9 @@ diff -r 893f3acf7184 lib/Target/ARM/ARMInstrInfo.td
  // @LOCALMOD-END
  
  // Move from ARM core register to Special Register
-diff -r 893f3acf7184 lib/Target/X86/X86InstrNaCl.td
+diff -r 244909ed3cf9 lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Thu Mar 17 17:49:59 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Fri Jun 24 14:06:54 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Tue Jun 28 10:55:57 2011 -0700
 @@ -437,3 +437,59 @@
                         [(int_nacl_longjmp EDI, EAX)]>,
                         Requires<[IsNaCl64]>, TB;
