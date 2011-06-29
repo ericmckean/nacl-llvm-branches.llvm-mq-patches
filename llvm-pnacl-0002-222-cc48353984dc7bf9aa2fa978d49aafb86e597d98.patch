@@ -3,7 +3,7 @@
 # Date 1297452631 28800
 # Branch pnacl-sfi
 # Node ID cc48353984dc7bf9aa2fa978d49aafb86e597d98
-# Parent d5bd7086dbab8ff545808e1d00e75ff23f1e6cd8
+# Parent 41452706113a4c0e3dc560e3b65ce37d15defd65
 Update nacl-file for llc-srpc.
  - Track size of output shm file
  - Handle regular files supplied by urlAsNaClDesc.
@@ -13,9 +13,9 @@ http://codereview.chromium.org/6480011/
 
  From .hg/patches/llvm-pnacl-0002-222-cc48353984dc7bf9aa2fa978d49aafb86e597d98.patch.stripped
 
-diff -r d5bd7086dbab tools/llc/llc.cpp
+diff -r 41452706113a tools/llc/llc.cpp
 --- a/tools/llc/llc.cpp	Tue Feb 08 11:05:21 2011 -0800
-+++ b/tools/llc/llc.cpp	Thu Jun 09 18:35:42 2011 -0700
++++ b/tools/llc/llc.cpp	Wed Jun 29 13:15:06 2011 -0700
 @@ -43,8 +43,7 @@
  #if defined(__native_client__) && defined(NACL_SRPC)
  #include <fcntl.h>
@@ -67,9 +67,9 @@ diff -r d5bd7086dbab tools/llc/llc.cpp
    if (M.get() == 0) {
      Err.Print(argv[0], errs());
      return 1;
-diff -r d5bd7086dbab tools/llc/nacl_file.cpp
+diff -r 41452706113a tools/llc/nacl_file.cpp
 --- a/tools/llc/nacl_file.cpp	Tue Feb 08 11:05:21 2011 -0800
-+++ b/tools/llc/nacl_file.cpp	Thu Jun 09 18:35:42 2011 -0700
++++ b/tools/llc/nacl_file.cpp	Wed Jun 29 13:15:06 2011 -0700
 @@ -32,6 +32,10 @@
  
  #define MAX_NACL_FILES 256

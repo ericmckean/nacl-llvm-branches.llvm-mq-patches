@@ -3,7 +3,7 @@
 # Date 1298415562 18000
 # Branch pnacl-sfi
 # Node ID 31f979b87330b0728d81b5fbf4490e03d90e0657
-# Parent dedb06e141b2f54a578149595b1adcd27c68e364
+# Parent 99664921f0452298818e7d1919db56d0f1bb7c4a
 Add flag for changing x86 mask
 
 http://codereview.chromium.org/6469099/
@@ -12,9 +12,9 @@ http://codereview.chromium.org/6469099/
 
  From .hg/patches/llvm-pnacl-0005-225-31f979b87330b0728d81b5fbf4490e03d90e0657.patch.stripped
 
-diff -r dedb06e141b2 lib/Target/X86/X86InstrNaCl.cpp
+diff -r 99664921f045 lib/Target/X86/X86InstrNaCl.cpp
 --- a/lib/Target/X86/X86InstrNaCl.cpp	Fri Feb 18 12:34:39 2011 -0800
-+++ b/lib/Target/X86/X86InstrNaCl.cpp	Thu Jun 23 13:21:58 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.cpp	Wed Jun 29 13:15:09 2011 -0700
 @@ -20,6 +20,11 @@
  
  using namespace llvm;
