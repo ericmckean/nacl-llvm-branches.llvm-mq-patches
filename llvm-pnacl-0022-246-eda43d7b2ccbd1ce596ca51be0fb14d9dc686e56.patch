@@ -3,16 +3,16 @@
 # Date 1301681159 25200
 # Branch pnacl-sfi
 # Node ID eda43d7b2ccbd1ce596ca51be0fb14d9dc686e56
-# Parent a2c567e99fe624b6f5e873c0f5df1caa6b4b0b09
+# Parent 935140dd99bb23e22b912804cca61585ecda63c9
 Fix off-by-one error in topological sort adjustment in X86-64 SelectAddr
 
  From llvm-pnacl-0022-246-eda43d7b2ccbd1ce596ca51be0fb14d9dc686e56.patch
 
  From .hg/patches/llvm-pnacl-0022-246-eda43d7b2ccbd1ce596ca51be0fb14d9dc686e56.patch.stripped
 
-diff -r a2c567e99fe6 lib/Target/X86/X86ISelDAGToDAG.cpp
+diff -r 935140dd99bb lib/Target/X86/X86ISelDAGToDAG.cpp
 --- a/lib/Target/X86/X86ISelDAGToDAG.cpp	Thu Mar 31 14:19:20 2011 -0700
-+++ b/lib/Target/X86/X86ISelDAGToDAG.cpp	Mon Jun 13 11:07:09 2011 -0700
++++ b/lib/Target/X86/X86ISelDAGToDAG.cpp	Wed Jun 29 12:00:03 2011 -0700
 @@ -1218,10 +1218,11 @@
      if (Index.getValueType() != MVT::i64) {
        Index = CurDAG->getZExtOrTrunc(Index, Index.getDebugLoc(), MVT::i64);

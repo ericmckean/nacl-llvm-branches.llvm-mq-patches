@@ -3,16 +3,16 @@
 # Date 1301356914 25200
 # Branch pnacl-sfi
 # Node ID 985777e2e62f6daca9aec8dab851eb61715f045f
-# Parent e663815babc716feac05dc960965f72e34ca7eff
+# Parent a9307c67a53a5017dd769c9a8f7eba7df8cccd83
 Fix minor bug to enable relocation Fixups in DWARF data.
 
  From llvm-pnacl-0016-236-985777e2e62f6daca9aec8dab851eb61715f045f.patch
 
  From .hg/patches/llvm-pnacl-0016-236-985777e2e62f6daca9aec8dab851eb61715f045f.patch.stripped
 
-diff -r e663815babc7 lib/Target/ARM/ARMAsmBackend.cpp
+diff -r a9307c67a53a lib/Target/ARM/ARMAsmBackend.cpp
 --- a/lib/Target/ARM/ARMAsmBackend.cpp	Fri Mar 18 08:34:35 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmBackend.cpp	Thu Jun 09 18:39:26 2011 -0700
++++ b/lib/Target/ARM/ARMAsmBackend.cpp	Wed Jun 29 11:59:58 2011 -0700
 @@ -410,7 +410,7 @@
    if (!Value) return;           // Doesn't change encoding.
  
