@@ -3,16 +3,16 @@
 # Date 1297191921 28800
 # Branch pnacl-sfi
 # Node ID 04eba3102bd02843be19d597dd4cf2a52f1087eb
-# Parent e6a0b3eb82845bd687d983012e1e9d9aa94629e5
+# Parent 7a4e6e98005a42db739b849bc0611cc38ee18ddd
 Sandbox arbitrary moves to RBP
 
  From llvm-pnacl-0001-221-04eba3102bd02843be19d597dd4cf2a52f1087eb.patch
 
  From .hg/patches/llvm-pnacl-0001-221-04eba3102bd02843be19d597dd4cf2a52f1087eb.patch.stripped
 
-diff -r e6a0b3eb8284 lib/Target/X86/X86NaClRewritePass.cpp
+diff -r 7a4e6e98005a lib/Target/X86/X86NaClRewritePass.cpp
 --- a/lib/Target/X86/X86NaClRewritePass.cpp	Wed Feb 02 19:05:20 2011 -0800
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Wed Jun 29 22:05:49 2011 -0700
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Wed Jun 29 23:04:51 2011 -0700
 @@ -296,12 +296,41 @@
      return false;
  

@@ -3,7 +3,7 @@
 # Date 1300462475 25200
 # Branch pnacl-sfi
 # Node ID eeaa12fb82b94aff06dd5edd2e39ba32abc12238
-# Parent b8b0c328d62c6023766bcc9c49c9c8ff41eef60d
+# Parent 606ef8723e762d4467edd6a23635af6e665907c1
 Add intrinsics for TLS support to remove src/untrusted/stubs/crt_*.S
 BUG=http://code.google.com/p/nativeclient/issues/detail?id=1519
 TEST=none (yet)
@@ -12,9 +12,9 @@ TEST=none (yet)
 
  From .hg/patches/llvm-pnacl-0015-235-eeaa12fb82b94aff06dd5edd2e39ba32abc12238.patch.stripped
 
-diff -r b8b0c328d62c include/llvm/Intrinsics.td
+diff -r 606ef8723e76 include/llvm/Intrinsics.td
 --- a/include/llvm/Intrinsics.td	Thu Mar 17 17:49:59 2011 -0700
-+++ b/include/llvm/Intrinsics.td	Wed Jun 29 22:05:56 2011 -0700
++++ b/include/llvm/Intrinsics.td	Wed Jun 29 23:04:58 2011 -0700
 @@ -491,6 +491,20 @@
                        GCCBuiltin<"__builtin_nacl_setjmp">;
  def int_nacl_longjmp : Intrinsic<[],  [llvm_ptr_ty, llvm_i32_ty]>,
@@ -36,9 +36,9 @@ diff -r b8b0c328d62c include/llvm/Intrinsics.td
  // @LOCALMOD-END
  
  //===----------------------------------------------------------------------===//
-diff -r b8b0c328d62c lib/Target/ARM/ARMInstrInfo.td
+diff -r 606ef8723e76 lib/Target/ARM/ARMInstrInfo.td
 --- a/lib/Target/ARM/ARMInstrInfo.td	Thu Mar 17 17:49:59 2011 -0700
-+++ b/lib/Target/ARM/ARMInstrInfo.td	Wed Jun 29 22:05:56 2011 -0700
++++ b/lib/Target/ARM/ARMInstrInfo.td	Wed Jun 29 23:04:58 2011 -0700
 @@ -4087,7 +4087,10 @@
                             "sfi_nops_to_force_slot2; "
                             "sfi_code_mask r4; "
@@ -101,9 +101,9 @@ diff -r b8b0c328d62c lib/Target/ARM/ARMInstrInfo.td
  // @LOCALMOD-END
  
  // Move from ARM core register to Special Register
-diff -r b8b0c328d62c lib/Target/X86/X86InstrNaCl.td
+diff -r 606ef8723e76 lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Thu Mar 17 17:49:59 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jun 29 22:05:56 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jun 29 23:04:58 2011 -0700
 @@ -437,3 +437,59 @@
                         [(int_nacl_longjmp EDI, EAX)]>,
                         Requires<[IsNaCl64]>, TB;

@@ -1,13 +1,13 @@
 # HG changeset patch
-# Parent 982433e7999afe36f7bccd1290ff1aa49a9046e8
+# Parent e00d9c0d2ac8d0e93ac878ea83212bcdb2121841
 
 Make EmitBundle(Lock|Unlock|AlignStart|AlignEnd) into small asserting routines.
 This is needed because of an upstream change which added new uses of MCStreamer
 Keep local changes bundled together.
 
-diff -r 982433e7999a include/llvm/MC/MCStreamer.h
+diff -r e00d9c0d2ac8 include/llvm/MC/MCStreamer.h
 --- a/include/llvm/MC/MCStreamer.h	Tue May 31 12:33:49 2011 -0700
-+++ b/include/llvm/MC/MCStreamer.h	Wed Jun 29 22:06:13 2011 -0700
++++ b/include/llvm/MC/MCStreamer.h	Wed Jun 29 23:05:16 2011 -0700
 @@ -414,18 +414,18 @@
  
      /// EmitBundleLock - Begin a group of instructions which cannot
