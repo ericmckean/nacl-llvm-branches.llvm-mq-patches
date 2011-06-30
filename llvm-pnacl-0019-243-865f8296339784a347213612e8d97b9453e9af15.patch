@@ -3,7 +3,7 @@
 # Date 1301357236 25200
 # Branch pnacl-sfi
 # Node ID 865f8296339784a347213612e8d97b9453e9af15
-# Parent 456ef040acc0b728a363b01d06856bdb99b44932
+# Parent d621a89e69fccbda242377ea7ab89f908d2a7fbf
 # Parent  5fc7321392bef1d0ad3c470a913a34945df60a23
 Merge 242:5fc7321392be and 238:bb23f96ef85a
 
@@ -11,9 +11,9 @@ Merge 242:5fc7321392be and 238:bb23f96ef85a
 
  From .hg/patches/llvm-pnacl-0019-243-865f8296339784a347213612e8d97b9453e9af15.patch.stripped
 
-diff -r 456ef040acc0 lib/Target/ARM/ARMExpandPseudoInsts.cpp
+diff -r d621a89e69fc lib/Target/ARM/ARMExpandPseudoInsts.cpp
 --- a/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Wed Jun 29 17:09:07 2011 -0700
++++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Wed Jun 29 18:10:30 2011 -0700
 @@ -865,17 +865,32 @@
      }
      case ARM::TPsoft: {
@@ -57,9 +57,9 @@ diff -r 456ef040acc0 lib/Target/ARM/ARMExpandPseudoInsts.cpp
        return true;
      }
      case ARM::tLDRpci_pic:
-diff -r 456ef040acc0 lib/Target/X86/X86ISelDAGToDAG.cpp
+diff -r d621a89e69fc lib/Target/X86/X86ISelDAGToDAG.cpp
 --- a/lib/Target/X86/X86ISelDAGToDAG.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/lib/Target/X86/X86ISelDAGToDAG.cpp	Wed Jun 29 17:09:07 2011 -0700
++++ b/lib/Target/X86/X86ISelDAGToDAG.cpp	Wed Jun 29 18:10:30 2011 -0700
 @@ -231,8 +231,9 @@
      inline void getAddressOperands(X86ISelAddressMode &AM, SDValue &Base, 
                                     SDValue &Scale, SDValue &Index,
@@ -123,9 +123,9 @@ diff -r 456ef040acc0 lib/Target/X86/X86ISelDAGToDAG.cpp
    return true;
  }
  
-diff -r 456ef040acc0 lib/Target/X86/X86RegisterInfo.cpp
+diff -r d621a89e69fc lib/Target/X86/X86RegisterInfo.cpp
 --- a/lib/Target/X86/X86RegisterInfo.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/lib/Target/X86/X86RegisterInfo.cpp	Wed Jun 29 17:09:07 2011 -0700
++++ b/lib/Target/X86/X86RegisterInfo.cpp	Wed Jun 29 18:10:30 2011 -0700
 @@ -310,18 +310,14 @@
  
  const TargetRegisterClass *
@@ -147,9 +147,9 @@ diff -r 456ef040acc0 lib/Target/X86/X86RegisterInfo.cpp
        return &X86::GR64_NOSPRegClass;
      return &X86::GR32_NOSPRegClass;
    case 2: // Available for tailcall (not callee-saved GPRs).
-diff -r 456ef040acc0 tools/llc/nacl_file.cpp
+diff -r d621a89e69fc tools/llc/nacl_file.cpp
 --- a/tools/llc/nacl_file.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/tools/llc/nacl_file.cpp	Wed Jun 29 17:09:07 2011 -0700
++++ b/tools/llc/nacl_file.cpp	Wed Jun 29 18:10:30 2011 -0700
 @@ -124,7 +124,11 @@
    }
    entry->real_fd = fd;

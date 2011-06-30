@@ -3,16 +3,16 @@
 # Date 1304631442 25200
 # Branch pnacl-sfi
 # Node ID cb04533056093333fdb7377eb95b72b883527249
-# Parent 1fa1d267f7868530c3568790362760ccd3a0f642
+# Parent 03857ae7aff8316b52a937c8f3dfc9666f169b22
 Add libplatform and libgio to LLVM self-build
 
  From llvm-pnacl-0029-253-cb04533056093333fdb7377eb95b72b883527249.patch
 
  From .hg/patches/llvm-pnacl-0029-253-cb04533056093333fdb7377eb95b72b883527249.patch.stripped
 
-diff -r 1fa1d267f786 Makefile.rules
+diff -r 03857ae7aff8 Makefile.rules
 --- a/Makefile.rules	Thu Apr 28 13:00:37 2011 -0700
-+++ b/Makefile.rules	Wed Jun 29 17:09:14 2011 -0700
++++ b/Makefile.rules	Wed Jun 29 18:10:37 2011 -0700
 @@ -578,7 +578,7 @@
  endif
  

@@ -3,7 +3,7 @@
 # Date 1303766025 25200
 # Branch pnacl-sfi
 # Node ID a4c09ba0275cf0a5243a1790fb5fab5d97aaf561
-# Parent 2622946ba259e5c870bef3bac886e709540000c6
+# Parent 9c33f06c24463e1f5f25136b0f8d53d10e405a29
 Use __nacl_read_tp instead of non-standard version of __tls_get_addr.
 
 http://codereview.chromium.org/6882124/
@@ -12,9 +12,9 @@ http://codereview.chromium.org/6882124/
 
  From .hg/patches/llvm-pnacl-0026-250-a4c09ba0275cf0a5243a1790fb5fab5d97aaf561.patch.stripped
 
-diff -r 2622946ba259 lib/Target/X86/X86ISelLowering.cpp
+diff -r 9c33f06c2446 lib/Target/X86/X86ISelLowering.cpp
 --- a/lib/Target/X86/X86ISelLowering.cpp	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Wed Jun 29 17:09:12 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.cpp	Wed Jun 29 18:10:35 2011 -0700
 @@ -6499,11 +6499,18 @@
  }
  
@@ -122,9 +122,9 @@ diff -r 2622946ba259 lib/Target/X86/X86ISelLowering.cpp
    case X86ISD::EH_RETURN:          return "X86ISD::EH_RETURN";
    case X86ISD::TC_RETURN:          return "X86ISD::TC_RETURN";
    case X86ISD::FNSTCW16m:          return "X86ISD::FNSTCW16m";
-diff -r 2622946ba259 lib/Target/X86/X86ISelLowering.h
+diff -r 9c33f06c2446 lib/Target/X86/X86ISelLowering.h
 --- a/lib/Target/X86/X86ISelLowering.h	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.h	Wed Jun 29 17:09:12 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.h	Wed Jun 29 18:10:35 2011 -0700
 @@ -185,6 +185,11 @@
        // thunk at the address from an earlier relocation.
        TLSCALL,
@@ -137,9 +137,9 @@ diff -r 2622946ba259 lib/Target/X86/X86ISelLowering.h
        // EH_RETURN - Exception Handling helpers.
        EH_RETURN,
  
-diff -r 2622946ba259 lib/Target/X86/X86InstrNaCl.td
+diff -r 9c33f06c2446 lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jun 29 17:09:12 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jun 29 18:10:35 2011 -0700
 @@ -14,6 +14,15 @@
  
  
@@ -211,9 +211,9 @@ diff -r 2622946ba259 lib/Target/X86/X86InstrNaCl.td
                           [(X86tlsaddr tls32addr:$sym)]>,
                           Requires<[IsNaCl64]>;
  
-diff -r 2622946ba259 lib/Target/X86/X86NaClRewritePass.cpp
+diff -r 9c33f06c2446 lib/Target/X86/X86NaClRewritePass.cpp
 --- a/lib/Target/X86/X86NaClRewritePass.cpp	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Wed Jun 29 17:09:12 2011 -0700
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Wed Jun 29 18:10:35 2011 -0700
 @@ -556,6 +556,17 @@
      return true;
    }
