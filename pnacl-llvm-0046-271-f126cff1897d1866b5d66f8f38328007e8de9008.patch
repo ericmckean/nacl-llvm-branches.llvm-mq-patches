@@ -1,0 +1,432 @@
+# HG changeset patch
+# User Jan Voung <jvoung@google.com>
+# Date 1308785727 25200
+# Branch pnacl-sfi
+# Node ID f126cff1897d1866b5d66f8f38328007e8de9008
+# Parent 124387b25c161ba4c2771d26a742a5ff3844ce02
+Change nacl tls layout intrinsics to a higher level / new interface.
+http://codereview.chromium.org/7217002/
+
+ From pnacl-llvm-0046-271-f126cff1897d1866b5d66f8f38328007e8de9008.patch
+
+diff -r 124387b25c16 include/llvm/CodeGen/ISDOpcodes.h
+--- a/include/llvm/CodeGen/ISDOpcodes.h	Wed Jun 22 16:25:30 2011 -0700
++++ b/include/llvm/CodeGen/ISDOpcodes.h	Fri Jul 01 15:24:00 2011 -0700
+@@ -602,6 +602,16 @@
+     ATOMIC_LOAD_UMIN,
+     ATOMIC_LOAD_UMAX,
+ 
++    // @LOCALMOD-BEGIN
++    // NACL_* - Native Client instrinsics for TLS.
++    // These correspond to functions in:
++    // native_client/src/untrusted/nacl/tls_params.h
++    NACL_THREAD_STACK_PADDING,
++    NACL_TP_ALIGN,
++    NACL_TP_TLS_OFFSET,
++    NACL_TP_TDB_OFFSET,
++    // @LOCALMOD-END
++
+     /// BUILTIN_OP_END - This must be the last enum value in this list.
+     /// The target-specific pre-isel opcode values start here.
+     BUILTIN_OP_END
+diff -r 124387b25c16 include/llvm/Intrinsics.td
+--- a/include/llvm/Intrinsics.td	Wed Jun 22 16:25:30 2011 -0700
++++ b/include/llvm/Intrinsics.td	Fri Jul 01 15:24:00 2011 -0700
+@@ -492,19 +492,20 @@
+ def int_nacl_longjmp : Intrinsic<[],  [llvm_ptr_ty, llvm_i32_ty]>,
+                        GCCBuiltin<"__builtin_nacl_longjmp">;
+ 
+-// The following intrinsics provide a replacement for interface in
+-// native_client/src/untrusted/nacl/tls.h.  The intrinsic names are basically
+-// the functions there without the leading underscores.
+-def int_nacl_tls_alignment : Intrinsic<[llvm_i32_ty], []>,
+-                             GCCBuiltin<"__builtin_nacl_tls_alignment">;
+-def int_nacl_tdb_offset_in_tls : Intrinsic<[llvm_i32_ty], [llvm_i32_ty]>,
+-                             GCCBuiltin<"__builtin_nacl_tdb_offset_in_tls">;
+-def int_nacl_tdb_effective_payload_size :
+-        Intrinsic<[llvm_i32_ty], [llvm_i32_ty]>,
+-        GCCBuiltin<"__builtin_nacl_tdb_effective_payload_size">;
+-def int_nacl_return_address_size :
++// The following intrinsics provide target-specific implementations of
++// the interface in native_client/src/untrusted/nacl/tls_params.h.
++// The intrinsic names are basically the functions there without the
++// leading underscores.
++def int_nacl_tp_alignment : Intrinsic<[llvm_i32_ty], []>,
++                            GCCBuiltin<"__builtin_nacl_tp_alignment">;
++def int_nacl_tp_tls_offset : Intrinsic<[llvm_i32_ty], [llvm_i32_ty]>,
++                             GCCBuiltin<"__builtin_nacl_tp_tls_offset">;
++def int_nacl_tp_tdb_offset : Intrinsic<[llvm_i32_ty], [llvm_i32_ty]>,
++                             GCCBuiltin<"__builtin_nacl_tp_tdb_offset">;
++def int_nacl_thread_stack_padding :
+         Intrinsic<[llvm_i32_ty], []>,
+-        GCCBuiltin<"__builtin_nacl_return_address_size">;
++        GCCBuiltin<"__builtin_nacl_thread_stack_padding">;
++
+ // @LOCALMOD-END
+ 
+ //===----------------------------------------------------------------------===//
+diff -r 124387b25c16 lib/CodeGen/SelectionDAG/SelectionDAG.cpp
+--- a/lib/CodeGen/SelectionDAG/SelectionDAG.cpp	Wed Jun 22 16:25:30 2011 -0700
++++ b/lib/CodeGen/SelectionDAG/SelectionDAG.cpp	Fri Jul 01 15:24:00 2011 -0700
+@@ -5885,6 +5885,14 @@
+     case ISD::SETLE:   return "setle";
+     case ISD::SETNE:   return "setne";
+     }
++
++  // @LOCALMOD-BEGIN
++  // NaCl intrinsics for TLS setup
++  case ISD::NACL_THREAD_STACK_PADDING: return "nacl_thread_stack_padding";
++  case ISD::NACL_TP_ALIGN:             return "nacl_tp_alignment";
++  case ISD::NACL_TP_TLS_OFFSET:        return "nacl_tls_offset";
++  case ISD::NACL_TP_TDB_OFFSET:        return "nacl_tdb_offset";
++  // @LOCALMOD-END
+   }
+ }
+ 
+diff -r 124387b25c16 lib/CodeGen/SelectionDAG/SelectionDAGBuilder.cpp
+--- a/lib/CodeGen/SelectionDAG/SelectionDAGBuilder.cpp	Wed Jun 22 16:25:30 2011 -0700
++++ b/lib/CodeGen/SelectionDAG/SelectionDAGBuilder.cpp	Fri Jul 01 15:24:00 2011 -0700
+@@ -4785,6 +4785,33 @@
+   case Intrinsic::lifetime_end:
+     // Discard region information.
+     return 0;
++  // @LOCALMOD-BEGIN
++  // Native Client Intrinsics for TLS setup / layout.
++  case Intrinsic::nacl_thread_stack_padding: {
++    EVT DestVT = TLI.getValueType(I.getType());
++    setValue(&I, DAG.getNode(ISD::NACL_THREAD_STACK_PADDING, dl, DestVT));
++    return 0;
++  }
++  case Intrinsic::nacl_tp_alignment: {
++    EVT DestVT = TLI.getValueType(I.getType());
++    setValue(&I, DAG.getNode(ISD::NACL_TP_ALIGN, dl, DestVT));
++    return 0;
++  }
++  case Intrinsic::nacl_tp_tls_offset: {
++    SDValue tls_size = getValue(I.getArgOperand(0));
++    setValue(&I, DAG.getNode(ISD::NACL_TP_TLS_OFFSET, dl,
++                             tls_size.getValueType(),
++                             tls_size));
++    return 0;
++  }
++  case Intrinsic::nacl_tp_tdb_offset: {
++    SDValue tdb_size = getValue(I.getArgOperand(0));
++    setValue(&I, DAG.getNode(ISD::NACL_TP_TDB_OFFSET, dl,
++                             tdb_size.getValueType(),
++                             tdb_size));
++    return 0;
++  }
++  // @LOCALMOD-END
+   }
+ }
+ 
+diff -r 124387b25c16 lib/Target/ARM/ARMISelLowering.cpp
+--- a/lib/Target/ARM/ARMISelLowering.cpp	Wed Jun 22 16:25:30 2011 -0700
++++ b/lib/Target/ARM/ARMISelLowering.cpp	Fri Jul 01 15:24:00 2011 -0700
+@@ -705,6 +705,15 @@
+     }
+   }
+ 
++  // @LOCALMOD-BEGIN
++  if (Subtarget->isTargetNaCl()) {
++    setOperationAction(ISD::NACL_THREAD_STACK_PADDING, MVT::i32, Custom);
++    setOperationAction(ISD::NACL_TP_ALIGN,             MVT::i32, Custom);
++    setOperationAction(ISD::NACL_TP_TLS_OFFSET,        MVT::i32, Custom);
++    setOperationAction(ISD::NACL_TP_TDB_OFFSET,        MVT::i32, Custom);
++  }
++  // @LOCALMOD-END
++
+   // We have target-specific dag combine patterns for the following nodes:
+   // ARMISD::VMOVRRD  - No need to call setTargetDAGCombine
+   setTargetDAGCombine(ISD::ADD);
+@@ -1898,6 +1907,48 @@
+   SDValue JTI = DAG.getTargetJumpTable(JT->getIndex(), PTy);
+   return DAG.getNode(ARMISD::WrapperJT2, dl, MVT::i32, JTI);
+ }
++
++//////////////////////////////////////////////////////////////////////
++// NaCl TLS setup / layout intrinsics.
++// See: native_client/src/untrusted/stubs/tls_params.h
++SDValue ARMTargetLowering::LowerNaClTpAlign(SDValue Op,
++                                            SelectionDAG &DAG) const {
++  // size_t __nacl_tp_alignment () {
++  //   return 1 << 12;
++  // }
++  return DAG.getConstant(4096, Op.getValueType().getSimpleVT());
++}
++
++SDValue ARMTargetLowering::LowerNaClTpTlsOffset(SDValue Op,
++                                                SelectionDAG &DAG) const {
++  // ssize_t __nacl_tp_tls_offset (size_t tls_size) {
++  //   return 8;
++  // }
++  return DAG.getConstant(8, Op.getValueType().getSimpleVT());
++}
++
++SDValue ARMTargetLowering::LowerNaClTpTdbOffset(SDValue Op,
++                                                SelectionDAG &DAG) const {
++  // ssize_t __nacl_tp_tdb_offset (size_t tdb_size) {
++  //   return -tdb_size;
++  // }
++  DebugLoc dl = Op.getDebugLoc();
++  return DAG.getNode(ISD::SUB, dl, Op.getValueType().getSimpleVT(),
++                     DAG.getConstant(0, Op.getValueType().getSimpleVT()),
++                     Op.getOperand(0));
++}
++
++SDValue
++ARMTargetLowering::LowerNaClThreadStackPadding(SDValue Op,
++                                               SelectionDAG &DAG) const {
++  // size_t __nacl_thread_stack_padding () {
++  //   return 4;
++  // }
++  return DAG.getConstant(4, Op.getValueType().getSimpleVT());
++}
++
++//////////////////////////////////////////////////////////////////////
++
+ // @LOCALMOD-END
+ 
+ // Lower ISD::GlobalTLSAddress using the "general dynamic" model
+@@ -4481,6 +4532,13 @@
+   case ISD::CONCAT_VECTORS: return LowerCONCAT_VECTORS(Op, DAG);
+   case ISD::FLT_ROUNDS_:   return LowerFLT_ROUNDS_(Op, DAG);
+   case ISD::MUL:           return LowerMUL(Op, DAG);
++  // @LOCALMOD-BEGIN
++  case ISD::NACL_THREAD_STACK_PADDING:
++    return LowerNaClThreadStackPadding(Op, DAG);
++  case ISD::NACL_TP_ALIGN:         return LowerNaClTpAlign(Op, DAG);
++  case ISD::NACL_TP_TLS_OFFSET:    return LowerNaClTpTlsOffset(Op, DAG);
++  case ISD::NACL_TP_TDB_OFFSET:    return LowerNaClTpTdbOffset(Op, DAG);
++  // @LOCALMOD-END
+   }
+   return SDValue();
+ }
+diff -r 124387b25c16 lib/Target/ARM/ARMISelLowering.h
+--- a/lib/Target/ARM/ARMISelLowering.h	Wed Jun 22 16:25:30 2011 -0700
++++ b/lib/Target/ARM/ARMISelLowering.h	Fri Jul 01 15:24:00 2011 -0700
+@@ -381,6 +381,10 @@
+                                  bool InitialExec) const;
+     SDValue LowerJumpTable(SDValue Op, SelectionDAG &DAG) const;
+     SDValue LowerEH_RETURN(SDValue Op, SelectionDAG &DAG) const;
++    SDValue LowerNaClThreadStackPadding(SDValue Op, SelectionDAG &DAG) const;
++    SDValue LowerNaClTpAlign(SDValue Op, SelectionDAG &DAG) const;
++    SDValue LowerNaClTpTlsOffset(SDValue Op, SelectionDAG &DAG) const;
++    SDValue LowerNaClTpTdbOffset(SDValue Op, SelectionDAG &DAG) const;
+     // @LOCALMOD-END
+ 
+     SDValue LowerGLOBAL_OFFSET_TABLE(SDValue Op, SelectionDAG &DAG) const;
+diff -r 124387b25c16 lib/Target/ARM/ARMInstrInfo.td
+--- a/lib/Target/ARM/ARMInstrInfo.td	Wed Jun 22 16:25:30 2011 -0700
++++ b/lib/Target/ARM/ARMInstrInfo.td	Fri Jul 01 15:24:00 2011 -0700
+@@ -4103,47 +4103,3 @@
+                        "bx lr; ",
+                        [(int_nacl_longjmp R0, R1)]>;
+ }
+-
+-//===========================================================================
+-// The following intrinsics provide a replacement for the functions in
+-// native_client/src/untrusted/stubs/tls_arm.c, which are the ARM-specific
+-// versions of an interface in native_client/src/untrusted/nacl/tls.h.  The
+-// intrinsic names and pattern names are basically the functions there without
+-// the leading underscores.
+-
+-// from src/untrusted/stubs/tls_arm.c:
+-// int __nacl_tls_aligment() {
+-//   return (1 << 12);
+-// }
+-def NACL_TLS_ALIGNMENT : AXI<(outs GPR:$dst), (ins), MiscFrm, NoItinerary,
+-                           "mov $dst, #4096",
+-                           [(set GPR:$dst, (int_nacl_tls_alignment))]>;
+-
+-// from src/untrusted/stubs/tls_arm.c:
+-// size_t __nacl_tdb_offset_in_tls(size_t tls_data_and_bss_size) {
+-//   return 0; /* TDB is the first symbol in the TLS. */
+-// }
+-def NACL_TDB_OFFSET_IN_TLS :
+-        AXI<(outs GPR:$dst), (ins GPR:$src), MiscFrm, NoItinerary,
+-          "mov $dst, #0\t@ incoming value of $src is ignored",
+-          [(set GPR:$dst, (int_nacl_tdb_offset_in_tls GPR:$src))]>;
+-
+-// from src/untrusted/stubs/tls_arm.c:
+-// size_t __nacl_tdb_effective_payload_size(size_t tdb_size) {
+-//   return 0; /* TDB is the first symbol in the TLS. */
+-// }
+-def NACL_TDB_EFFECTIVE_PAYLOAD_SIZE :
+-        AXI<(outs GPR:$dst), (ins GPR:$src), MiscFrm, NoItinerary,
+-          "mov $dst, #0\t@ incoming value of $src is ignored",
+-          [(set GPR:$dst, (int_nacl_tdb_effective_payload_size GPR:$src))]>;
+-
+-// from src/untrusted/stubs/tls_arm.c:
+-// size_t __nacl_return_address_size() {
+-//   return 4;
+-// }
+-def NACL_RETURN_ADDRESS_SIZE :
+-        AXI<(outs GPR:$dst), (ins), MiscFrm, NoItinerary,
+-          "mov $dst, #4",
+-          [(set GPR:$dst, (int_nacl_return_address_size))]>;
+-
+-// @LOCALMOD-END
+diff -r 124387b25c16 lib/Target/X86/X86ISelLowering.cpp
+--- a/lib/Target/X86/X86ISelLowering.cpp	Wed Jun 22 16:25:30 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.cpp	Fri Jul 01 15:24:00 2011 -0700
+@@ -989,6 +989,15 @@
+   if (Subtarget->is64Bit())
+     setTargetDAGCombine(ISD::MUL);
+ 
++  // @LOCALMOD-BEGIN
++  if (Subtarget->isTargetNaCl()) {
++    setOperationAction(ISD::NACL_THREAD_STACK_PADDING, MVT::i32, Custom);
++    setOperationAction(ISD::NACL_TP_ALIGN,             MVT::i32, Custom);
++    setOperationAction(ISD::NACL_TP_TLS_OFFSET,        MVT::i32, Custom);
++    setOperationAction(ISD::NACL_TP_TDB_OFFSET,        MVT::i32, Custom);
++  }
++  // @LOCALMOD-END
++
+   computeRegisterProperties();
+ 
+   // On Darwin, -Os means optimize for size without hurting performance,
+@@ -7794,6 +7803,49 @@
+                        MachinePointerInfo(DstSV), MachinePointerInfo(SrcSV));
+ }
+ 
++//////////////////////////////////////////////////////////////////////
++// NaCl TLS setup / layout intrinsics.
++// See: native_client/src/untrusted/stubs/tls_params.h
++SDValue X86TargetLowering::LowerNaClTpAlign(SDValue Op,
++                                            SelectionDAG &DAG) const {
++  // size_t __nacl_tp_alignment () {
++  //   return 64;
++  // }
++  return DAG.getConstant(64, Op.getValueType().getSimpleVT());
++}
++
++SDValue X86TargetLowering::LowerNaClTpTlsOffset(SDValue Op,
++                                                SelectionDAG &DAG) const {
++  // ssize_t __nacl_tp_tls_offset (size_t tls_size) {
++  //   return -tls_size;
++  // }
++  DebugLoc dl = Op.getDebugLoc();
++  return DAG.getNode(ISD::SUB, dl, Op.getValueType().getSimpleVT(),
++                     DAG.getConstant(0, Op.getValueType().getSimpleVT()),
++                     Op.getOperand(0));
++}
++
++SDValue X86TargetLowering::LowerNaClTpTdbOffset(SDValue Op,
++                                                SelectionDAG &DAG) const {
++  // ssize_t __nacl_tp_tdb_offset (size_t tdb_size) {
++  //   return 0;
++  // }
++  return DAG.getConstant(0, Op.getValueType().getSimpleVT());
++}
++
++SDValue
++X86TargetLowering::LowerNaClThreadStackPadding(SDValue Op,
++                                               SelectionDAG &DAG) const {
++  // size_t __nacl_thread_stack_padding () {
++  //   return reg_size;
++  // }
++  return DAG.getConstant(RegInfo->getSlotSize(),
++                         Op.getValueType().getSimpleVT());
++}
++
++//////////////////////////////////////////////////////////////////////
++
++
+ SDValue
+ X86TargetLowering::LowerINTRINSIC_WO_CHAIN(SDValue Op, SelectionDAG &DAG) const {
+   DebugLoc dl = Op.getDebugLoc();
+@@ -8852,6 +8904,13 @@
+   case ISD::ADDE:
+   case ISD::SUBC:
+   case ISD::SUBE:               return LowerADDC_ADDE_SUBC_SUBE(Op, DAG);
++  // @LOCALMOD-BEGIN
++  case ISD::NACL_THREAD_STACK_PADDING:
++    return LowerNaClThreadStackPadding(Op, DAG);
++  case ISD::NACL_TP_ALIGN:         return LowerNaClTpAlign(Op, DAG);
++  case ISD::NACL_TP_TLS_OFFSET:    return LowerNaClTpTlsOffset(Op, DAG);
++  case ISD::NACL_TP_TDB_OFFSET:    return LowerNaClTpTdbOffset(Op, DAG);
++  // @LOCALMOD-END
+   }
+ }
+ 
+diff -r 124387b25c16 lib/Target/X86/X86ISelLowering.h
+--- a/lib/Target/X86/X86ISelLowering.h	Wed Jun 22 16:25:30 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.h	Fri Jul 01 15:24:00 2011 -0700
+@@ -800,6 +800,13 @@
+     SDValue LowerREADCYCLECOUNTER(SDValue Op, SelectionDAG &DAG) const;
+     SDValue LowerMEMBARRIER(SDValue Op, SelectionDAG &DAG) const;
+ 
++    // @LOCALMOD-BEGIN
++    SDValue LowerNaClThreadStackPadding(SDValue Op, SelectionDAG &DAG) const;
++    SDValue LowerNaClTpAlign(SDValue Op, SelectionDAG &DAG) const;
++    SDValue LowerNaClTpTlsOffset(SDValue Op, SelectionDAG &DAG) const;
++    SDValue LowerNaClTpTdbOffset(SDValue Op, SelectionDAG &DAG) const;
++    // @LOCALMOD-END
++
+     // Utility functions to help LowerVECTOR_SHUFFLE
+     SDValue LowerVECTOR_SHUFFLEv8i16(SDValue Op, SelectionDAG &DAG) const;
+     
+diff -r 124387b25c16 lib/Target/X86/X86InstrNaCl.td
+--- a/lib/Target/X86/X86InstrNaCl.td	Wed Jun 22 16:25:30 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Fri Jul 01 15:24:00 2011 -0700
+@@ -453,59 +453,3 @@
+                        [(int_nacl_longjmp EDI, EAX)]>,
+                        Requires<[IsNaCl64]>, TB;
+ }
+-
+-//===========================================================================
+-// The following intrinsics provide a replacement for the functions in
+-// native_client/src/untrusted/stubs/tls_arm.c, which are the X86-specific
+-// versions of an interface in native_client/src/untrusted/nacl/tls.h.  The
+-// intrinsic names and pattern names are basically the functions there without
+-// the leading underscores.  The return address size differs between 32 and
+-// 64 bit compilation, leading to the duplication in NACL_RETURN_ADDRESS_SIZE
+-// templates.
+-
+-// from src/untrusted/stubs/tls_x86_{32,64}.c:
+-// int __nacl_tls_aligment() {
+-//   return 32;
+-// }
+-def NACL_TLS_ALIGNMENT : I<0, Pseudo, (outs GR32:$dst), (ins),
+-                           "movl $$32, $dst",
+-                           [(set GR32:$dst, (int_nacl_tls_alignment))]>;
+-
+-// from src/untrusted/stubs/tls_x86_{32,64}.c:
+-// size_t __nacl_tdb_offset_in_tls(size_t tls_data_and_bss_size) {
+-//  return tls_data_and_bss_size; /* TDB after TLS */
+-// }
+-def NACL_TDB_OFFSET_IN_TLS :
+-        I<0, Pseudo, (outs GR32:$dst), (ins GR32:$src),
+-          "movl $src, $dst",
+-          [(set GR32:$dst, (int_nacl_tdb_offset_in_tls GR32:$src))]>;
+-
+-// from src/untrusted/stubs/tls_x86_{32,64}.c:
+-// size_t __nacl_tdb_effective_payload_size(size_t tdb_size) {
+-//   return tdb_size; /* TDB after TLS */
+-// }
+-def NACL_TDB_EFFECTIVE_PAYLOAD_SIZE :
+-        I<0, Pseudo, (outs GR32:$dst), (ins GR32:$src),
+-          "movl $src, $dst",
+-          [(set GR32:$dst, (int_nacl_tdb_effective_payload_size GR32:$src))]>;
+-
+-// from src/untrusted/stubs/tls_x86_32.c:
+-// size_t __nacl_return_address_size() {
+-//   return 4;
+-// }
+-def NACL_RETURN_ADDRESS_SIZE32 :
+-        I<0, Pseudo, (outs GR32:$dst), (ins),
+-          "movl $$4, $dst",
+-          [(set GR32:$dst, (int_nacl_return_address_size))]>,
+-        Requires<[IsNaCl32]>;
+-
+-// from src/untrusted/stubs/tls_x86_64.c:
+-// size_t __nacl_return_address_size() {
+-//   return 8;
+-// }
+-def NACL_RETURN_ADDRESS_SIZE64 :
+-        I<0, Pseudo, (outs GR32:$dst), (ins),
+-          "movl $$8, $dst",
+-          [(set GR32:$dst, (int_nacl_return_address_size))]>,
+-        Requires<[IsNaCl64]>;
+-
