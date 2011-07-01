@@ -1,0 +1,522 @@
+# HG changeset patch
+# User robertm@google.com
+# Date 1307651924 14400
+# Branch pnacl-sfi
+# Node ID 54be72e3436a8f6dc6e46fa3bb1f5627e7970632
+# Parent 42a71436e7debe4f5697932bbec65bebdc79e78d
+Eliminate almost all localmods from the no longer used constant island
+pass and fix a few more unnecessary deltas.
+
+CL= http://codereview.chromium.org/7134046/
+
+ From pnacl-llvm-0040-264-54be72e3436a8f6dc6e46fa3bb1f5627e7970632.patch
+
+diff -r 42a71436e7de lib/Target/ARM/ARMBaseInstrInfo.cpp
+--- a/lib/Target/ARM/ARMBaseInstrInfo.cpp	Wed Jun 01 17:08:11 2011 -0700
++++ b/lib/Target/ARM/ARMBaseInstrInfo.cpp	Fri Jul 01 15:15:00 2011 -0700
+@@ -37,7 +37,6 @@
+ #include "llvm/ADT/STLExtras.h"
+ using namespace llvm;
+ 
+-
+ static cl::opt<bool>
+ EnableARM3Addr("enable-arm-3-addr-conv", cl::Hidden,
+                cl::desc("Enable ARM 2-addr to 3-addr conv"));
+@@ -518,9 +517,6 @@
+   return JT[JTI].MBBs.size();
+ }
+ 
+-// @LOCALMOD-START
+-// @NOTE: this needs to be fixe to make the constand island estimates better
+-// @LOCALMOD-END
+ /// GetInstSize - Return the size of the specified MachineInstr.
+ ///
+ unsigned ARMBaseInstrInfo::GetInstSizeInBytes(const MachineInstr *MI) const {
+@@ -633,8 +629,7 @@
+   bool GPRSrc  = ARM::GPRRegClass.contains(SrcReg);
+ 
+   if (GPRDest && GPRSrc) {
+-    unsigned Opc = ARM::MOVr;
+-    AddDefaultCC(AddDefaultPred(BuildMI(MBB, I, DL, get(Opc), DestReg)
++    AddDefaultCC(AddDefaultPred(BuildMI(MBB, I, DL, get(ARM::MOVr), DestReg)
+                                   .addReg(SrcReg, getKillRegState(KillSrc))));
+     return;
+   }
+@@ -1348,8 +1343,7 @@
+     assert(ARM_AM::getSOImmVal(ThisVal) != -1 && "Bit extraction didn't work?");
+ 
+     // Build the new ADD / SUB.
+-    unsigned Opc;
+-    Opc = isSub ? ARM::SUBri : ARM::ADDri;
++    unsigned Opc = isSub ? ARM::SUBri : ARM::ADDri;
+ 
+     BuildMI(MBB, MBBI, dl, TII.get(Opc), DestReg)
+       .addReg(BaseReg, RegState::Kill).addImm(ThisVal)
+diff -r 42a71436e7de lib/Target/ARM/ARMConstantIslandPass.cpp
+--- a/lib/Target/ARM/ARMConstantIslandPass.cpp	Wed Jun 01 17:08:11 2011 -0700
++++ b/lib/Target/ARM/ARMConstantIslandPass.cpp	Fri Jul 01 15:15:00 2011 -0700
+@@ -18,8 +18,6 @@
+ #include "ARMAddressingModes.h"
+ #include "ARMMachineFunctionInfo.h"
+ #include "ARMInstrInfo.h"
+-#include "ARMNaClRewritePass.h"  // @LOCALMOD
+-#include "ARMTargetMachine.h"  // @LOCALMOD
+ #include "Thumb2InstrInfo.h"
+ #include "llvm/CodeGen/MachineConstantPool.h"
+ #include "llvm/CodeGen/MachineFunctionPass.h"
+@@ -48,12 +46,6 @@
+ STATISTIC(NumJTMoved,    "Number of jump table destination blocks moved");
+ STATISTIC(NumJTInserted, "Number of jump table intermediate blocks inserted");
+ 
+-// @LOCALMOD-START
+-#include "llvm/Support/CommandLine.h"
+-cl::opt<bool> FlagSfiCpDisableVerify("sfi-cp-disable-verify");
+-cl::opt<bool> FlagSfiCpFudge("sfi-cp-fudge");
+-cl::opt<int> FlagSfiCpFudgePercent("sfi-cp-fudge-percent", cl::init(85));
+-// @LOCALMOD-END
+ 
+ static cl::opt<bool>
+ AdjustJumpTableBlocks("arm-adjust-jump-tables", cl::Hidden, cl::init(true),
+@@ -174,7 +166,6 @@
+     bool HasInlineAsm;
+ 
+     const ARMInstrInfo *TII;
+-    const TargetRegisterInfo *TRI; // @LOCALMOD
+     const ARMSubtarget *STI;
+     ARMFunctionInfo *AFI;
+     bool isThumb;
+@@ -191,14 +182,6 @@
+     }
+ 
+   private:
+-    // @LOCALMOD-BEGIN
+-    unsigned GetFudge(const MachineInstr* I,
+-                      unsigned  offset,
+-                      bool is_start,
+-                      bool is_end,
+-                      bool is_jump_target) const;
+-    // @LOCALMOD-END
+- 
+     void DoInitialPlacement(MachineFunction &MF,
+                             std::vector<MachineInstr*> &CPEMIs);
+     CPEntry *findConstPoolEntry(unsigned CPI, const MachineInstr *CPEMI);
+@@ -245,21 +228,8 @@
+ /// verify - check BBOffsets, BBSizes, alignment of islands
+ void ARMConstantIslands::verify(MachineFunction &MF) {
+   assert(BBOffsets.size() == BBSizes.size());
+-  for (unsigned i = 1, e = BBOffsets.size(); i != e; ++i) 
+-    
+-    // @LOCALMOD-START
+-    // NOTE: this is horrible hack and needs to be cleaned up when
+-    //       we revisit constant pools for arm 
+-    {
+-      if (FlagSfiCpDisableVerify) {
+-	if (!(BBOffsets[i-1]+BBSizes[i-1] == BBOffsets[i])) {
+-	  errs() << "\nCONSTANT POOL INCONSISTENCY IN SIZES - IGNORED\n\n";
+-	}
+-      } else {
+-	assert(BBOffsets[i-1]+BBSizes[i-1] == BBOffsets[i]);
+-      }
+-  } 
+-  // @LOCALMOD-END
++  for (unsigned i = 1, e = BBOffsets.size(); i != e; ++i)
++    assert(BBOffsets[i-1]+BBSizes[i-1] == BBOffsets[i]);
+   if (!isThumb)
+     return;
+ #ifndef NDEBUG
+@@ -269,19 +239,9 @@
+     if (!MBB->empty() &&
+         MBB->begin()->getOpcode() == ARM::CONSTPOOL_ENTRY) {
+       unsigned MBBId = MBB->getNumber();
+-      // @LOCALMOD-START
+-      if (FlagSfiCpDisableVerify) {
+-	if (!(HasInlineAsm ||
+-	      (BBOffsets[MBBId]%4 == 0 && BBSizes[MBBId]%4 == 0) ||
+-	      (BBOffsets[MBBId]%4 != 0 && BBSizes[MBBId]%4 != 0))) {
+-	  errs() << "\nCONSTANT POOL INCONSISTENCY IN ALIGNMENT - IGNORED\n\n";
+-	}
+-      } else {
+-	assert(HasInlineAsm ||
+-	       (BBOffsets[MBBId]%4 == 0 && BBSizes[MBBId]%4 == 0) ||
+-	       (BBOffsets[MBBId]%4 != 0 && BBSizes[MBBId]%4 != 0));
+-      }
+-      // @LOCALMOD-END
++      assert(HasInlineAsm ||
++             (BBOffsets[MBBId]%4 == 0 && BBSizes[MBBId]%4 == 0) ||
++             (BBOffsets[MBBId]%4 != 0 && BBSizes[MBBId]%4 != 0));
+     }
+   }
+   for (unsigned i = 0, e = CPUsers.size(); i != e; ++i) {
+@@ -290,16 +250,7 @@
+     unsigned CPEOffset  = GetOffsetOf(U.CPEMI);
+     unsigned Disp = UserOffset < CPEOffset ? CPEOffset - UserOffset :
+       UserOffset - CPEOffset;
+-    // @LOCALMOD-START
+-    if (FlagSfiCpDisableVerify) {
+-      if(Disp > U.MaxDisp) {
+-	errs() << "\nCONSTANT POOL INCONSISTENCY IN DISP - IGNORED\n\n";
+-      }
+-    } else {
+-      // NOTE the original assert used || which is a bug 
+-      assert(Disp <= U.MaxDisp && "Constant pool entry out of range!");
+-    }
+-    // @LOCALMOD-END
++    assert(Disp <= U.MaxDisp || "Constant pool entry out of range!");
+   }
+ #endif
+ }
+@@ -323,7 +274,6 @@
+   MachineConstantPool &MCP = *MF.getConstantPool();
+ 
+   TII = (const ARMInstrInfo*)MF.getTarget().getInstrInfo();
+-  TRI = MF.getTarget().getRegisterInfo(); // @LOCALMOD
+   AFI = MF.getInfo<ARMFunctionInfo>();
+   STI = &MF.getTarget().getSubtarget<ARMSubtarget>();
+ 
+@@ -410,6 +360,7 @@
+   // Shrink 32-bit Thumb2 branch, load, and store instructions.
+   if (isThumb2 && !STI->prefers32BitThumb())
+     MadeChange |= OptimizeThumb2Instructions(MF);
++
+   // After a while, this might be made debug-only, but it is not expensive.
+   verify(MF);
+ 
+@@ -515,126 +466,6 @@
+   }
+ }
+ 
+-
+-//@LOCALMOD-START
+-// We try to account for extra sfi space overhead here
+-// NOTE: This function needs to be updated whenever changes
+-//       to the sfi scheme are made
+-// NOTE: this is very likely missing a few cases
+-//       we will add those as neeeded and otherwise
+-//       rely on artificially reducing the ldr offset range.
+-// NOTE: one missing case: jump table targets are 16 bytes aligned
+-unsigned ARMConstantIslands::GetFudge(const MachineInstr* I,
+-                                      unsigned  offset,
+-                                      bool is_start,
+-                                      bool is_end,
+-                                      bool is_jump_target) const {
+-  if (!FlagSfiCpFudge) return 0;
+-  const int kBundleSize = 16;
+-  unsigned fudge = 0;
+-  const int Opc = I->getOpcode();
+-
+-  if (is_jump_target && is_start) {
+-    while ( (offset + fudge) % kBundleSize != 0) fudge += 4;
+-  }
+-
+-  switch(Opc) {
+-   case ARM::BL:
+-   case ARM::BLX:
+-   case ARM::BL_pred:
+-   case ARM::BLr9:
+-   case ARM::BLXr9:
+-   case ARM::BLr9_pred:
+-   case ARM::TPsoft:
+-    // branches must be in the last slot
+-    while ( (offset + fudge) % kBundleSize != 0xc) fudge += 4;
+-    break;
+-
+-   case ARM::CONSTPOOL_ENTRY:
+-    if (is_start) {
+-      while ( (offset + fudge) % kBundleSize != 0) fudge += 4;
+-    }
+-
+-    if (is_end) {
+-      while ( (offset + fudge) % kBundleSize != 0xc) fudge += 4;
+-    }
+-
+-    {
+-      const int size = TII->GetInstSizeInBytes(I);
+-      assert (size == 4 || size == 8);
+-      // we do not want the data to cross bundle boundaries
+-      if (size == 8) {
+-        if((offset + fudge) % kBundleSize == 0xc) fudge += 4;
+-      }
+-    }
+-    // illegal if at data bundle beginning
+-    if ((offset + fudge) % kBundleSize == 0) fudge += 4;
+-    break;
+-
+-   case ARM::STR_PRE:
+-   case ARM::STR_POST:
+-   case ARM::STRB_PRE:
+-   case ARM::STRB_POST:
+-   case ARM::STRH:
+-   case ARM::STRD:
+-    // TODO: there are vfp stores missing
+-   case ARM::VSTRS:
+-   case ARM::VSTRD:
+-
+-    // case ARM::STM:// TODO: make this work
+-    {
+-    const MachineOperand &MO1 = I->getOperand(1);
+-    if (MO1.getReg() != ARM::SP) {
+-      // cannot be in the last slot
+-      if ( (offset + fudge) % kBundleSize == 0xc) fudge += 4;
+-      // one mask
+-      fudge += 4;
+-    }
+-    break;
+-    }
+-  case ARM::BX:
+-  case ARM::BXr9_CALL:
+-  case ARM::BX_RET:
+-    // cannot be in the last slot
+-    if ( (offset + fudge) % kBundleSize == 0xc) fudge += 4;
+-    // one mask
+-    fudge += 4;
+-    break;
+-  }
+-
+-  // Check for stack adjustments, which will be sandboxed later
+-  // (possibly adding padding and a data mask instrs).
+-  if (ARM_SFI::NeedSandboxStackChange(*I, TRI)) {
+-    // stack adjusts must not be in the last slot
+-    if ( (offset + fudge) % kBundleSize == 0xc) fudge += 4;
+-    // add masking
+-    fudge += 4;
+-  }
+-
+-  return fudge;
+-}
+-
+-static void UpdateJumpTargetAlignment(MachineFunction &MF) {
+-  if (!FlagSfiBranch) return;
+-
+-  // JUMP TABLE TARGETS
+-  MachineJumpTableInfo *jt_info = MF.getJumpTableInfo();
+-  const std::vector<MachineJumpTableEntry> &JT = jt_info->getJumpTables();
+-  for (unsigned i=0; i < JT.size(); ++i) {
+-    std::vector<MachineBasicBlock*> MBBs = JT[i].MBBs;
+-
+-    //cout << "JUMPTABLE "<< i << " " << MBBs.size() << "\n";
+-    for (unsigned j=0; j < MBBs.size(); ++j) {
+-      if (MBBs[j]->begin()->getOpcode() == ARM::CONSTPOOL_ENTRY) {
+-        continue;
+-      }
+-      MBBs[j]->setAlignment(16);
+-    }
+-  }
+-}
+-
+-//@LOCALMOD-END
+-
+ /// InitialFunctionScan - Do the initial scan of the function, building up
+ /// information about the sizes of each block, the location of all the water,
+ /// and finding all of the constant pool users.
+@@ -668,15 +499,6 @@
+          I != E; ++I) {
+       if (I->isDebugValue())
+         continue;
+-      //@LOCALMOD-START
+-      // TODO: also account for jump_targets more
+-      MBBSize += GetFudge(I,
+-                          Offset,
+-                          I == MBB.begin(),
+-                          I == E,
+-                          MF.begin() == MBBI || MBBI->getAlignment() == 16);
+-      //@LOCALMOD-END
+-
+       // Add instruction size to MBBSize.
+       MBBSize += TII->GetInstSizeInBytes(I);
+ 
+@@ -810,14 +632,6 @@
+           unsigned CPI = I->getOperand(op).getIndex();
+           MachineInstr *CPEMI = CPEMIs[CPI];
+           unsigned MaxOffs = ((1 << Bits)-1) * Scale;
+-
+-          // @LOCALMOD-BEGIN
+-          if (FlagSfiCpFudge) {
+-            MaxOffs *= FlagSfiCpFudgePercent;
+-            MaxOffs /= 100;
+-          }
+-          // @LOCALMOD-END
+-          
+           CPUsers.push_back(CPUser(I, CPEMI, MaxOffs, NegOk, IsSoImm));
+ 
+           // Increment corresponding CPEntry reference count.
+@@ -868,10 +682,6 @@
+     assert(I != MBB->end() && "Didn't find MI in its own basic block?");
+     if (&*I == MI) return Offset;
+     Offset += TII->GetInstSizeInBytes(I);
+-    // @LOCALMOD-START
+-    // TODO: take jump targets into account
+-    Offset += GetFudge(I, Offset, I ==  MBB->begin(), I == MBB->end(), 0);
+-    // @LOCALMOD-END
+   }
+ }
+ 
+@@ -994,13 +804,7 @@
+   unsigned NewBBSize = 0;
+   for (MachineBasicBlock::iterator I = NewBB->begin(), E = NewBB->end();
+        I != E; ++I)
+-  // @LOCALMOD-START
+-  {
+-    NewBBSize += GetFudge(I, NewBBSize, false, false, 0);
+     NewBBSize += TII->GetInstSizeInBytes(I);
+-  }
+-  // @LOCALMOD-END
+-
+   // Set the size of NewBB in BBSizes.  It does not include any padding now.
+   BBSizes[NewBBI] = NewBBSize;
+ 
+@@ -1125,16 +929,6 @@
+ void ARMConstantIslands::AdjustBBOffsetsAfter(MachineBasicBlock *BB,
+                                               int delta) {
+   MachineFunction::iterator MBBI = BB; MBBI = llvm::next(MBBI);
+-  // @LOCALMOD-START
+-  // TODO: explain this
+-  if (delta > 0) {
+-    BBSizes[BB->getNumber()] += 4;  // @LOCALMOD
+-    delta += 4;
+-  }
+-  // @LOCALMOD-END
+-
+-
+-  
+   for(unsigned i = BB->getNumber()+1, e = BB->getParent()->getNumBlockIDs();
+       i < e; ++i) {
+     BBOffsets[i] += delta;
+@@ -1334,8 +1128,7 @@
+   MachineBasicBlock *UserMBB = UserMI->getParent();
+   unsigned OffsetOfNextBlock = BBOffsets[UserMBB->getNumber()] +
+                                BBSizes[UserMBB->getNumber()];
+-  // @LOCALMOD
+-  // assert(OffsetOfNextBlock== BBOffsets[UserMBB->getNumber()+1]);
++  assert(OffsetOfNextBlock== BBOffsets[UserMBB->getNumber()+1]);
+ 
+   // If the block does not end in an unconditional branch already, and if the
+   // end of the block is within range, make new water there.  (The addition
+@@ -1379,17 +1172,7 @@
+     // The 4 in the following is for the unconditional branch we'll be
+     // inserting (allows for long branch on Thumb1).  Alignment of the
+     // island is handled inside OffsetIsInRange.
+-
+-    // @LOCALMOD-START
+-    //unsigned BaseInsertOffset = UserOffset + U.MaxDisp -4;
+-     unsigned BaseInsertOffset = UserOffset - 4;
+-     if (FlagSfiCpFudge) {
+-       BaseInsertOffset += U.MaxDisp * FlagSfiCpFudgePercent / 100;
+-     } else {
+-       BaseInsertOffset += U.MaxDisp;
+-     }
+-     // @LOCALMOD-END
+-
++    unsigned BaseInsertOffset = UserOffset + U.MaxDisp -4;
+     // This could point off the end of the block if we've already got
+     // constant pool entries following this block; only the last one is
+     // in the water list.  Back past any possible branches (allow for a
+@@ -1404,16 +1187,9 @@
+     unsigned CPUIndex = CPUserIndex+1;
+     unsigned NumCPUsers = CPUsers.size();
+     MachineInstr *LastIT = 0;
+-    MachineBasicBlock::iterator EndBB = UserMBB->end(); //@LOCALMOD
+-    // @LOCALMOD: TODO: GetInstSizeInBytes() should be replaced with
+-    //                  our estimator
+     for (unsigned Offset = UserOffset+TII->GetInstSizeInBytes(UserMI);
+-         Offset < BaseInsertOffset && MI != EndBB; //@LOCALMOD
+-         // @LOCALMOD-START
+-         //Offset += TII->GetInstSizeInBytes(MI),
+-         Offset +=  GetFudge(MI, Offset, false, false, false) +
+-                           TII->GetInstSizeInBytes(MI),
+-        // @LOCALMOD-END 
++         Offset < BaseInsertOffset;
++         Offset += TII->GetInstSizeInBytes(MI),
+            MI = llvm::next(MI)) {
+       if (CPUIndex < NumCPUsers && CPUsers[CPUIndex].MI == MI) {
+         CPUser &U = CPUsers[CPUIndex];
+@@ -1643,10 +1419,6 @@
+ /// Otherwise, add an intermediate branch instruction to a branch.
+ bool
+ ARMConstantIslands::FixUpUnconditionalBr(MachineFunction &MF, ImmBranch &Br) {
+-  // @LOCALMOD-start
+-  assert(0 && "fix up uncond br not implemented");
+-  // @LOCALMOD-end
+- 
+   MachineInstr *MI = Br.MI;
+   MachineBasicBlock *MBB = MI->getParent();
+   if (!isThumb1)
+@@ -1670,9 +1442,6 @@
+ /// conditional branch + an unconditional branch to the destination.
+ bool
+ ARMConstantIslands::FixUpConditionalBr(MachineFunction &MF, ImmBranch &Br) {
+- // @LOCALMOD-start
+-  assert(0 && "fix up cond br not implemented");
+-  // @LOCALMOD-end
+   MachineInstr *MI = Br.MI;
+   MachineBasicBlock *DestBB = MI->getOperand(0).getMBB();
+ 
+diff -r 42a71436e7de lib/Target/ARM/ARMConstantPoolValue.cpp
+--- a/lib/Target/ARM/ARMConstantPoolValue.cpp	Wed Jun 01 17:08:11 2011 -0700
++++ b/lib/Target/ARM/ARMConstantPoolValue.cpp	Fri Jul 01 15:15:00 2011 -0700
+@@ -44,8 +44,6 @@
+   : MachineConstantPoolValue((const Type*)Type::getInt32Ty(gv->getContext())),
+     CVal(gv), S(NULL), LabelId(0), Kind(ARMCP::CPValue), PCAdjust(0),
+     Modifier(Modif), AddCurrentAddress(false) {}
+-    // @LOCALMOD     ^^^ (should show up in next merge)
+-
+ 
+ const GlobalValue *ARMConstantPoolValue::getGV() const {
+   return dyn_cast_or_null<GlobalValue>(CVal);
+diff -r 42a71436e7de lib/Target/ARM/ARMInstrInfo.cpp
+--- a/lib/Target/ARM/ARMInstrInfo.cpp	Wed Jun 01 17:08:11 2011 -0700
++++ b/lib/Target/ARM/ARMInstrInfo.cpp	Fri Jul 01 15:15:00 2011 -0700
+@@ -24,7 +24,6 @@
+ #include "llvm/MC/MCAsmInfo.h"
+ using namespace llvm;
+ 
+-
+ ARMInstrInfo::ARMInstrInfo(const ARMSubtarget &STI)
+   : ARMBaseInstrInfo(STI), RI(*this, STI) {
+ }
+diff -r 42a71436e7de lib/Target/ARM/ARMLoadStoreOptimizer.cpp
+--- a/lib/Target/ARM/ARMLoadStoreOptimizer.cpp	Wed Jun 01 17:08:11 2011 -0700
++++ b/lib/Target/ARM/ARMLoadStoreOptimizer.cpp	Fri Jul 01 15:15:00 2011 -0700
+@@ -39,9 +39,6 @@
+ #include "llvm/ADT/Statistic.h"
+ using namespace llvm;
+ 
+-#include "llvm/Support/CommandLine.h" // @LOCALMOD
+-extern cl::opt<bool> FlagSfiStore; // @LOCALMOD
+-
+ STATISTIC(NumLDMGened , "Number of ldm instructions generated");
+ STATISTIC(NumSTMGened , "Number of stm instructions generated");
+ STATISTIC(NumVLDMGened, "Number of vldm instructions generated");
+@@ -504,7 +501,6 @@
+   unsigned MyPredReg = 0;
+   if (!MI)
+     return false;
+-
+   if (MI->getOpcode() != ARM::t2SUBri &&
+       MI->getOpcode() != ARM::t2SUBrSPi &&
+       MI->getOpcode() != ARM::t2SUBrSPi12 &&
+@@ -530,7 +526,6 @@
+   unsigned MyPredReg = 0;
+   if (!MI)
+     return false;
+-
+   if (MI->getOpcode() != ARM::t2ADDri &&
+       MI->getOpcode() != ARM::t2ADDrSPi &&
+       MI->getOpcode() != ARM::t2ADDrSPi12 &&
+@@ -1333,7 +1328,6 @@
+   return NumMerges > 0;
+ }
+ 
+-
+ namespace {
+   struct OffsetCompare {
+     bool operator()(const MachineInstr *LHS, const MachineInstr *RHS) const {
+@@ -1357,7 +1351,8 @@
+ ///   ldmfd sp!, {..., pc}
+ // @LOCALMOD for sfi we do not want this to happen
+ bool ARMLoadStoreOpt::MergeReturnIntoLDM(MachineBasicBlock &MBB) {
+-// @LOCALMOD-START
++  // @LOCALMOD-START
++  // This should probably be controlled by a flag
+   return false;
+   // @LOCALMOD-END
+ 

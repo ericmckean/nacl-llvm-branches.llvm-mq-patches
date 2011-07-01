@@ -1,0 +1,32 @@
+# HG changeset patch
+# User robertm@google.com
+# Date 1308077762 14400
+# Branch pnacl-sfi
+# Node ID 00f246b3f25fed1cacc02a62d1b202c732bd8f0e
+# Parent dcda718bd98aabbcdf1f378956a8a51145749c35
+This makes the code slightly faster by not computing the unused remainder and
+more importantly works around a problem in compiler-rt - the bug has more
+details.
+
+BUG= http://code.google.com/p/nativeclient/issues/detail?id=1915
+CL= http://codereview.chromium.org/7146002/
+
+ From pnacl-llvm-0042-266-00f246b3f25fed1cacc02a62d1b202c732bd8f0e.patch
+
+diff -r dcda718bd98a lib/Target/ARM/ARMISelLowering.cpp
+--- a/lib/Target/ARM/ARMISelLowering.cpp	Mon Jun 13 11:21:09 2011 -0700
++++ b/lib/Target/ARM/ARMISelLowering.cpp	Fri Jul 01 15:15:03 2011 -0700
+@@ -380,8 +380,11 @@
+     // Long long helper functions
+     // RTABI chapter 4.2, Table 9
+     setLibcallName(RTLIB::MUL_I64,  "__aeabi_lmul");
+-    setLibcallName(RTLIB::SDIV_I64, "__aeabi_ldivmod");
+-    setLibcallName(RTLIB::UDIV_I64, "__aeabi_uldivmod");
++    // @LOCALMOD-start
++    // use default names instead of the arm specific ones
++    //setLibcallName(RTLIB::SDIV_I64, "__aeabi_ldivmod");
++    //setLibcallName(RTLIB::UDIV_I64, "__aeabi_uldivmod");
++    // @LOCALMOD-end
+     setLibcallName(RTLIB::SHL_I64, "__aeabi_llsl");
+     setLibcallName(RTLIB::SRL_I64, "__aeabi_llsr");
+     setLibcallName(RTLIB::SRA_I64, "__aeabi_lasr");
