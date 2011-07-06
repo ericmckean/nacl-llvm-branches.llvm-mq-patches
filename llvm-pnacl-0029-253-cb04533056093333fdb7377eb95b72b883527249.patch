@@ -10,7 +10,7 @@ Add libplatform and libgio to LLVM self-build
 
 diff -r 7326cdef4785 Makefile.rules
 --- a/Makefile.rules	Thu Apr 28 13:00:37 2011 -0700
-+++ b/Makefile.rules	Wed Jul 06 14:59:34 2011 -0700
++++ b/Makefile.rules	Wed Jul 06 15:31:22 2011 -0700
 @@ -578,7 +578,7 @@
  endif
  

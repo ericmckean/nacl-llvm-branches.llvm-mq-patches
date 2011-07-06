@@ -15,7 +15,7 @@ review: http://codereview.chromium.org/6576046/
 
 diff -r c5208d5b375a lib/Target/ARM/ARMNaClHeaders.cpp
 --- a/lib/Target/ARM/ARMNaClHeaders.cpp	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Wed Jul 06 13:49:25 2011 -0700
++++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Wed Jul 06 15:31:11 2011 -0700
 @@ -69,6 +69,9 @@
  
    O << " @ ========================================\n";

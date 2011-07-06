@@ -1,0 +1,17 @@
+# HG changeset patch
+# Parent 4cdadc5a5bf2d59435a49a1fa76ab377c543bbf2
+
+diff -r 4cdadc5a5bf2 tools/lto/LTOModule.cpp
+--- a/tools/lto/LTOModule.cpp	Wed Jul 06 15:31:30 2011 -0700
++++ b/tools/lto/LTOModule.cpp	Wed Jul 06 15:31:30 2011 -0700
+@@ -140,8 +140,8 @@
+   }
+ 
+   // parse bitcode buffer
+-  OwningPtr<Module> m(getLazyBitcodeModule(buffer, getGlobalContext(),
+-                                           &errMsg));
++  OwningPtr<Module> m(ParseBitcodeFile(buffer, getGlobalContext(), // @LOCALMOD
++                                       &errMsg));
+   if (!m) {
+     delete buffer;
+     return NULL;

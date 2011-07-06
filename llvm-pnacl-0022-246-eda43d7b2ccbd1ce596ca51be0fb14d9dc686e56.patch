@@ -10,7 +10,7 @@ Fix off-by-one error in topological sort adjustment in X86-64 SelectAddr
 
 diff -r 98744a8f09c9 lib/Target/X86/X86ISelDAGToDAG.cpp
 --- a/lib/Target/X86/X86ISelDAGToDAG.cpp	Thu Mar 31 14:19:20 2011 -0700
-+++ b/lib/Target/X86/X86ISelDAGToDAG.cpp	Wed Jul 06 14:08:17 2011 -0700
++++ b/lib/Target/X86/X86ISelDAGToDAG.cpp	Wed Jul 06 15:31:17 2011 -0700
 @@ -1219,10 +1219,11 @@
      if (Index.getValueType() != MVT::i64) {
        Index = CurDAG->getZExtOrTrunc(Index, Index.getDebugLoc(), MVT::i64);

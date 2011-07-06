@@ -12,7 +12,7 @@ TEST=none (yet)
 
 diff -r 17e8b1c58841 include/llvm/Intrinsics.td
 --- a/include/llvm/Intrinsics.td	Thu Mar 17 17:49:59 2011 -0700
-+++ b/include/llvm/Intrinsics.td	Wed Jul 06 13:53:11 2011 -0700
++++ b/include/llvm/Intrinsics.td	Wed Jul 06 15:31:13 2011 -0700
 @@ -491,6 +491,20 @@
                        GCCBuiltin<"__builtin_nacl_setjmp">;
  def int_nacl_longjmp : Intrinsic<[],  [llvm_ptr_ty, llvm_i32_ty]>,
@@ -36,7 +36,7 @@ diff -r 17e8b1c58841 include/llvm/Intrinsics.td
  //===----------------------------------------------------------------------===//
 diff -r 17e8b1c58841 lib/Target/ARM/ARMInstrInfo.td
 --- a/lib/Target/ARM/ARMInstrInfo.td	Thu Mar 17 17:49:59 2011 -0700
-+++ b/lib/Target/ARM/ARMInstrInfo.td	Wed Jul 06 13:53:11 2011 -0700
++++ b/lib/Target/ARM/ARMInstrInfo.td	Wed Jul 06 15:31:13 2011 -0700
 @@ -3801,7 +3801,10 @@
                             "sfi_nops_to_force_slot2; "
                             "sfi_code_mask r4; "
@@ -101,7 +101,7 @@ diff -r 17e8b1c58841 lib/Target/ARM/ARMInstrInfo.td
  // Move from ARM core register to Special Register
 diff -r 17e8b1c58841 lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Thu Mar 17 17:49:59 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jul 06 13:53:11 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jul 06 15:31:13 2011 -0700
 @@ -437,3 +437,59 @@
                         [(int_nacl_longjmp EDI, EAX)]>,
                         Requires<[IsNaCl64]>, TB;

@@ -3,7 +3,7 @@
 # Date 1307651924 14400
 # Branch pnacl-sfi
 # Node ID 54be72e3436a8f6dc6e46fa3bb1f5627e7970632
-# Parent 5d348ce0c2492e4e642014f461ee6799e9b8267f
+# Parent 6062c1268cb1c7114d4751f22c6be794bc6e37f3
 Eliminate almost all localmods from the no longer used constant island
 pass and fix a few more unnecessary deltas.
 

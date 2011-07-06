@@ -19,7 +19,7 @@ TEST=utman.sh test-arm-pic
 
 diff -r 31b0cc08ff44 lib/Target/ARM/ARMAsmBackend.cpp
 --- a/lib/Target/ARM/ARMAsmBackend.cpp	Thu Apr 21 12:02:47 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmBackend.cpp	Wed Jul 06 14:54:52 2011 -0700
++++ b/lib/Target/ARM/ARMAsmBackend.cpp	Wed Jul 06 15:31:20 2011 -0700
 @@ -144,8 +144,15 @@
    }
    // ARM mode
@@ -39,7 +39,7 @@ diff -r 31b0cc08ff44 lib/Target/ARM/ARMAsmBackend.cpp
    case 1: OW->Write8(0); break;
 diff -r 31b0cc08ff44 lib/Target/ARM/ARMNaClHeaders.cpp
 --- a/lib/Target/ARM/ARMNaClHeaders.cpp	Thu Apr 21 12:02:47 2011 -0700
-+++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Wed Jul 06 14:54:52 2011 -0700
++++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Wed Jul 06 15:31:20 2011 -0700
 @@ -45,25 +45,25 @@
  
    O <<

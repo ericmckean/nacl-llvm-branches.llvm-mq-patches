@@ -10,7 +10,7 @@ Add declarations for functions used by intrinsics
 
 diff -r 0ce99424c3b6 include/llvm/CodeGen/IntrinsicLowering.h
 --- a/include/llvm/CodeGen/IntrinsicLowering.h	Wed Apr 27 16:07:18 2011 -0700
-+++ b/include/llvm/CodeGen/IntrinsicLowering.h	Wed Jul 06 14:59:11 2011 -0700
++++ b/include/llvm/CodeGen/IntrinsicLowering.h	Wed Jul 06 15:31:22 2011 -0700
 @@ -16,6 +16,7 @@
  #ifndef LLVM_CODEGEN_INTRINSICLOWERING_H
  #define LLVM_CODEGEN_INTRINSICLOWERING_H
@@ -46,7 +46,7 @@ diff -r 0ce99424c3b6 include/llvm/CodeGen/IntrinsicLowering.h
      /// inserted into the module specified.
 diff -r 0ce99424c3b6 lib/CodeGen/IntrinsicLowering.cpp
 --- a/lib/CodeGen/IntrinsicLowering.cpp	Wed Apr 27 16:07:18 2011 -0700
-+++ b/lib/CodeGen/IntrinsicLowering.cpp	Wed Jul 06 14:59:11 2011 -0700
++++ b/lib/CodeGen/IntrinsicLowering.cpp	Wed Jul 06 15:31:22 2011 -0700
 @@ -92,8 +92,48 @@
  #  define setjmp_undefined_for_msvc
  #endif
@@ -98,7 +98,7 @@ diff -r 0ce99424c3b6 lib/CodeGen/IntrinsicLowering.cpp
        switch (I->getIntrinsicID()) {
 diff -r 0ce99424c3b6 tools/gold/gold-plugin.cpp
 --- a/tools/gold/gold-plugin.cpp	Wed Apr 27 16:07:18 2011 -0700
-+++ b/tools/gold/gold-plugin.cpp	Wed Jul 06 14:59:11 2011 -0700
++++ b/tools/gold/gold-plugin.cpp	Wed Jul 06 15:31:22 2011 -0700
 @@ -361,39 +361,6 @@
      }
    }
@@ -141,7 +141,7 @@ diff -r 0ce99424c3b6 tools/gold/gold-plugin.cpp
  
 diff -r 0ce99424c3b6 tools/lto/LTOCodeGenerator.cpp
 --- a/tools/lto/LTOCodeGenerator.cpp	Wed Apr 27 16:07:18 2011 -0700
-+++ b/tools/lto/LTOCodeGenerator.cpp	Wed Jul 06 14:59:11 2011 -0700
++++ b/tools/lto/LTOCodeGenerator.cpp	Wed Jul 06 15:31:22 2011 -0700
 @@ -25,6 +25,7 @@
  #include "llvm/ADT/Triple.h"
  #include "llvm/Analysis/Passes.h"
@@ -169,7 +169,7 @@ diff -r 0ce99424c3b6 tools/lto/LTOCodeGenerator.cpp
  LTOCodeGenerator::~LTOCodeGenerator()
 diff -r 0ce99424c3b6 tools/lto/LTOModule.cpp
 --- a/tools/lto/LTOModule.cpp	Wed Apr 27 16:07:18 2011 -0700
-+++ b/tools/lto/LTOModule.cpp	Wed Jul 06 14:59:11 2011 -0700
++++ b/tools/lto/LTOModule.cpp	Wed Jul 06 15:31:22 2011 -0700
 @@ -41,6 +41,7 @@
  #include "llvm/Target/TargetMachine.h"
  #include "llvm/Target/TargetRegistry.h"

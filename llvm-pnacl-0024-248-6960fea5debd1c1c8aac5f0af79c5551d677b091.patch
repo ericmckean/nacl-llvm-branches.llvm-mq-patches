@@ -38,7 +38,7 @@ TEST=utman.sh test-arm-pic
 
 diff -r 40a2011cc41a lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Fri Apr 15 18:11:24 2011 -0400
-+++ b/lib/MC/ELFObjectWriter.cpp	Wed Jul 06 14:54:32 2011 -0700
++++ b/lib/MC/ELFObjectWriter.cpp	Wed Jul 06 15:31:19 2011 -0700
 @@ -25,17 +25,29 @@
  #include "llvm/Support/ELF.h"
  #include "llvm/Target/TargetAsmBackend.h"
@@ -323,7 +323,7 @@ diff -r 40a2011cc41a lib/MC/ELFObjectWriter.cpp
  
 diff -r 40a2011cc41a lib/MC/ELFObjectWriter.h
 --- a/lib/MC/ELFObjectWriter.h	Fri Apr 15 18:11:24 2011 -0400
-+++ b/lib/MC/ELFObjectWriter.h	Wed Jul 06 14:54:32 2011 -0700
++++ b/lib/MC/ELFObjectWriter.h	Wed Jul 06 15:31:19 2011 -0700
 @@ -139,18 +139,22 @@
  
      unsigned ShstrtabIndex;

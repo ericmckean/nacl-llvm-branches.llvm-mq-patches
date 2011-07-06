@@ -10,7 +10,7 @@ Revert removing __nacl_read_tp
 
 diff -r 483e8094d853 lib/CodeGen/IntrinsicLowering.cpp
 --- a/lib/CodeGen/IntrinsicLowering.cpp	Thu May 26 13:02:07 2011 -0700
-+++ b/lib/CodeGen/IntrinsicLowering.cpp	Wed Jul 06 14:59:40 2011 -0700
++++ b/lib/CodeGen/IntrinsicLowering.cpp	Wed Jul 06 15:31:28 2011 -0700
 @@ -129,11 +129,8 @@
    // assert that __nacl_read_tp exists.
    // Insert a correctly-typed definition now.

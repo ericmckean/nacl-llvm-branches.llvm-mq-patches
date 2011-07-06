@@ -10,7 +10,7 @@ Preserve intrinsic symbols and ignore unused declarations
 
 diff -r 2c7af9fd4a98 tools/gold/gold-plugin.cpp
 --- a/tools/gold/gold-plugin.cpp	Mon Apr 25 14:13:45 2011 -0700
-+++ b/tools/gold/gold-plugin.cpp	Wed Jul 06 14:54:54 2011 -0700
++++ b/tools/gold/gold-plugin.cpp	Wed Jul 06 15:31:21 2011 -0700
 @@ -61,7 +61,6 @@
    };
  
@@ -88,7 +88,7 @@ diff -r 2c7af9fd4a98 tools/gold/gold-plugin.cpp
  
 diff -r 2c7af9fd4a98 tools/lto/LTOModule.cpp
 --- a/tools/lto/LTOModule.cpp	Mon Apr 25 14:13:45 2011 -0700
-+++ b/tools/lto/LTOModule.cpp	Wed Jul 06 14:54:54 2011 -0700
++++ b/tools/lto/LTOModule.cpp	Wed Jul 06 15:31:21 2011 -0700
 @@ -428,6 +428,14 @@
    if (decl->getName().startswith("llvm."))
      return;

@@ -11,7 +11,7 @@ Merge 242:5fc7321392be and 238:bb23f96ef85a
 
 diff -r 8d290a2a4fc6 lib/Target/ARM/ARMExpandPseudoInsts.cpp
 --- a/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Wed Jul 06 14:05:41 2011 -0700
++++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Wed Jul 06 15:31:15 2011 -0700
 @@ -936,17 +936,32 @@
      }
      case ARM::TPsoft: {
@@ -57,7 +57,7 @@ diff -r 8d290a2a4fc6 lib/Target/ARM/ARMExpandPseudoInsts.cpp
      case ARM::tLDRpci_pic:
 diff -r 8d290a2a4fc6 lib/Target/X86/X86ISelDAGToDAG.cpp
 --- a/lib/Target/X86/X86ISelDAGToDAG.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/lib/Target/X86/X86ISelDAGToDAG.cpp	Wed Jul 06 14:05:41 2011 -0700
++++ b/lib/Target/X86/X86ISelDAGToDAG.cpp	Wed Jul 06 15:31:15 2011 -0700
 @@ -232,8 +232,9 @@
      inline void getAddressOperands(X86ISelAddressMode &AM, SDValue &Base, 
                                     SDValue &Scale, SDValue &Index,
@@ -123,7 +123,7 @@ diff -r 8d290a2a4fc6 lib/Target/X86/X86ISelDAGToDAG.cpp
  
 diff -r 8d290a2a4fc6 lib/Target/X86/X86RegisterInfo.cpp
 --- a/lib/Target/X86/X86RegisterInfo.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/lib/Target/X86/X86RegisterInfo.cpp	Wed Jul 06 14:05:41 2011 -0700
++++ b/lib/Target/X86/X86RegisterInfo.cpp	Wed Jul 06 15:31:15 2011 -0700
 @@ -310,18 +310,14 @@
  
  const TargetRegisterClass *
@@ -147,7 +147,7 @@ diff -r 8d290a2a4fc6 lib/Target/X86/X86RegisterInfo.cpp
    case 2: // Available for tailcall (not callee-saved GPRs).
 diff -r 8d290a2a4fc6 tools/llc/nacl_file.cpp
 --- a/tools/llc/nacl_file.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/tools/llc/nacl_file.cpp	Wed Jul 06 14:05:41 2011 -0700
++++ b/tools/llc/nacl_file.cpp	Wed Jul 06 15:31:15 2011 -0700
 @@ -124,7 +124,11 @@
    }
    entry->real_fd = fd;

@@ -15,7 +15,7 @@ CL http://codereview.chromium.org/6969069
 
 diff -r cf2714b9401d Makefile.rules
 --- a/Makefile.rules	Thu May 12 16:39:54 2011 -0700
-+++ b/Makefile.rules	Wed Jul 06 14:59:36 2011 -0700
++++ b/Makefile.rules	Wed Jul 06 15:31:24 2011 -0700
 @@ -578,7 +578,7 @@
  endif
  
@@ -27,7 +27,7 @@ diff -r cf2714b9401d Makefile.rules
  endif
 diff -r cf2714b9401d lib/Support/Unix/Path.inc
 --- a/lib/Support/Unix/Path.inc	Thu May 12 16:39:54 2011 -0700
-+++ b/lib/Support/Unix/Path.inc	Wed Jul 06 14:59:36 2011 -0700
++++ b/lib/Support/Unix/Path.inc	Wed Jul 06 15:31:24 2011 -0700
 @@ -787,9 +787,11 @@
  
  bool
@@ -42,7 +42,7 @@ diff -r cf2714b9401d lib/Support/Unix/Path.inc
  
 diff -r cf2714b9401d lib/Support/Unix/PathV2.inc
 --- a/lib/Support/Unix/PathV2.inc	Thu May 12 16:39:54 2011 -0700
-+++ b/lib/Support/Unix/PathV2.inc	Wed Jul 06 14:59:36 2011 -0700
++++ b/lib/Support/Unix/PathV2.inc	Wed Jul 06 15:31:24 2011 -0700
 @@ -94,7 +94,9 @@
  
  error_code current_path(SmallVectorImpl<char> &result) {

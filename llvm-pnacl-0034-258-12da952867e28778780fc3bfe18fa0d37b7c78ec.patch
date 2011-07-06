@@ -15,7 +15,7 @@ Why is FlagSfiZeroMask even necessary???
 
 diff -r 98cd051f1bb3 lib/Target/ARM/ARMInstrNaCl.cpp
 --- a/lib/Target/ARM/ARMInstrNaCl.cpp	Mon May 16 17:52:22 2011 -0400
-+++ b/lib/Target/ARM/ARMInstrNaCl.cpp	Wed Jul 06 14:59:38 2011 -0700
++++ b/lib/Target/ARM/ARMInstrNaCl.cpp	Wed Jul 06 15:31:26 2011 -0700
 @@ -20,6 +20,10 @@
  
  using namespace llvm;

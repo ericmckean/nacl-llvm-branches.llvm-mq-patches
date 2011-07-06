@@ -10,7 +10,7 @@ Tweaks to LLVM for self-build
 
 diff -r 5ba6c443a430 lib/Target/SubtargetFeature.cpp
 --- a/lib/Target/SubtargetFeature.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/lib/Target/SubtargetFeature.cpp	Wed Jul 06 13:52:34 2011 -0700
++++ b/lib/Target/SubtargetFeature.cpp	Wed Jul 06 15:31:12 2011 -0700
 @@ -380,5 +380,11 @@
        AddFeature("64bit");
        AddFeature("altivec");
@@ -25,7 +25,7 @@ diff -r 5ba6c443a430 lib/Target/SubtargetFeature.cpp
  }
 diff -r 5ba6c443a430 lib/Target/X86/X86InstrControl.td
 --- a/lib/Target/X86/X86InstrControl.td	Mon Mar 07 11:48:02 2011 -0800
-+++ b/lib/Target/X86/X86InstrControl.td	Wed Jul 06 13:52:34 2011 -0700
++++ b/lib/Target/X86/X86InstrControl.td	Wed Jul 06 15:31:12 2011 -0700
 @@ -146,13 +146,13 @@
      def CALLpcrel32 : Ii32PCRel<0xE8, RawFrm,
                             (outs), (ins i32imm_pcrel:$dst,variable_ops),
@@ -64,7 +64,7 @@ diff -r 5ba6c443a430 lib/Target/X86/X86InstrControl.td
  
 diff -r 5ba6c443a430 lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Mon Mar 07 11:48:02 2011 -0800
-+++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jul 06 13:52:34 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jul 06 15:31:12 2011 -0700
 @@ -61,7 +61,7 @@
  
  let isCall = 1, isAsmParserOnly = 1 in {
@@ -103,7 +103,7 @@ diff -r 5ba6c443a430 lib/Target/X86/X86InstrNaCl.td
      def NACL_CG_CALL64r       : I<0, Pseudo, (outs), (ins GR32:$dst, variable_ops),
 diff -r 5ba6c443a430 tools/gold/gold-plugin.cpp
 --- a/tools/gold/gold-plugin.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/tools/gold/gold-plugin.cpp	Wed Jul 06 13:52:34 2011 -0700
++++ b/tools/gold/gold-plugin.cpp	Wed Jul 06 15:31:12 2011 -0700
 @@ -61,6 +61,7 @@
    };
  
@@ -141,7 +141,7 @@ diff -r 5ba6c443a430 tools/gold/gold-plugin.cpp
            case LDPO_DYN:  // .so
 diff -r 5ba6c443a430 tools/llc/llc.cpp
 --- a/tools/llc/llc.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/tools/llc/llc.cpp	Wed Jul 06 13:52:34 2011 -0700
++++ b/tools/llc/llc.cpp	Wed Jul 06 15:31:12 2011 -0700
 @@ -299,6 +299,11 @@
    if (MCPU.size() || MAttrs.size()) {
      SubtargetFeatures Features;
@@ -156,7 +156,7 @@ diff -r 5ba6c443a430 tools/llc/llc.cpp
      FeaturesStr = Features.getString();
 diff -r 5ba6c443a430 tools/llc/nacl_file.cpp
 --- a/tools/llc/nacl_file.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/tools/llc/nacl_file.cpp	Wed Jul 06 13:52:34 2011 -0700
++++ b/tools/llc/nacl_file.cpp	Wed Jul 06 15:31:12 2011 -0700
 @@ -37,8 +37,8 @@
  #define printerr(...)                           \
    fprintf(stderr, __VA_ARGS__)

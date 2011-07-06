@@ -12,7 +12,7 @@ http://codereview.chromium.org/6882124/
 
 diff -r a4c0cc31cf09 lib/Target/X86/X86ISelLowering.cpp
 --- a/lib/Target/X86/X86ISelLowering.cpp	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Wed Jul 06 14:54:53 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.cpp	Wed Jul 06 15:31:20 2011 -0700
 @@ -6514,11 +6514,18 @@
  }
  
@@ -122,7 +122,7 @@ diff -r a4c0cc31cf09 lib/Target/X86/X86ISelLowering.cpp
    case X86ISD::FNSTCW16m:          return "X86ISD::FNSTCW16m";
 diff -r a4c0cc31cf09 lib/Target/X86/X86ISelLowering.h
 --- a/lib/Target/X86/X86ISelLowering.h	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.h	Wed Jul 06 14:54:53 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.h	Wed Jul 06 15:31:20 2011 -0700
 @@ -185,6 +185,11 @@
        // thunk at the address from an earlier relocation.
        TLSCALL,
@@ -137,7 +137,7 @@ diff -r a4c0cc31cf09 lib/Target/X86/X86ISelLowering.h
  
 diff -r a4c0cc31cf09 lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jul 06 14:54:53 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jul 06 15:31:20 2011 -0700
 @@ -14,6 +14,15 @@
  
  
@@ -211,7 +211,7 @@ diff -r a4c0cc31cf09 lib/Target/X86/X86InstrNaCl.td
  
 diff -r a4c0cc31cf09 lib/Target/X86/X86NaClRewritePass.cpp
 --- a/lib/Target/X86/X86NaClRewritePass.cpp	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Wed Jul 06 14:54:53 2011 -0700
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Wed Jul 06 15:31:20 2011 -0700
 @@ -556,6 +556,17 @@
      return true;
    }

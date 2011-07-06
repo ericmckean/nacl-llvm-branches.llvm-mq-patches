@@ -13,7 +13,7 @@ http://codereview.chromium.org/6480011/
 
 diff -r dd424300a164 tools/llc/llc.cpp
 --- a/tools/llc/llc.cpp	Tue Feb 08 11:05:21 2011 -0800
-+++ b/tools/llc/llc.cpp	Wed Jul 06 11:51:17 2011 -0700
++++ b/tools/llc/llc.cpp	Wed Jul 06 15:31:05 2011 -0700
 @@ -43,8 +43,7 @@
  #if defined(__native_client__) && defined(NACL_SRPC)
  #include <fcntl.h>
@@ -72,7 +72,7 @@ diff -r dd424300a164 tools/llc/llc.cpp
 -
 diff -r dd424300a164 tools/llc/nacl_file.cpp
 --- a/tools/llc/nacl_file.cpp	Tue Feb 08 11:05:21 2011 -0800
-+++ b/tools/llc/nacl_file.cpp	Wed Jul 06 11:51:17 2011 -0700
++++ b/tools/llc/nacl_file.cpp	Wed Jul 06 15:31:05 2011 -0700
 @@ -32,6 +32,10 @@
  
  #define MAX_NACL_FILES 256

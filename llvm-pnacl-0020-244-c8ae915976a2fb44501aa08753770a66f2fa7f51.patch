@@ -26,7 +26,7 @@ BUG= http://code.google.com/p/nativeclient/issues/detail?id=1562
 
 diff -r a25e16e8cf75 lib/Linker/LinkArchives.cpp
 --- a/lib/Linker/LinkArchives.cpp	Mon Mar 28 17:07:16 2011 -0700
-+++ b/lib/Linker/LinkArchives.cpp	Wed Jul 06 14:07:55 2011 -0700
++++ b/lib/Linker/LinkArchives.cpp	Wed Jul 06 15:31:16 2011 -0700
 @@ -17,10 +17,24 @@
  #include "llvm/ADT/SetOperations.h"
  #include "llvm/Bitcode/Archive.h"
@@ -66,7 +66,7 @@ diff -r a25e16e8cf75 lib/Linker/LinkArchives.cpp
    // archive, such f2c'd programs.
 diff -r a25e16e8cf75 tools/Makefile
 --- a/tools/Makefile	Mon Mar 28 17:07:16 2011 -0700
-+++ b/tools/Makefile	Wed Jul 06 14:07:55 2011 -0700
++++ b/tools/Makefile	Wed Jul 06 15:31:16 2011 -0700
 @@ -19,13 +19,10 @@
  # NOTE: The tools are organized into five groups of four consisting of one
  # large and three small executables. This is done to minimize memory load
@@ -85,7 +85,7 @@ diff -r a25e16e8cf75 tools/Makefile
                   llvmc llvm-diff macho-dump llvm-objdump bc-wrap \
 diff -r a25e16e8cf75 tools/llc/llc.cpp
 --- a/tools/llc/llc.cpp	Mon Mar 28 17:07:16 2011 -0700
-+++ b/tools/llc/llc.cpp	Wed Jul 06 14:07:55 2011 -0700
++++ b/tools/llc/llc.cpp	Wed Jul 06 15:31:16 2011 -0700
 @@ -40,6 +40,10 @@
  #include "llvm/Target/TargetSelect.h"
  #include <memory>
@@ -109,7 +109,7 @@ diff -r a25e16e8cf75 tools/llc/llc.cpp
  
 diff -r a25e16e8cf75 tools/llvm-ld/llvm-ld.cpp
 --- a/tools/llvm-ld/llvm-ld.cpp	Mon Mar 28 17:07:16 2011 -0700
-+++ b/tools/llvm-ld/llvm-ld.cpp	Wed Jul 06 14:07:55 2011 -0700
++++ b/tools/llvm-ld/llvm-ld.cpp	Wed Jul 06 15:31:16 2011 -0700
 @@ -40,6 +40,11 @@
  #include "llvm/Config/config.h"
  #include <memory>

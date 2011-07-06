@@ -10,7 +10,7 @@ Refactor TLS support (issue 7078016)
 
 diff -r 6c7ccfcb9316 lib/CodeGen/SelectionDAG/TargetLowering.cpp
 --- a/lib/CodeGen/SelectionDAG/TargetLowering.cpp	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/CodeGen/SelectionDAG/TargetLowering.cpp	Wed Jul 06 14:59:41 2011 -0700
++++ b/lib/CodeGen/SelectionDAG/TargetLowering.cpp	Wed Jul 06 15:31:29 2011 -0700
 @@ -26,12 +26,21 @@
  #include "llvm/CodeGen/MachineFunction.h"
  #include "llvm/CodeGen/SelectionDAG.h"
@@ -44,7 +44,7 @@ diff -r 6c7ccfcb9316 lib/CodeGen/SelectionDAG/TargetLowering.cpp
      else
 diff -r 6c7ccfcb9316 lib/Target/X86/X86ISelLowering.cpp
 --- a/lib/Target/X86/X86ISelLowering.cpp	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Wed Jul 06 14:59:41 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.cpp	Wed Jul 06 15:31:29 2011 -0700
 @@ -6468,7 +6468,7 @@
  static SDValue
  GetTLSADDR(SelectionDAG &DAG, SDValue Chain, GlobalAddressSDNode *GA,
@@ -200,7 +200,7 @@ diff -r 6c7ccfcb9316 lib/Target/X86/X86ISelLowering.cpp
    case X86ISD::FNSTCW16m:          return "X86ISD::FNSTCW16m";
 diff -r 6c7ccfcb9316 lib/Target/X86/X86ISelLowering.h
 --- a/lib/Target/X86/X86ISelLowering.h	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.h	Wed Jul 06 14:59:41 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.h	Wed Jul 06 15:31:29 2011 -0700
 @@ -181,15 +181,18 @@
        // TLSADDR - Thread Local Storage.
        TLSADDR,
@@ -227,7 +227,7 @@ diff -r 6c7ccfcb9316 lib/Target/X86/X86ISelLowering.h
  
 diff -r 6c7ccfcb9316 lib/Target/X86/X86InstrInfo.td
 --- a/lib/Target/X86/X86InstrInfo.td	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86InstrInfo.td	Wed Jul 06 14:59:41 2011 -0700
++++ b/lib/Target/X86/X86InstrInfo.td	Wed Jul 06 15:31:29 2011 -0700
 @@ -191,6 +191,14 @@
  def X86tlsaddr : SDNode<"X86ISD::TLSADDR", SDT_X86TLSADDR,
                          [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]>;
@@ -245,7 +245,7 @@ diff -r 6c7ccfcb9316 lib/Target/X86/X86InstrInfo.td
  
 diff -r 6c7ccfcb9316 lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jul 06 14:59:41 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jul 06 15:31:29 2011 -0700
 @@ -17,11 +17,6 @@
  // NaCl specific DAG Nodes.
  //
@@ -324,7 +324,7 @@ diff -r 6c7ccfcb9316 lib/Target/X86/X86InstrNaCl.td
  def NACL_CG_VAARG_64 : I<0, Pseudo,
 diff -r 6c7ccfcb9316 lib/Target/X86/X86NaClRewritePass.cpp
 --- a/lib/Target/X86/X86NaClRewritePass.cpp	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Wed Jul 06 14:59:41 2011 -0700
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Wed Jul 06 15:31:29 2011 -0700
 @@ -556,17 +556,6 @@
      return true;
    }

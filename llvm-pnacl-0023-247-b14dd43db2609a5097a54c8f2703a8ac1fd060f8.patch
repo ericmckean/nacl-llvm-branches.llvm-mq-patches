@@ -30,7 +30,7 @@ Please review this at http://codereview.chromium.org/6822040/
 
 diff -r ae8a695cfa40 tools/llvm-ld/llvm-ld.cpp
 --- a/tools/llvm-ld/llvm-ld.cpp	Fri Apr 01 11:05:59 2011 -0700
-+++ b/tools/llvm-ld/llvm-ld.cpp	Wed Jul 06 14:08:18 2011 -0700
++++ b/tools/llvm-ld/llvm-ld.cpp	Wed Jul 06 15:31:18 2011 -0700
 @@ -41,6 +41,7 @@
  #include <memory>
  #include <cstring>

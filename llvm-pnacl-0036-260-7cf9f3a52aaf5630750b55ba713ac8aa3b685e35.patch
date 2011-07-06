@@ -10,7 +10,7 @@ Disable checking for symbol __nacl_read_tp (issue7071010)
 
 diff -r 9be9eef54b0f lib/CodeGen/IntrinsicLowering.cpp
 --- a/lib/CodeGen/IntrinsicLowering.cpp	Fri May 20 16:06:57 2011 -0700
-+++ b/lib/CodeGen/IntrinsicLowering.cpp	Wed Jul 06 14:59:40 2011 -0700
++++ b/lib/CodeGen/IntrinsicLowering.cpp	Wed Jul 06 15:31:27 2011 -0700
 @@ -129,8 +129,11 @@
    // assert that __nacl_read_tp exists.
    // Insert a correctly-typed definition now.

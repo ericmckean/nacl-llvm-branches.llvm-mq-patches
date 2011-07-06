@@ -3,7 +3,7 @@
 # Date 1298504194 28800
 # Branch pnacl-sfi
 # Node ID 23b356d8f22bfc53f1de444964e85935f242a253
-# Parent 4815d00396208e22c123eea6766ac9037f72a4a8
+# Parent b635e4d8bf9c59911ff2b5d98f52dea23759f3eb
 This CL should have been part of http://codereview.chromium.org/6559005/
 because it was actually applied as part of
 http://llvm.org/viewvc/llvm-project?view=rev&revision=124895
@@ -13,3 +13,4 @@ arm-mc-elf-s38-fixtest.patch
  From llvm-pnacl-0008-228-23b356d8f22bfc53f1de444964e85935f242a253.patch
 
 Made emppty by upstream
+

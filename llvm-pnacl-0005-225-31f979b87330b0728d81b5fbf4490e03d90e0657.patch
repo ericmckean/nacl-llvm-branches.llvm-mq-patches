@@ -12,7 +12,7 @@ http://codereview.chromium.org/6469099/
 
 diff -r a941ba1b6a73 lib/Target/X86/X86InstrNaCl.cpp
 --- a/lib/Target/X86/X86InstrNaCl.cpp	Fri Feb 18 12:34:39 2011 -0800
-+++ b/lib/Target/X86/X86InstrNaCl.cpp	Wed Jul 06 11:55:38 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.cpp	Wed Jul 06 15:31:07 2011 -0700
 @@ -20,6 +20,11 @@
  
  using namespace llvm;

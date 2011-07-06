@@ -1,0 +1,33 @@
+# HG changeset patch
+# Parent dfb6e6e83c1d081d5ec776b5ab0ee2d181dde759
+
+Make EmitBundle(Lock|Unlock|AlignStart|AlignEnd) into small asserting routines.
+This is needed because of an upstream change which added new uses of MCStreamer
+Keep local changes bundled together.
+
+diff -r dfb6e6e83c1d include/llvm/MC/MCStreamer.h
+--- a/include/llvm/MC/MCStreamer.h	Wed Jul 06 15:31:30 2011 -0700
++++ b/include/llvm/MC/MCStreamer.h	Wed Jul 06 15:31:31 2011 -0700
+@@ -414,18 +414,18 @@
+ 
+     /// EmitBundleLock - Begin a group of instructions which cannot
+     /// cross a bundle boundary.
+-    virtual void EmitBundleLock() = 0;
++    virtual void EmitBundleLock() { assert(0 && "EmitBundleLock not supported"); }
+ 
+     /// EmitBundleUnlock - End a bundle-locked group of instructions.
+-    virtual void EmitBundleUnlock() = 0;
++    virtual void EmitBundleUnlock() { assert(0 && "EmitBundleUnlock not supported"); };
+ 
+     /// EmitBundleAlignStart - Guarantee that the next instruction or
+     /// bundle-locked group starts at the beginning of a bundle.
+-    virtual void EmitBundleAlignStart() = 0;
++    virtual void EmitBundleAlignStart() { assert(0 && "EmitBundleAlignStart not supported"); };
+ 
+     /// EmitBundleAlignEnd - Guarantee that the next instruction or
+     /// bundle-locked group finishes at the end of a bundle.
+-    virtual void EmitBundleAlignEnd() = 0;
++    virtual void EmitBundleAlignEnd() { assert(0 && "EmitBundleAlignEnd not supported"); };
+     /// @}
+     // @LOCALMOD-END
+ 

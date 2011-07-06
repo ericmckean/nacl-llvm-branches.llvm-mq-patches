@@ -70,7 +70,7 @@ This change agrees with what GNU as does, and makes the PIC code run.
 
 diff -r af11c1eea620 lib/Target/ARM/ARMAsmBackend.cpp
 --- a/lib/Target/ARM/ARMAsmBackend.cpp	Thu May 05 16:52:14 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmBackend.cpp	Wed Jul 06 14:59:36 2011 -0700
++++ b/lib/Target/ARM/ARMAsmBackend.cpp	Wed Jul 06 15:31:24 2011 -0700
 @@ -172,10 +172,10 @@
    case FK_Data_4:
      return Value;
