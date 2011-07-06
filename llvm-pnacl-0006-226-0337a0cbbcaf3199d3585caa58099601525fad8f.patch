@@ -19,8 +19,34 @@ PNaCl lib/MC/ELFObjectwriter.cpp had a @LOCALMOD to deal with the NaCl specific 
 
 diff -r fa25892d24f1 lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Tue Feb 22 17:59:22 2011 -0500
-+++ b/lib/MC/ELFObjectWriter.cpp	Wed Jul 06 12:08:33 2011 -0700
-@@ -1236,7 +1236,6 @@
++++ b/lib/MC/ELFObjectWriter.cpp	Wed Jul 06 12:37:00 2011 -0700
+@@ -59,6 +59,25 @@
+   }
+ }
+ 
++    /// Default e_flags = 0
++    virtual void WriteEFlags() { 
++      // @LOCALMOD-BEGIN
++      switch (TargetObjectWriter->getOSType()) {
++      case Triple::NativeClient:
++        Write32(ELF::EF_NACL_ALIGN_32);
++        break;
++      default:
++        Write32(0);   // e_flags = whatever the target wants
++        break;
++      }
++      // @LOCALMOD-END
++    }
++
++    // FIXME: MCAssembler can't yet return the Subtarget,
++    enum { DefaultEABIVersion = 0x05000000U };
++
++
++    virtual void WriteEFlags();
+ ELFObjectWriter::~ELFObjectWriter()
+ {}
+ 
+@@ -1236,7 +1255,6 @@
  
  /// START OF SUBCLASSES for ELFObjectWriter
  //===- ARMELFObjectWriter -------------------------------------------===//
@@ -28,10 +54,11 @@ diff -r fa25892d24f1 lib/MC/ELFObjectWriter.cpp
  ARMELFObjectWriter::ARMELFObjectWriter(MCELFObjectTargetWriter *MOTW,
                                         raw_ostream &_OS,
                                         bool IsLittleEndian)
-@@ -1248,6 +1247,20 @@
+@@ -1248,7 +1266,16 @@
  
  // FIXME: get the real EABI Version from the Triple.
  void ARMELFObjectWriter::WriteEFlags() {
+-  Write32(ELF::EF_ARM_EABIMASK & DefaultEABIVersion);
 +  // @LOCALMOD-BEGIN
 +  unsigned e_flag = ELF::EF_ARM_EABIMASK & DefaultEABIVersion;
 +  switch (TargetObjectWriter->getOSType()) {
@@ -42,31 +69,6 @@ diff -r fa25892d24f1 lib/MC/ELFObjectWriter.cpp
 +  }
 +  Write32(e_flag);
 +  // @LOCALMOD-END
-+}
-+
-+// FIXME: get the real EABI Version from the Triple.
-+void ARMELFObjectWriter::WriteEFlags() {
-   Write32(ELF::EF_ARM_EABIMASK & DefaultEABIVersion);
  }
  
-@@ -1279,6 +1292,20 @@
-   return NULL;
- }
- 
-+// FIXME: get the real EABI Version from the Triple.
-+void ARMELFObjectWriter::WriteEFlags() {
-+  // @LOCALMOD-BEGIN
-+  unsigned e_flag = ELF::EF_ARM_EABIMASK & DefaultEABIVersion;
-+  switch (TargetObjectWriter->getOSType()) {
-+  case Triple::NativeClient:
-+    e_flag |= ELF::EF_NACL_ALIGN_32;
-+    break;
-+  default: break;
-+  }
-+  Write32(e_flag);
-+  // @LOCALMOD-END
-+}
-+
- unsigned ARMELFObjectWriter::GetRelocType(const MCValue &Target,
-                                           const MCFixup &Fixup,
-                                           bool IsPCRel,
+ // In ARM, _MergedGlobals and other most symbols get emitted directly.
