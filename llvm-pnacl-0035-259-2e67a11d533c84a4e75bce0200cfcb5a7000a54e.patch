@@ -3,15 +3,15 @@
 # Date 1305932817 25200
 # Branch pnacl-sfi
 # Node ID 2e67a11d533c84a4e75bce0200cfcb5a7000a54e
-# Parent dbf2ccb047c003b758db7383e576854787b500d5
+# Parent defcad9ede791310e4b504a4e04c59c2c81342f4
 Make va_list 16-bytes instead of 24-bytes in X86-64 CodeGen
 
  From llvm-pnacl-0035-259-2e67a11d533c84a4e75bce0200cfcb5a7000a54e.patch
 
-diff -r dbf2ccb047c0 lib/Target/X86/X86ISelLowering.cpp
+diff -r defcad9ede79 lib/Target/X86/X86ISelLowering.cpp
 --- a/lib/Target/X86/X86ISelLowering.cpp	Tue May 17 16:44:51 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Tue Jun 07 14:19:59 2011 -0700
-@@ -7644,6 +7644,7 @@
++++ b/lib/Target/X86/X86ISelLowering.cpp	Wed Jul 06 14:59:39 2011 -0700
+@@ -8050,6 +8050,7 @@
    //   fp_offset         (48 - 48 + 8 * 16)
    //   overflow_arg_area (point to parameters coming in memory).
    //   reg_save_area
@@ -19,7 +19,7 @@ diff -r dbf2ccb047c0 lib/Target/X86/X86ISelLowering.cpp
    SmallVector<SDValue, 8> MemOps;
    SDValue FIN = Op.getOperand(1);
    // Store gp_offset
-@@ -7666,7 +7667,7 @@
+@@ -8072,7 +8073,7 @@
    FIN = DAG.getNode(ISD::ADD, DL, getPointerTy(),
                      FIN, DAG.getIntPtrConstant(4));
    SDValue OVFIN = DAG.getFrameIndex(FuncInfo->getVarArgsFrameIndex(),
@@ -28,7 +28,7 @@ diff -r dbf2ccb047c0 lib/Target/X86/X86ISelLowering.cpp
    Store = DAG.getStore(Op.getOperand(0), DL, OVFIN, FIN,
                         MachinePointerInfo(SV, 8),
                         false, false, 0);
-@@ -7674,11 +7675,12 @@
+@@ -8080,11 +8081,12 @@
  
    // Store ptr to reg_save_area.
    FIN = DAG.getNode(ISD::ADD, DL, getPointerTy(),
@@ -44,7 +44,7 @@ diff -r dbf2ccb047c0 lib/Target/X86/X86ISelLowering.cpp
    MemOps.push_back(Store);
    return DAG.getNode(ISD::TokenFactor, DL, MVT::Other,
                       &MemOps[0], MemOps.size());
-@@ -7762,7 +7764,9 @@
+@@ -8168,7 +8170,9 @@
    DebugLoc DL = Op.getDebugLoc();
  
    return DAG.getMemcpy(Chain, DL, DstPtr, SrcPtr,
@@ -55,7 +55,7 @@ diff -r dbf2ccb047c0 lib/Target/X86/X86ISelLowering.cpp
                         false,
                         MachinePointerInfo(DstSV), MachinePointerInfo(SrcSV));
  }
-@@ -9708,9 +9712,11 @@
+@@ -10120,9 +10124,11 @@
    MachineInstr::mmo_iterator MMOEnd = MI->memoperands_end();
  
    // Machine Information
@@ -68,7 +68,7 @@ diff -r dbf2ccb047c0 lib/Target/X86/X86ISelLowering.cpp
    const TargetRegisterClass *OffsetRegClass = getRegClassFor(MVT::i32);
    DebugLoc DL = MI->getDebugLoc();
  
-@@ -9739,15 +9745,6 @@
+@@ -10151,15 +10157,6 @@
    MachineBasicBlock *offsetMBB;
    MachineBasicBlock *endMBB;
    
@@ -84,7 +84,7 @@ diff -r dbf2ccb047c0 lib/Target/X86/X86ISelLowering.cpp
    unsigned OffsetDestReg = 0;    // Argument address computed by offsetMBB
    unsigned OverflowDestReg = 0;  // Argument address computed by overflowMBB
    unsigned OffsetReg = 0;
-@@ -9828,29 +9825,39 @@
+@@ -10240,29 +10237,39 @@
    }
  
    // In offsetMBB, emit code to use the reg_save_area.
@@ -133,7 +133,7 @@ diff -r dbf2ccb047c0 lib/Target/X86/X86ISelLowering.cpp
        .addReg(RegSaveReg);
  
      // Compute the offset for the next argument
-@@ -9880,7 +9887,8 @@
+@@ -10292,7 +10299,8 @@
  
    // Load the overflow_area address into a register.
    unsigned OverflowAddrReg = MRI.createVirtualRegister(AddrRegClass);
@@ -143,7 +143,7 @@ diff -r dbf2ccb047c0 lib/Target/X86/X86ISelLowering.cpp
      .addOperand(Base)
      .addOperand(Scale)
      .addOperand(Index)
-@@ -9896,11 +9904,13 @@
+@@ -10308,11 +10316,13 @@
      unsigned TmpReg = MRI.createVirtualRegister(AddrRegClass);
  
      // aligned_addr = (addr + (align-1)) & ~(align-1)
@@ -159,7 +159,7 @@ diff -r dbf2ccb047c0 lib/Target/X86/X86ISelLowering.cpp
        .addReg(TmpReg)
        .addImm(~(uint64_t)(Align-1));
    } else {
-@@ -9911,12 +9921,14 @@
+@@ -10323,12 +10333,14 @@
    // Compute the next overflow address after this argument.
    // (the overflow address should be kept 8-byte aligned)
    unsigned NextAddrReg = MRI.createVirtualRegister(AddrRegClass);
@@ -176,7 +176,7 @@ diff -r dbf2ccb047c0 lib/Target/X86/X86ISelLowering.cpp
      .addOperand(Base)
      .addOperand(Scale)
      .addOperand(Index)
-@@ -9932,19 +9944,6 @@
+@@ -10344,19 +10356,6 @@
        .addReg(OffsetDestReg).addMBB(offsetMBB)
        .addReg(OverflowDestReg).addMBB(overflowMBB);
    }

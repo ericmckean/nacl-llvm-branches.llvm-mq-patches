@@ -3,7 +3,7 @@
 # Date 1305315843 14400
 # Branch pnacl-sfi
 # Node ID bbaa8bbe8e9ec5b235a85f43d714842c17c35898
-# Parent 43d361526e8eed5a475473857f03edb378bf02e6
+# Parent cf2714b9401d9ad0b4ab23110a54de3615a43f81
 This CL disables a few more file operations like rename, sym_link, etc. in llvm support lib when compiling it with
 the pnacl TC.
 
@@ -13,9 +13,9 @@ CL http://codereview.chromium.org/6969069
 
  From llvm-pnacl-0032-256-bbaa8bbe8e9ec5b235a85f43d714842c17c35898.patch
 
-diff -r 43d361526e8e Makefile.rules
+diff -r cf2714b9401d Makefile.rules
 --- a/Makefile.rules	Thu May 12 16:39:54 2011 -0700
-+++ b/Makefile.rules	Tue Jun 07 14:19:54 2011 -0700
++++ b/Makefile.rules	Wed Jul 06 14:59:36 2011 -0700
 @@ -578,7 +578,7 @@
  endif
  
@@ -25,10 +25,10 @@ diff -r 43d361526e8e Makefile.rules
  else
    LIBS +=
  endif
-diff -r 43d361526e8e lib/Support/Unix/Path.inc
+diff -r cf2714b9401d lib/Support/Unix/Path.inc
 --- a/lib/Support/Unix/Path.inc	Thu May 12 16:39:54 2011 -0700
-+++ b/lib/Support/Unix/Path.inc	Tue Jun 07 14:19:54 2011 -0700
-@@ -785,9 +785,11 @@
++++ b/lib/Support/Unix/Path.inc	Wed Jul 06 14:59:36 2011 -0700
+@@ -787,9 +787,11 @@
  
  bool
  Path::renamePathOnDisk(const Path& newName, std::string* ErrMsg) {
@@ -40,9 +40,9 @@ diff -r 43d361526e8e lib/Support/Unix/Path.inc
    return false;
  }
  
-diff -r 43d361526e8e lib/Support/Unix/PathV2.inc
+diff -r cf2714b9401d lib/Support/Unix/PathV2.inc
 --- a/lib/Support/Unix/PathV2.inc	Thu May 12 16:39:54 2011 -0700
-+++ b/lib/Support/Unix/PathV2.inc	Tue Jun 07 14:19:54 2011 -0700
++++ b/lib/Support/Unix/PathV2.inc	Wed Jul 06 14:59:36 2011 -0700
 @@ -94,7 +94,9 @@
  
  error_code current_path(SmallVectorImpl<char> &result) {
