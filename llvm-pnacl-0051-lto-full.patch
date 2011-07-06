@@ -1,10 +1,10 @@
 # HG changeset patch
-# Parent 4cdadc5a5bf2d59435a49a1fa76ab377c543bbf2
+# Parent 0ceb5faaa040e89a482f6c7e2d70dcfff9a2d247
 
-diff -r 4cdadc5a5bf2 tools/lto/LTOModule.cpp
---- a/tools/lto/LTOModule.cpp	Wed Jul 06 15:31:30 2011 -0700
-+++ b/tools/lto/LTOModule.cpp	Wed Jul 06 15:31:30 2011 -0700
-@@ -140,8 +140,8 @@
+diff -r 0ceb5faaa040 tools/lto/LTOModule.cpp
+--- a/tools/lto/LTOModule.cpp	Wed Jul 06 16:57:15 2011 -0700
++++ b/tools/lto/LTOModule.cpp	Wed Jul 06 16:57:16 2011 -0700
+@@ -141,8 +141,8 @@
    }
  
    // parse bitcode buffer
