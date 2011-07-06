@@ -3,7 +3,7 @@
 # Date 1298504194 28800
 # Branch pnacl-sfi
 # Node ID da182c26641a461d6093d1d9f275762cd7694f69
-# Parent 10f7035b373af523829414f86c1897578c29f502
+# Parent 84c315dd088eb9ff75de15f203364097c53031c6
 http://llvm.org/viewvc/llvm-project?view=rev&revision=124995
 Teach ARM/MC/ELF to handle R_ARM_JUMP24 relocation type for conditional jumps.
 (yes, this is different from R_ARM_CALL)
