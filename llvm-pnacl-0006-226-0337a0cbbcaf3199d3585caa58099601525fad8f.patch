@@ -17,23 +17,9 @@ PNaCl lib/MC/ELFObjectwriter.cpp had a @LOCALMOD to deal with the NaCl specific 
 
  From llvm-pnacl-0006-226-0337a0cbbcaf3199d3585caa58099601525fad8f.patch
 
-diff -r fa25892d24f1 include/llvm/Support/ELF.h
---- a/include/llvm/Support/ELF.h	Tue Feb 22 17:59:22 2011 -0500
-+++ b/include/llvm/Support/ELF.h	Wed Jul 06 12:04:06 2011 -0700
-@@ -310,6 +310,10 @@
- // ARM Specific e_flags
- enum { EF_ARM_EABIMASK = 0xFF000000U };
- 
-+
-+// ARM Specific e_flags
-+enum { EF_ARM_EABIMASK = 0xFF000000U };
-+
- // ELF Relocation types for ARM
- // Meets 2.08 ABI Specs.
- 
 diff -r fa25892d24f1 lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Tue Feb 22 17:59:22 2011 -0500
-+++ b/lib/MC/ELFObjectWriter.cpp	Wed Jul 06 12:04:06 2011 -0700
++++ b/lib/MC/ELFObjectWriter.cpp	Wed Jul 06 12:08:33 2011 -0700
 @@ -1236,7 +1236,6 @@
  
  /// START OF SUBCLASSES for ELFObjectWriter
