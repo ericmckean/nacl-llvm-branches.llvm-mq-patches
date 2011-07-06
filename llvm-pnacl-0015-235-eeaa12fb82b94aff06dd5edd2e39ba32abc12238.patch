@@ -3,16 +3,16 @@
 # Date 1300462475 25200
 # Branch pnacl-sfi
 # Node ID eeaa12fb82b94aff06dd5edd2e39ba32abc12238
-# Parent b8d32347792aceecafd8e68d667fcfb7dbe17dc4
+# Parent 17e8b1c58841401bfd5be257ea2f01cc7cbc2243
 Add intrinsics for TLS support to remove src/untrusted/stubs/crt_*.S
 BUG=http://code.google.com/p/nativeclient/issues/detail?id=1519
 TEST=none (yet)
 
  From llvm-pnacl-0015-235-eeaa12fb82b94aff06dd5edd2e39ba32abc12238.patch
 
-diff -r b8d32347792a include/llvm/Intrinsics.td
+diff -r 17e8b1c58841 include/llvm/Intrinsics.td
 --- a/include/llvm/Intrinsics.td	Thu Mar 17 17:49:59 2011 -0700
-+++ b/include/llvm/Intrinsics.td	Tue Jun 07 14:19:23 2011 -0700
++++ b/include/llvm/Intrinsics.td	Wed Jul 06 13:53:11 2011 -0700
 @@ -491,6 +491,20 @@
                        GCCBuiltin<"__builtin_nacl_setjmp">;
  def int_nacl_longjmp : Intrinsic<[],  [llvm_ptr_ty, llvm_i32_ty]>,
@@ -34,10 +34,10 @@ diff -r b8d32347792a include/llvm/Intrinsics.td
  // @LOCALMOD-END
  
  //===----------------------------------------------------------------------===//
-diff -r b8d32347792a lib/Target/ARM/ARMInstrInfo.td
+diff -r 17e8b1c58841 lib/Target/ARM/ARMInstrInfo.td
 --- a/lib/Target/ARM/ARMInstrInfo.td	Thu Mar 17 17:49:59 2011 -0700
-+++ b/lib/Target/ARM/ARMInstrInfo.td	Tue Jun 07 14:19:23 2011 -0700
-@@ -4057,7 +4057,10 @@
++++ b/lib/Target/ARM/ARMInstrInfo.td	Wed Jul 06 13:53:11 2011 -0700
+@@ -3801,7 +3801,10 @@
                             "sfi_nops_to_force_slot2; "
                             "sfi_code_mask r4; "
                             "blx r4; "
@@ -49,7 +49,7 @@ diff -r b8d32347792a lib/Target/ARM/ARMInstrInfo.td
                             [(int_nacl_elf_start R4)]>;
  }
  
-@@ -4093,4 +4096,47 @@
+@@ -3837,6 +3840,49 @@
                         "bx lr; ",
                         [(int_nacl_longjmp R0, R1)]>;
  }
@@ -97,9 +97,11 @@ diff -r b8d32347792a lib/Target/ARM/ARMInstrInfo.td
 +          [(set GPR:$dst, (int_nacl_return_address_size))]>;
 +
  // @LOCALMOD-END
-diff -r b8d32347792a lib/Target/X86/X86InstrNaCl.td
+ 
+ // Move from ARM core register to Special Register
+diff -r 17e8b1c58841 lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Thu Mar 17 17:49:59 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Tue Jun 07 14:19:23 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jul 06 13:53:11 2011 -0700
 @@ -437,3 +437,59 @@
                         [(int_nacl_longjmp EDI, EAX)]>,
                         Requires<[IsNaCl64]>, TB;
