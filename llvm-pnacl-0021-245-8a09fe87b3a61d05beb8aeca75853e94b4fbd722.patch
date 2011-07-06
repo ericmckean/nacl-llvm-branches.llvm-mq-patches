@@ -3,7 +3,7 @@
 # Date 1301606360 25200
 # Branch pnacl-sfi
 # Node ID 8a09fe87b3a61d05beb8aeca75853e94b4fbd722
-# Parent 916a31f436fb92d20073fdbaf8d1e505f5f86b29
+# Parent 64202b63b878845b22452df7a30aba678e2c24e9
 Revert bb23f96ef85a.
 
 The switch changes (i.e. -linux to -nacl) breaks GCC-x86_64-none-linux-gnu stage 1
