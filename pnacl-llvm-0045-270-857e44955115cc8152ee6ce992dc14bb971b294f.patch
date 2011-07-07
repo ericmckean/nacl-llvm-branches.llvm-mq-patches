@@ -10,7 +10,7 @@ Add metadata for soname and output format to bitcode
 
 diff -r 99fe2f70c7c0 Makefile.rules
 --- a/Makefile.rules	Fri Jun 17 12:48:00 2011 -0700
-+++ b/Makefile.rules	Wed Jul 06 18:01:12 2011 -0700
++++ b/Makefile.rules	Wed Jul 06 19:59:44 2011 -0700
 @@ -578,7 +578,7 @@
  endif
  
@@ -22,7 +22,7 @@ diff -r 99fe2f70c7c0 Makefile.rules
  endif
 diff -r 99fe2f70c7c0 include/llvm-c/lto.h
 --- a/include/llvm-c/lto.h	Fri Jun 17 12:48:00 2011 -0700
-+++ b/include/llvm-c/lto.h	Wed Jul 06 18:01:12 2011 -0700
++++ b/include/llvm-c/lto.h	Wed Jul 06 19:59:44 2011 -0700
 @@ -53,6 +53,13 @@
      LTO_CODEGEN_PIC_MODEL_DYNAMIC_NO_PIC = 2
  } lto_codegen_model;
@@ -107,7 +107,7 @@ diff -r 99fe2f70c7c0 include/llvm-c/lto.h
   * Writes a new object file at the specified path that contains the
 diff -r 99fe2f70c7c0 include/llvm/Module.h
 --- a/include/llvm/Module.h	Fri Jun 17 12:48:00 2011 -0700
-+++ b/include/llvm/Module.h	Wed Jul 06 18:01:12 2011 -0700
++++ b/include/llvm/Module.h	Wed Jul 06 19:59:44 2011 -0700
 @@ -132,6 +132,15 @@
    /// An enumeration for describing the size of a pointer on the target machine.
    enum PointerSize { AnyPointerSize, Pointer32, Pointer64 };
@@ -172,7 +172,7 @@ diff -r 99fe2f70c7c0 include/llvm/Module.h
      GlobalScopeAsm = Asm;
 diff -r 99fe2f70c7c0 lib/VMCore/Module.cpp
 --- a/lib/VMCore/Module.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/lib/VMCore/Module.cpp	Wed Jul 06 18:01:12 2011 -0700
++++ b/lib/VMCore/Module.cpp	Wed Jul 06 19:59:44 2011 -0700
 @@ -21,6 +21,7 @@
  #include "llvm/ADT/STLExtras.h"
  #include "llvm/ADT/StringExtras.h"
@@ -253,7 +253,7 @@ diff -r 99fe2f70c7c0 lib/VMCore/Module.cpp
 +// @LOCALMOD-END
 diff -r 99fe2f70c7c0 tools/gold/gold-plugin.cpp
 --- a/tools/gold/gold-plugin.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/gold/gold-plugin.cpp	Wed Jul 06 18:01:12 2011 -0700
++++ b/tools/gold/gold-plugin.cpp	Wed Jul 06 19:59:44 2011 -0700
 @@ -51,6 +51,19 @@
    ld_plugin_add_input_library add_input_library = NULL;
    ld_plugin_set_extra_library_path set_extra_library_path = NULL;
@@ -325,14 +325,14 @@ diff -r 99fe2f70c7c0 tools/gold/gold-plugin.cpp
 +      abort();
 +      break;
 +  }
-+  lto_codegen_set_merged_module_output_format(cg, format);
++  lto_codegen_set_merged_module_output_format(codegen, format);
 +  // @LOCALMOD-END
 +
 +  // @LOCALMOD-BEGIN
 +  // For -shared linking, store the soname into the bitcode.
 +  if (linker_output == LDPO_DYN) {
 +    const char *soname = (*get_soname)();
-+    lto_codegen_set_merged_module_soname(cg, soname);
++    lto_codegen_set_merged_module_soname(code_gen, soname);
 +  }
 +  // @LOCALMOD-END
 +
@@ -341,7 +341,7 @@ diff -r 99fe2f70c7c0 tools/gold/gold-plugin.cpp
 +  unsigned int num_needed = (*get_num_needed)();
 +  for (unsigned i=0; i < num_needed; ++i) {
 +    const char *soname = (*get_needed)(i);
-+    lto_codegen_add_merged_module_library_dep(cg, soname);
++    lto_codegen_add_merged_module_library_dep(code_gen, soname);
 +  }
 +  // @LOCALMOD-END
    if (options::generate_bc_file != options::BC_NO) {
@@ -349,7 +349,7 @@ diff -r 99fe2f70c7c0 tools/gold/gold-plugin.cpp
      if (options::generate_bc_file == options::BC_ONLY)
 diff -r 99fe2f70c7c0 tools/llc/llc.cpp
 --- a/tools/llc/llc.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/llc/llc.cpp	Wed Jul 06 18:01:12 2011 -0700
++++ b/tools/llc/llc.cpp	Wed Jul 06 19:59:44 2011 -0700
 @@ -78,6 +78,21 @@
           cl::ZeroOrMore,
           cl::init(' '));
@@ -437,7 +437,7 @@ diff -r 99fe2f70c7c0 tools/llc/llc.cpp
      mod.setTargetTriple(Triple::normalize(TargetTriple));
 diff -r 99fe2f70c7c0 tools/lto/LTOCodeGenerator.cpp
 --- a/tools/lto/LTOCodeGenerator.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/lto/LTOCodeGenerator.cpp	Wed Jul 06 18:01:12 2011 -0700
++++ b/tools/lto/LTOCodeGenerator.cpp	Wed Jul 06 19:59:44 2011 -0700
 @@ -152,6 +152,37 @@
      _mustPreserveSymbols[sym] = 1;
  }
@@ -478,7 +478,7 @@ diff -r 99fe2f70c7c0 tools/lto/LTOCodeGenerator.cpp
                                            std::string &errMsg) {
 diff -r 99fe2f70c7c0 tools/lto/LTOCodeGenerator.h
 --- a/tools/lto/LTOCodeGenerator.h	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/lto/LTOCodeGenerator.h	Wed Jul 06 18:01:12 2011 -0700
++++ b/tools/lto/LTOCodeGenerator.h	Wed Jul 06 19:59:44 2011 -0700
 @@ -39,6 +39,11 @@
      bool                setCodePICModel(lto_codegen_model, std::string& errMsg);
      void                setCpu(const char *cpu);
@@ -493,7 +493,7 @@ diff -r 99fe2f70c7c0 tools/lto/LTOCodeGenerator.h
      bool                compile_to_file(const char** name, std::string& errMsg);
 diff -r 99fe2f70c7c0 tools/lto/LTOModule.cpp
 --- a/tools/lto/LTOModule.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/lto/LTOModule.cpp	Wed Jul 06 18:01:12 2011 -0700
++++ b/tools/lto/LTOModule.cpp	Wed Jul 06 19:59:44 2011 -0700
 @@ -28,6 +28,7 @@
  #include "llvm/Support/Process.h"
  #include "llvm/Support/SourceMgr.h"
@@ -540,7 +540,7 @@ diff -r 99fe2f70c7c0 tools/lto/LTOModule.cpp
    addDefinedSymbol(f, mangler, true);
 diff -r 99fe2f70c7c0 tools/lto/LTOModule.h
 --- a/tools/lto/LTOModule.h	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/lto/LTOModule.h	Wed Jul 06 18:01:12 2011 -0700
++++ b/tools/lto/LTOModule.h	Wed Jul 06 19:59:44 2011 -0700
 @@ -64,6 +64,14 @@
  
      const char*              getTargetTriple();
@@ -558,7 +558,7 @@ diff -r 99fe2f70c7c0 tools/lto/LTOModule.h
      const char*              getSymbolName(uint32_t index);
 diff -r 99fe2f70c7c0 tools/lto/lto.cpp
 --- a/tools/lto/lto.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/lto/lto.cpp	Wed Jul 06 18:01:12 2011 -0700
++++ b/tools/lto/lto.cpp	Wed Jul 06 19:59:44 2011 -0700
 @@ -169,6 +169,44 @@
      return mod->setTargetTriple(triple);
  }
@@ -647,7 +647,7 @@ diff -r 99fe2f70c7c0 tools/lto/lto.cpp
 +
 diff -r 99fe2f70c7c0 tools/lto/lto.exports
 --- a/tools/lto/lto.exports	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/lto/lto.exports	Wed Jul 06 18:01:12 2011 -0700
++++ b/tools/lto/lto.exports	Wed Jul 06 19:59:44 2011 -0700
 @@ -11,6 +11,10 @@
  lto_module_get_symbol_name
  lto_module_get_target_triple
