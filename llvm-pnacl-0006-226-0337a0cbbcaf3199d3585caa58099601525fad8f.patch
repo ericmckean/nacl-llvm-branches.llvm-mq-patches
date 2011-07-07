@@ -3,7 +3,7 @@
 # Date 1298504194 28800
 # Branch pnacl-sfi
 # Node ID 0337a0cbbcaf3199d3585caa58099601525fad8f
-# Parent fa25892d24f18385a8f8063da53074c178834a8e
+# Parent f63ae8894d2e8562b50dc6ff7eab2f4dcca8d3bc
 Just what it says - for ARM/MC/ELF
 http://llvm.org/viewvc/llvm-project?view=rev&revision=124899
 
@@ -17,36 +17,10 @@ PNaCl lib/MC/ELFObjectwriter.cpp had a @LOCALMOD to deal with the NaCl specific 
 
  From llvm-pnacl-0006-226-0337a0cbbcaf3199d3585caa58099601525fad8f.patch
 
-diff -r fa25892d24f1 lib/MC/ELFObjectWriter.cpp
+diff -r f63ae8894d2e lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Tue Feb 22 17:59:22 2011 -0500
-+++ b/lib/MC/ELFObjectWriter.cpp	Wed Jul 06 15:31:07 2011 -0700
-@@ -59,6 +59,25 @@
-   }
- }
- 
-+    /// Default e_flags = 0
-+    virtual void WriteEFlags() { 
-+      // @LOCALMOD-BEGIN
-+      switch (TargetObjectWriter->getOSType()) {
-+      case Triple::NativeClient:
-+        Write32(ELF::EF_NACL_ALIGN_32);
-+        break;
-+      default:
-+        Write32(0);   // e_flags = whatever the target wants
-+        break;
-+      }
-+      // @LOCALMOD-END
-+    }
-+
-+    // FIXME: MCAssembler can't yet return the Subtarget,
-+    enum { DefaultEABIVersion = 0x05000000U };
-+
-+
-+    virtual void WriteEFlags();
- ELFObjectWriter::~ELFObjectWriter()
- {}
- 
-@@ -1236,7 +1255,6 @@
++++ b/lib/MC/ELFObjectWriter.cpp	Wed Jul 06 17:23:27 2011 -0700
+@@ -1236,7 +1236,6 @@
  
  /// START OF SUBCLASSES for ELFObjectWriter
  //===- ARMELFObjectWriter -------------------------------------------===//
@@ -54,7 +28,7 @@ diff -r fa25892d24f1 lib/MC/ELFObjectWriter.cpp
  ARMELFObjectWriter::ARMELFObjectWriter(MCELFObjectTargetWriter *MOTW,
                                         raw_ostream &_OS,
                                         bool IsLittleEndian)
-@@ -1248,7 +1266,16 @@
+@@ -1248,7 +1247,16 @@
  
  // FIXME: get the real EABI Version from the Triple.
  void ARMELFObjectWriter::WriteEFlags() {
