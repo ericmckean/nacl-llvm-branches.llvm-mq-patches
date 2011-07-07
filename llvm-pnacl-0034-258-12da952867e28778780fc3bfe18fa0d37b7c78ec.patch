@@ -3,7 +3,7 @@
 # Date 1305675891 25200
 # Branch pnacl-sfi
 # Node ID 12da952867e28778780fc3bfe18fa0d37b7c78ec
-# Parent f5c94cd03359e66b77c687d0672d3d59c0f52fb9
+# Parent 15253e8ba55ad1af487284bf30375da13ab316de
 Fix http://code.google.com/p/nativeclient/issues/detail?id=1814
 
 It looks like the issue was the lack of support for FlagSfiZeroMask support
@@ -13,9 +13,9 @@ Why is FlagSfiZeroMask even necessary???
 
  From llvm-pnacl-0034-258-12da952867e28778780fc3bfe18fa0d37b7c78ec.patch
 
-diff -r f5c94cd03359 lib/Target/ARM/ARMInstrNaCl.cpp
+diff -r 15253e8ba55a lib/Target/ARM/ARMInstrNaCl.cpp
 --- a/lib/Target/ARM/ARMInstrNaCl.cpp	Mon May 16 17:52:22 2011 -0400
-+++ b/lib/Target/ARM/ARMInstrNaCl.cpp	Wed Jul 06 17:46:41 2011 -0700
++++ b/lib/Target/ARM/ARMInstrNaCl.cpp	Wed Jul 06 18:01:04 2011 -0700
 @@ -20,6 +20,10 @@
  
  using namespace llvm;

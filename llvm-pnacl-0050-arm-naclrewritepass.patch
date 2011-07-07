@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 67e75d99638eaae2f185bcace6b4c7beed1c143a
+# Parent 1a6ea78318a5ac467097c83ef14fd3868a115510
 
 Track upstream change:
 VSTMDDB, VSTMSDB went away between 128002 and 129006
 
-diff -r 67e75d99638e lib/Target/ARM/ARMNaClRewritePass.cpp
+diff -r 1a6ea78318a5 lib/Target/ARM/ARMNaClRewritePass.cpp
 --- a/lib/Target/ARM/ARMNaClRewritePass.cpp	Mon Jun 27 11:39:09 2011 -0700
-+++ b/lib/Target/ARM/ARMNaClRewritePass.cpp	Wed Jul 06 17:46:53 2011 -0700
++++ b/lib/Target/ARM/ARMNaClRewritePass.cpp	Wed Jul 06 18:01:16 2011 -0700
 @@ -503,9 +503,9 @@
    case ARM::STMIB:
  

@@ -3,15 +3,15 @@
 # Date 1308340080 25200
 # Branch pnacl-sfi
 # Node ID 07b579b7d4a3750301b03991b58d755fd7ffb975
-# Parent 5dde2aeafec8f94a6e5cb3420d544b6517a24c01
+# Parent 5e1277217cd4a5972dd59e4822fdacf40ce82983
 # Parent  bfd021e013ade829e66d6c3c9a3f1f9cd87d4c05
 Merge
 
  From pnacl-llvm-0044-269-07b579b7d4a3750301b03991b58d755fd7ffb975.patch
 
-diff -r 5dde2aeafec8 lib/Target/ARM/ARMISelLowering.cpp
+diff -r 5e1277217cd4 lib/Target/ARM/ARMISelLowering.cpp
 --- a/lib/Target/ARM/ARMISelLowering.cpp	Fri Jun 17 11:43:58 2011 -0700
-+++ b/lib/Target/ARM/ARMISelLowering.cpp	Wed Jul 06 17:46:48 2011 -0700
++++ b/lib/Target/ARM/ARMISelLowering.cpp	Wed Jul 06 18:01:11 2011 -0700
 @@ -259,8 +259,8 @@
    setLibcallName(RTLIB::SHL_I128, 0);
    setLibcallName(RTLIB::SRL_I128, 0);

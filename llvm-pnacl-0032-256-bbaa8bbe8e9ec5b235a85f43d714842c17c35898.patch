@@ -3,7 +3,7 @@
 # Date 1305315843 14400
 # Branch pnacl-sfi
 # Node ID bbaa8bbe8e9ec5b235a85f43d714842c17c35898
-# Parent 88b88998e37edd557a956070b2c00e40132883ee
+# Parent 91c53cafd872c330a350983e0d4ac1a4e0e72d84
 This CL disables a few more file operations like rename, sym_link, etc. in llvm support lib when compiling it with
 the pnacl TC.
 
@@ -13,9 +13,9 @@ CL http://codereview.chromium.org/6969069
 
  From llvm-pnacl-0032-256-bbaa8bbe8e9ec5b235a85f43d714842c17c35898.patch
 
-diff -r 88b88998e37e Makefile.rules
+diff -r 91c53cafd872 Makefile.rules
 --- a/Makefile.rules	Thu May 12 16:39:54 2011 -0700
-+++ b/Makefile.rules	Wed Jul 06 17:46:40 2011 -0700
++++ b/Makefile.rules	Wed Jul 06 18:01:03 2011 -0700
 @@ -578,7 +578,7 @@
  endif
  
@@ -25,9 +25,9 @@ diff -r 88b88998e37e Makefile.rules
  else
    LIBS +=
  endif
-diff -r 88b88998e37e lib/Support/Unix/Path.inc
+diff -r 91c53cafd872 lib/Support/Unix/Path.inc
 --- a/lib/Support/Unix/Path.inc	Thu May 12 16:39:54 2011 -0700
-+++ b/lib/Support/Unix/Path.inc	Wed Jul 06 17:46:40 2011 -0700
++++ b/lib/Support/Unix/Path.inc	Wed Jul 06 18:01:03 2011 -0700
 @@ -787,9 +787,11 @@
  
  bool
@@ -40,9 +40,9 @@ diff -r 88b88998e37e lib/Support/Unix/Path.inc
    return false;
  }
  
-diff -r 88b88998e37e lib/Support/Unix/PathV2.inc
+diff -r 91c53cafd872 lib/Support/Unix/PathV2.inc
 --- a/lib/Support/Unix/PathV2.inc	Thu May 12 16:39:54 2011 -0700
-+++ b/lib/Support/Unix/PathV2.inc	Wed Jul 06 17:46:40 2011 -0700
++++ b/lib/Support/Unix/PathV2.inc	Wed Jul 06 18:01:03 2011 -0700
 @@ -94,7 +94,9 @@
  
  error_code current_path(SmallVectorImpl<char> &result) {
