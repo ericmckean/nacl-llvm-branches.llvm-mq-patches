@@ -51,3 +51,4 @@ pnacl-llvm-0049-274-69da56e5597a5c882b6862932054208f1fb5b8b0.patch
 llvm-pnacl-0050-arm-naclrewritepass.patch
 llvm-pnacl-0051-lto-full.patch
 llvm-pnacl-0052-new-emitbundle.patch
+llvm-pnacl-0053-lsdasection.patch

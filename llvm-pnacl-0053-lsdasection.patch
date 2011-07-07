@@ -1,0 +1,14 @@
+# HG changeset patch
+# Parent 862205be09942f049e3f1b81321d79b9f5fff8ff
+diff -r 862205be0994 -r e1399da1b49c lib/Target/ARM/ARMTargetObjectFile.cpp
+--- a/lib/Target/ARM/ARMTargetObjectFile.cpp	Thu Jul 07 13:51:36 2011 -0700
++++ b/lib/Target/ARM/ARMTargetObjectFile.cpp	Thu Jul 07 14:46:59 2011 -0700
+@@ -36,7 +36,7 @@
+                                  ELF::SHF_WRITE |
+                                  ELF::SHF_ALLOC,
+                                  SectionKind::getDataRel());
+-    LSDASection = NULL;
++    // LSDASection = NULL; @LOCALMOD
+   }
+ 
+   AttributesSection =
