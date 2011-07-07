@@ -3,14 +3,14 @@
 # Date 1305932817 25200
 # Branch pnacl-sfi
 # Node ID 2e67a11d533c84a4e75bce0200cfcb5a7000a54e
-# Parent defcad9ede791310e4b504a4e04c59c2c81342f4
+# Parent 957cd366bd3bf0788c61f9b33142821c1d645165
 Make va_list 16-bytes instead of 24-bytes in X86-64 CodeGen
 
  From llvm-pnacl-0035-259-2e67a11d533c84a4e75bce0200cfcb5a7000a54e.patch
 
-diff -r defcad9ede79 lib/Target/X86/X86ISelLowering.cpp
+diff -r 957cd366bd3b lib/Target/X86/X86ISelLowering.cpp
 --- a/lib/Target/X86/X86ISelLowering.cpp	Tue May 17 16:44:51 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Wed Jul 06 15:31:27 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.cpp	Wed Jul 06 17:30:34 2011 -0700
 @@ -8050,6 +8050,7 @@
    //   fp_offset         (48 - 48 + 8 * 16)
    //   overflow_arg_area (point to parameters coming in memory).

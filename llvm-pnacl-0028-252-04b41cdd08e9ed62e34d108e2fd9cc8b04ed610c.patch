@@ -3,14 +3,14 @@
 # Date 1304020837 25200
 # Branch pnacl-sfi
 # Node ID 04b41cdd08e9ed62e34d108e2fd9cc8b04ed610c
-# Parent 0ce99424c3b6ebfd28cfe9289c39417eb5b2d704
+# Parent 14868535df28dc3c6e20119b4c63211b6ad6006c
 Add declarations for functions used by intrinsics
 
  From llvm-pnacl-0028-252-04b41cdd08e9ed62e34d108e2fd9cc8b04ed610c.patch
 
-diff -r 0ce99424c3b6 include/llvm/CodeGen/IntrinsicLowering.h
+diff -r 14868535df28 include/llvm/CodeGen/IntrinsicLowering.h
 --- a/include/llvm/CodeGen/IntrinsicLowering.h	Wed Apr 27 16:07:18 2011 -0700
-+++ b/include/llvm/CodeGen/IntrinsicLowering.h	Wed Jul 06 15:31:22 2011 -0700
++++ b/include/llvm/CodeGen/IntrinsicLowering.h	Wed Jul 06 17:30:29 2011 -0700
 @@ -16,6 +16,7 @@
  #ifndef LLVM_CODEGEN_INTRINSICLOWERING_H
  #define LLVM_CODEGEN_INTRINSICLOWERING_H
@@ -44,9 +44,9 @@ diff -r 0ce99424c3b6 include/llvm/CodeGen/IntrinsicLowering.h
      /// AddPrototypes - This method, if called, causes all of the prototypes
      /// that might be needed by an intrinsic lowering implementation to be
      /// inserted into the module specified.
-diff -r 0ce99424c3b6 lib/CodeGen/IntrinsicLowering.cpp
+diff -r 14868535df28 lib/CodeGen/IntrinsicLowering.cpp
 --- a/lib/CodeGen/IntrinsicLowering.cpp	Wed Apr 27 16:07:18 2011 -0700
-+++ b/lib/CodeGen/IntrinsicLowering.cpp	Wed Jul 06 15:31:22 2011 -0700
++++ b/lib/CodeGen/IntrinsicLowering.cpp	Wed Jul 06 17:30:29 2011 -0700
 @@ -92,8 +92,48 @@
  #  define setjmp_undefined_for_msvc
  #endif
@@ -96,9 +96,9 @@ diff -r 0ce99424c3b6 lib/CodeGen/IntrinsicLowering.cpp
    for (Module::iterator I = M.begin(), E = M.end(); I != E; ++I)
      if (I->isDeclaration() && !I->use_empty())
        switch (I->getIntrinsicID()) {
-diff -r 0ce99424c3b6 tools/gold/gold-plugin.cpp
+diff -r 14868535df28 tools/gold/gold-plugin.cpp
 --- a/tools/gold/gold-plugin.cpp	Wed Apr 27 16:07:18 2011 -0700
-+++ b/tools/gold/gold-plugin.cpp	Wed Jul 06 15:31:22 2011 -0700
++++ b/tools/gold/gold-plugin.cpp	Wed Jul 06 17:30:29 2011 -0700
 @@ -361,39 +361,6 @@
      }
    }
@@ -139,9 +139,9 @@ diff -r 0ce99424c3b6 tools/gold/gold-plugin.cpp
    if (options::generate_api_file)
      api_file.close();
  
-diff -r 0ce99424c3b6 tools/lto/LTOCodeGenerator.cpp
+diff -r 14868535df28 tools/lto/LTOCodeGenerator.cpp
 --- a/tools/lto/LTOCodeGenerator.cpp	Wed Apr 27 16:07:18 2011 -0700
-+++ b/tools/lto/LTOCodeGenerator.cpp	Wed Jul 06 15:31:22 2011 -0700
++++ b/tools/lto/LTOCodeGenerator.cpp	Wed Jul 06 17:30:29 2011 -0700
 @@ -25,6 +25,7 @@
  #include "llvm/ADT/Triple.h"
  #include "llvm/Analysis/Passes.h"
@@ -167,9 +167,9 @@ diff -r 0ce99424c3b6 tools/lto/LTOCodeGenerator.cpp
  }
  
  LTOCodeGenerator::~LTOCodeGenerator()
-diff -r 0ce99424c3b6 tools/lto/LTOModule.cpp
+diff -r 14868535df28 tools/lto/LTOModule.cpp
 --- a/tools/lto/LTOModule.cpp	Wed Apr 27 16:07:18 2011 -0700
-+++ b/tools/lto/LTOModule.cpp	Wed Jul 06 15:31:22 2011 -0700
++++ b/tools/lto/LTOModule.cpp	Wed Jul 06 17:30:29 2011 -0700
 @@ -41,6 +41,7 @@
  #include "llvm/Target/TargetMachine.h"
  #include "llvm/Target/TargetRegistry.h"
