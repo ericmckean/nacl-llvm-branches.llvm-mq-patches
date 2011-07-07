@@ -3,14 +3,14 @@
 # Date 1306440127 25200
 # Branch pnacl-sfi
 # Node ID 7cf9f3a52aaf5630750b55ba713ac8aa3b685e35
-# Parent 7aa811d4a2e02a98713d5cf1d1fd89f5eab40753
+# Parent 353c35cfbd75ed1db3d7ff64a6542bc8a9f060b5
 Disable checking for symbol __nacl_read_tp (issue7071010)
 
  From llvm-pnacl-0036-260-7cf9f3a52aaf5630750b55ba713ac8aa3b685e35.patch
 
-diff -r 7aa811d4a2e0 lib/CodeGen/IntrinsicLowering.cpp
+diff -r 353c35cfbd75 lib/CodeGen/IntrinsicLowering.cpp
 --- a/lib/CodeGen/IntrinsicLowering.cpp	Fri May 20 16:06:57 2011 -0700
-+++ b/lib/CodeGen/IntrinsicLowering.cpp	Wed Jul 06 17:30:35 2011 -0700
++++ b/lib/CodeGen/IntrinsicLowering.cpp	Wed Jul 06 17:46:42 2011 -0700
 @@ -129,8 +129,11 @@
    // assert that __nacl_read_tp exists.
    // Insert a correctly-typed definition now.
