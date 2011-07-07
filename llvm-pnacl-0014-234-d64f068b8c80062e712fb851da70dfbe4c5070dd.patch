@@ -3,14 +3,14 @@
 # Date 1300409399 25200
 # Branch pnacl-sfi
 # Node ID d64f068b8c80062e712fb851da70dfbe4c5070dd
-# Parent 5ba6c443a4308cbf4728e86196dd6e40740379a1
+# Parent 74fd8b242454cc671277028f2853f8a3e14e2eb0
 Tweaks to LLVM for self-build
 
  From llvm-pnacl-0014-234-d64f068b8c80062e712fb851da70dfbe4c5070dd.patch
 
-diff -r 5ba6c443a430 lib/Target/SubtargetFeature.cpp
+diff -r 74fd8b242454 lib/Target/SubtargetFeature.cpp
 --- a/lib/Target/SubtargetFeature.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/lib/Target/SubtargetFeature.cpp	Wed Jul 06 15:31:12 2011 -0700
++++ b/lib/Target/SubtargetFeature.cpp	Wed Jul 06 17:24:04 2011 -0700
 @@ -380,5 +380,11 @@
        AddFeature("64bit");
        AddFeature("altivec");
@@ -23,9 +23,9 @@ diff -r 5ba6c443a430 lib/Target/SubtargetFeature.cpp
 +// @LOCALMOD-END
    }
  }
-diff -r 5ba6c443a430 lib/Target/X86/X86InstrControl.td
+diff -r 74fd8b242454 lib/Target/X86/X86InstrControl.td
 --- a/lib/Target/X86/X86InstrControl.td	Mon Mar 07 11:48:02 2011 -0800
-+++ b/lib/Target/X86/X86InstrControl.td	Wed Jul 06 15:31:12 2011 -0700
++++ b/lib/Target/X86/X86InstrControl.td	Wed Jul 06 17:24:04 2011 -0700
 @@ -146,13 +146,13 @@
      def CALLpcrel32 : Ii32PCRel<0xE8, RawFrm,
                             (outs), (ins i32imm_pcrel:$dst,variable_ops),
@@ -62,9 +62,9 @@ diff -r 5ba6c443a430 lib/Target/X86/X86InstrControl.td
  
  // Tail call stuff.
  
-diff -r 5ba6c443a430 lib/Target/X86/X86InstrNaCl.td
+diff -r 74fd8b242454 lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Mon Mar 07 11:48:02 2011 -0800
-+++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jul 06 15:31:12 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Wed Jul 06 17:24:04 2011 -0700
 @@ -61,7 +61,7 @@
  
  let isCall = 1, isAsmParserOnly = 1 in {
@@ -101,9 +101,9 @@ diff -r 5ba6c443a430 lib/Target/X86/X86InstrNaCl.td
                                  Requires<[IsNaCl64]>;
  
      def NACL_CG_CALL64r       : I<0, Pseudo, (outs), (ins GR32:$dst, variable_ops),
-diff -r 5ba6c443a430 tools/gold/gold-plugin.cpp
+diff -r 74fd8b242454 tools/gold/gold-plugin.cpp
 --- a/tools/gold/gold-plugin.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/tools/gold/gold-plugin.cpp	Wed Jul 06 15:31:12 2011 -0700
++++ b/tools/gold/gold-plugin.cpp	Wed Jul 06 17:24:04 2011 -0700
 @@ -61,6 +61,7 @@
    };
  
@@ -139,9 +139,9 @@ diff -r 5ba6c443a430 tools/gold/gold-plugin.cpp
          switch (tv->tv_u.tv_val) {
            case LDPO_REL:  // .o
            case LDPO_DYN:  // .so
-diff -r 5ba6c443a430 tools/llc/llc.cpp
+diff -r 74fd8b242454 tools/llc/llc.cpp
 --- a/tools/llc/llc.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/tools/llc/llc.cpp	Wed Jul 06 15:31:12 2011 -0700
++++ b/tools/llc/llc.cpp	Wed Jul 06 17:24:04 2011 -0700
 @@ -299,6 +299,11 @@
    if (MCPU.size() || MAttrs.size()) {
      SubtargetFeatures Features;
@@ -154,9 +154,9 @@ diff -r 5ba6c443a430 tools/llc/llc.cpp
      for (unsigned i = 0; i != MAttrs.size(); ++i)
        Features.AddFeature(MAttrs[i]);
      FeaturesStr = Features.getString();
-diff -r 5ba6c443a430 tools/llc/nacl_file.cpp
+diff -r 74fd8b242454 tools/llc/nacl_file.cpp
 --- a/tools/llc/nacl_file.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/tools/llc/nacl_file.cpp	Wed Jul 06 15:31:12 2011 -0700
++++ b/tools/llc/nacl_file.cpp	Wed Jul 06 17:24:04 2011 -0700
 @@ -37,8 +37,8 @@
  #define printerr(...)                           \
    fprintf(stderr, __VA_ARGS__)

@@ -3,7 +3,7 @@
 # Date 1301356919 25200
 # Branch pnacl-sfi
 # Node ID bb23f96ef85abf5287e4aad9ed511efd7300705f
-# Parent cd322d117f891d9514262e12dcfcd75b93f75fa4
+# Parent 2ad26952d757970ad55d65d929f0b2886269ef4d
 1. Add support for new ARM triple arm-nacl-gnueabi
 2. Invert SFI switches. Now they DISABLE specific SFI specific features
 3.

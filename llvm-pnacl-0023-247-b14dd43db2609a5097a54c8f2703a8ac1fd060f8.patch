@@ -3,7 +3,7 @@
 # Date 1302905484 14400
 # Branch pnacl-sfi
 # Node ID b14dd43db2609a5097a54c8f2703a8ac1fd060f8
-# Parent ae8a695cfa40c3dfd55897f27227767c6f357680
+# Parent 518d7ff6a30a153b3a901df03986c84ebb755fa9
 This adds functionality for an annotated symbol dump to llvm-ld.
 
 E.g.:
@@ -28,9 +28,9 @@ Please review this at http://codereview.chromium.org/6822040/
 
  From llvm-pnacl-0023-247-b14dd43db2609a5097a54c8f2703a8ac1fd060f8.patch
 
-diff -r ae8a695cfa40 tools/llvm-ld/llvm-ld.cpp
+diff -r 518d7ff6a30a tools/llvm-ld/llvm-ld.cpp
 --- a/tools/llvm-ld/llvm-ld.cpp	Fri Apr 01 11:05:59 2011 -0700
-+++ b/tools/llvm-ld/llvm-ld.cpp	Wed Jul 06 15:31:18 2011 -0700
++++ b/tools/llvm-ld/llvm-ld.cpp	Wed Jul 06 17:24:10 2011 -0700
 @@ -41,6 +41,7 @@
  #include <memory>
  #include <cstring>

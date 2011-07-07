@@ -3,7 +3,7 @@
 # Date 1298504194 28800
 # Branch pnacl-sfi
 # Node ID 85a53e22a73c22aaae7ab761580fd5ffe3788ec5
-# Parent b67e750962e070f860944efcbd9525e65159fd4b
+# Parent 5a4402d455547a717eb61f0d5b405cf65225c931
 http://llvm.org/viewvc/llvm-project?view=rev&revision=124996
 
 For downporting of ARM/MC/ELF work
