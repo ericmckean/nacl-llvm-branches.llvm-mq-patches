@@ -38,8 +38,8 @@ TEST=utman.sh test-arm-pic
 
 diff -r 1143dbba8cd2 lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Fri Apr 15 18:11:24 2011 -0400
-+++ b/lib/MC/ELFObjectWriter.cpp	Wed Jul 06 17:46:20 2011 -0700
-@@ -25,17 +25,32 @@
++++ b/lib/MC/ELFObjectWriter.cpp	Wed Jul 06 18:00:35 2011 -0700
+@@ -25,17 +25,29 @@
  #include "llvm/Support/ELF.h"
  #include "llvm/Target/TargetAsmBackend.h"
  #include "llvm/ADT/StringSwitch.h"
@@ -63,9 +63,6 @@ diff -r 1143dbba8cd2 lib/MC/ELFObjectWriter.cpp
 +}
 +//@LOCALMOD-END
 +
-+}
-+//@LOCALMOD-END
-+
  bool ELFObjectWriter::isFixupKindPCRel(const MCAssembler &Asm, unsigned Kind) {
    const MCFixupKindInfo &FKI =
      Asm.getBackend().getFixupKindInfo((MCFixupKind) Kind);
@@ -74,7 +71,7 @@ diff -r 1143dbba8cd2 lib/MC/ELFObjectWriter.cpp
    return FKI.Flags & MCFixupKindInfo::FKF_IsPCRel;
  }
  
-@@ -332,9 +347,12 @@
+@@ -332,9 +344,12 @@
    }
  }
  
@@ -88,7 +85,7 @@ diff -r 1143dbba8cd2 lib/MC/ELFObjectWriter.cpp
    const MCSymbol &Symbol = Target.getSymA()->getSymbol();
    const MCSymbol &ASymbol = Symbol.AliasedSymbol();
    const MCSymbol *Renamed = Renames.lookup(&Symbol);
-@@ -357,7 +375,7 @@
+@@ -357,7 +372,7 @@
    const SectionKind secKind = Section.getKind();
  
    if (secKind.isBSS())
@@ -97,7 +94,7 @@ diff -r 1143dbba8cd2 lib/MC/ELFObjectWriter.cpp
  
    if (secKind.isThreadLocal()) {
      if (Renamed)
-@@ -373,7 +391,7 @@
+@@ -373,7 +388,7 @@
        (Kind == MCSymbolRefExpr::VK_PLT ||
         Kind == MCSymbolRefExpr::VK_GOTPCREL ||
         Kind == MCSymbolRefExpr::VK_GOTOFF ||
@@ -106,7 +103,7 @@ diff -r 1143dbba8cd2 lib/MC/ELFObjectWriter.cpp
    // Fixes an LLVM bug. This bug has already been fixed upstream
    // and should disappear on the next merge.
         Kind == MCSymbolRefExpr::VK_NTPOFF)) {
-@@ -385,15 +403,16 @@
+@@ -385,15 +400,16 @@
  
    if (Section.getFlags() & ELF::SHF_MERGE) {
      if (Target.getConstant() == 0)
@@ -125,7 +122,7 @@ diff -r 1143dbba8cd2 lib/MC/ELFObjectWriter.cpp
  
  void ELFObjectWriter::RecordRelocation(const MCAssembler &Asm,
                                         const MCAsmLayout &Layout,
-@@ -410,8 +429,9 @@
+@@ -410,8 +426,9 @@
    if (!Target.isAbsolute()) {
      const MCSymbol &Symbol = Target.getSymA()->getSymbol();
      const MCSymbol &ASymbol = Symbol.AliasedSymbol();
@@ -137,7 +134,7 @@ diff -r 1143dbba8cd2 lib/MC/ELFObjectWriter.cpp
      if (const MCSymbolRefExpr *RefB = Target.getSymB()) {
        const MCSymbol &SymbolB = RefB->getSymbol();
        MCSymbolData &SDB = Asm.getSymbolData(SymbolB);
-@@ -1262,31 +1282,95 @@
+@@ -1262,31 +1279,95 @@
  // In ARM, _MergedGlobals and other most symbols get emitted directly.
  // I.e. not as an offset to a section symbol.
  // This code is a first-cut approximation of what ARM/gcc does.
@@ -245,7 +242,7 @@ diff -r 1143dbba8cd2 lib/MC/ELFObjectWriter.cpp
  unsigned ARMELFObjectWriter::GetRelocType(const MCValue &Target,
                                            const MCFixup &Fixup,
                                            bool IsPCRel,
-@@ -1295,6 +1379,20 @@
+@@ -1295,6 +1376,20 @@
    MCSymbolRefExpr::VariantKind Modifier = Target.isAbsolute() ?
      MCSymbolRefExpr::VK_None : Target.getSymA()->getKind();
  
@@ -266,7 +263,7 @@ diff -r 1143dbba8cd2 lib/MC/ELFObjectWriter.cpp
    unsigned Type = 0;
    if (IsPCRel) {
      switch ((unsigned)Fixup.getKind()) {
-@@ -1303,7 +1401,7 @@
+@@ -1303,7 +1398,7 @@
        switch (Modifier) {
        default: llvm_unreachable("Unsupported Modifier");
        case MCSymbolRefExpr::VK_None:
@@ -275,7 +272,7 @@ diff -r 1143dbba8cd2 lib/MC/ELFObjectWriter.cpp
          break;
        case MCSymbolRefExpr::VK_ARM_TLSGD:
          assert(0 && "unimplemented");
-@@ -1324,7 +1422,15 @@
+@@ -1324,7 +1419,15 @@
        }
        break;
      case ARM::fixup_arm_condbranch:
@@ -292,7 +289,7 @@ diff -r 1143dbba8cd2 lib/MC/ELFObjectWriter.cpp
        break;
      case ARM::fixup_arm_movt_hi16:
      case ARM::fixup_arm_movt_hi16_pcrel:
-@@ -1399,11 +1505,9 @@
+@@ -1399,11 +1502,9 @@
      }
    }
  
@@ -307,7 +304,7 @@ diff -r 1143dbba8cd2 lib/MC/ELFObjectWriter.cpp
  
 diff -r 1143dbba8cd2 lib/MC/ELFObjectWriter.h
 --- a/lib/MC/ELFObjectWriter.h	Fri Apr 15 18:11:24 2011 -0400
-+++ b/lib/MC/ELFObjectWriter.h	Wed Jul 06 17:46:20 2011 -0700
++++ b/lib/MC/ELFObjectWriter.h	Wed Jul 06 18:00:35 2011 -0700
 @@ -139,18 +139,22 @@
  
      unsigned ShstrtabIndex;
