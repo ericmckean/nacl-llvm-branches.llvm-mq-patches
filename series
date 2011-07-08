@@ -36,6 +36,7 @@ llvm-pnacl-0038-262-5ff14599085746ac871ec2acdaaddb82a716bbd2.patch
 llvm-pnacl-0039-new-emitbundle.patch
 llvm-pnacl-0040-arm-naclrewritepass.patch
 llvm-pnacl-0040-lto-full.patch
+STOP
 pnacl-llvm-0039-263-0d3856fc6b19c070f408d5e6a36d89ff180a2141.patch
 pnacl-llvm-0040-264-54be72e3436a8f6dc6e46fa3bb1f5627e7970632.patch
 pnacl-llvm-0041-265-6789ea6de2530e312bc4f14b5a1e720490fe5b7b.patch
