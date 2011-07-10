@@ -3,7 +3,7 @@
 # Date 1305243594 25200
 # Branch pnacl-sfi
 # Node ID 19c5680568b4d5af396453646b2796753dac2b28
-# Parent 5b68248faaf6ddf4a1dc376f8e8b51851273e4bd
+# Parent 12a61bf46c905510c5537fe1d2a4eaaa9741fc30
 This fixes the last bit of divergence between LLVM and binutils for ARM in the
 text section.
 
@@ -70,9 +70,9 @@ This change agrees with what GNU as does, and makes the PIC code run.
 
  From .hg/patches/llvm-pnacl-0031-255-19c5680568b4d5af396453646b2796753dac2b28.patch.stripped
 
-diff -r 5b68248faaf6 lib/Target/ARM/ARMAsmBackend.cpp
+diff -r 12a61bf46c90 lib/Target/ARM/ARMAsmBackend.cpp
 --- a/lib/Target/ARM/ARMAsmBackend.cpp	Thu May 05 16:52:14 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmBackend.cpp	Wed Jun 29 23:05:10 2011 -0700
++++ b/lib/Target/ARM/ARMAsmBackend.cpp	Sun Jul 10 16:20:58 2011 -0700
 @@ -172,10 +172,10 @@
    case FK_Data_4:
      return Value;
