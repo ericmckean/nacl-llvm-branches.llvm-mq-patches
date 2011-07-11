@@ -1,0 +1,21 @@
+# HG changeset patch
+# Parent f79c090d6512c1d419eeac9bd4097b2f74d86b61
+
+Track upstream change:
+VSTMDDB, VSTMSDB went away between 128002 and 129006
+
+diff -r f79c090d6512 lib/Target/ARM/ARMNaClRewritePass.cpp
+--- a/lib/Target/ARM/ARMNaClRewritePass.cpp	Tue Jun 28 10:56:31 2011 -0700
++++ b/lib/Target/ARM/ARMNaClRewritePass.cpp	Tue Jun 28 11:11:05 2011 -0700
+@@ -503,9 +503,9 @@
+   case ARM::STMIB:
+ 
+   case ARM::VSTMDIA:
+-  case ARM::VSTMDDB:
++    // case ARM::VSTMDDB: // VSTMDDB, VSTMSDB went away bet: 128002 and 129006
+   case ARM::VSTMSIA:
+-  case ARM::VSTMSDB:
++    //case ARM::VSTMSDB: 
+     *AddrIdx = 0;
+     break;
+ 

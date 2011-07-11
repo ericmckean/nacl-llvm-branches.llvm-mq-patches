@@ -40,3 +40,4 @@ llvm-pnacl-0038-262-5ff14599085746ac871ec2acdaaddb82a716bbd2.patch
 llvm-pnacl-0039-new-emitbundle.patch
 llvm-pnacl-0040-lsdasection.patch
 llvm-pnacl-0041-lto-full.patch
+llvm-pnacl-0042-arm-naclrewritepass.patch 
