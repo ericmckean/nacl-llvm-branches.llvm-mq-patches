@@ -3,7 +3,7 @@
 # Date 1298504194 28800
 # Branch pnacl-sfi
 # Node ID da182c26641a461d6093d1d9f275762cd7694f69
-# Parent d5490e4128571cac36bd5fc11adad04846d2660a
+# Parent 6051fa12f6910f2cad69b70376624abef9479dd3
 http://llvm.org/viewvc/llvm-project?view=rev&revision=124995
 Teach ARM/MC/ELF to handle R_ARM_JUMP24 relocation type for conditional jumps.
 (yes, this is different from R_ARM_CALL)
@@ -23,3 +23,4 @@ Added a few FIXME's for future naming fixups in ARMInstrInfo.td
  From .hg/patches/llvm-pnacl-0009-229-da182c26641a461d6093d1d9f275762cd7694f69.patch.stripped
 
  Empty due to upstream
+

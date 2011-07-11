@@ -1,9 +1,9 @@
 # HG changeset patch
-# Parent 52582aeabd7f8f5fa1123144c506094ef1b28484
+# Parent 937fee6bb58b3af9b1716a05aee30816990d1fbe
 
-diff -r 52582aeabd7f lib/Target/ARM/ARMTargetObjectFile.cpp
---- a/lib/Target/ARM/ARMTargetObjectFile.cpp	Mon Jul 11 09:37:43 2011 -0700
-+++ b/lib/Target/ARM/ARMTargetObjectFile.cpp	Mon Jul 11 09:37:44 2011 -0700
+diff -r 937fee6bb58b lib/Target/ARM/ARMTargetObjectFile.cpp
+--- a/lib/Target/ARM/ARMTargetObjectFile.cpp	Mon Jul 11 14:29:17 2011 -0700
++++ b/lib/Target/ARM/ARMTargetObjectFile.cpp	Mon Jul 11 14:29:18 2011 -0700
 @@ -36,7 +36,7 @@
                                   ELF::SHF_WRITE |
                                   ELF::SHF_ALLOC,
