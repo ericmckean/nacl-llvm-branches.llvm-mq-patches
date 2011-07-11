@@ -35,3 +35,4 @@ llvm-pnacl-0037-261-e25c7690d014b1ea5c29383f946a7e219e30f79d.patch
 llvm-pnacl-0038-262-5ff14599085746ac871ec2acdaaddb82a716bbd2.patch
 llvm-pnacl-0039-new-emitbundle.patch
 llvm-pnacl-0040-lsdasection.patch
+llvm-pnacl-0041-lto-full.patch
