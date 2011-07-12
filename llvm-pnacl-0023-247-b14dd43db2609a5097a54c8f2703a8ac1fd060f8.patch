@@ -28,9 +28,9 @@ Please review this at http://codereview.chromium.org/6822040/
 
  From llvm-pnacl-0023-247-b14dd43db2609a5097a54c8f2703a8ac1fd060f8.patch
 
-diff -r 99f4b2adb59e tools/llvm-ld/llvm-ld.cpp
---- a/tools/llvm-ld/llvm-ld.cpp	Fri Apr 01 11:05:59 2011 -0700
-+++ b/tools/llvm-ld/llvm-ld.cpp	Tue Jun 07 14:19:38 2011 -0700
+diff -r 99f4b2adb59e llvm-trunk/tools/llvm-ld/llvm-ld.cpp
+--- a/llvm-trunk/tools/llvm-ld/llvm-ld.cpp	Fri Apr 01 11:05:59 2011 -0700
++++ b/llvm-trunk/tools/llvm-ld/llvm-ld.cpp	Tue Jun 07 14:19:38 2011 -0700
 @@ -41,6 +41,7 @@
  #include <memory>
  #include <cstring>

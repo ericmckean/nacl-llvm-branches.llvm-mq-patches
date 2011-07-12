@@ -17,9 +17,9 @@ TEST=utman.sh test-arm-pic
 
  From llvm-pnacl-0025-249-953e674850af79fe3d42ac6130c114c411ffa05d.patch
 
-diff -r 9710ba110e05 lib/Target/ARM/ARMAsmBackend.cpp
---- a/lib/Target/ARM/ARMAsmBackend.cpp	Thu Apr 21 12:02:47 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmBackend.cpp	Tue Jun 07 14:19:42 2011 -0700
+diff -r 9710ba110e05 llvm-trunk/lib/Target/ARM/ARMAsmBackend.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMAsmBackend.cpp	Thu Apr 21 12:02:47 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMAsmBackend.cpp	Tue Jun 07 14:19:42 2011 -0700
 @@ -144,8 +144,15 @@
    }
    // ARM mode
@@ -37,9 +37,9 @@ diff -r 9710ba110e05 lib/Target/ARM/ARMAsmBackend.cpp
    switch (Count % 4) {
    default: break; // No leftover bytes to write
    case 1: OW->Write8(0); break;
-diff -r 9710ba110e05 lib/Target/ARM/ARMNaClHeaders.cpp
---- a/lib/Target/ARM/ARMNaClHeaders.cpp	Thu Apr 21 12:02:47 2011 -0700
-+++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Tue Jun 07 14:19:42 2011 -0700
+diff -r 9710ba110e05 llvm-trunk/lib/Target/ARM/ARMNaClHeaders.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMNaClHeaders.cpp	Thu Apr 21 12:02:47 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMNaClHeaders.cpp	Tue Jun 07 14:19:42 2011 -0700
 @@ -45,25 +45,25 @@
  
    O <<

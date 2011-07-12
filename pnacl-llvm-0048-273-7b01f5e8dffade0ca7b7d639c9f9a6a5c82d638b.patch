@@ -35,9 +35,9 @@ CL= http://codereview.chromium.org/7233016/
 
  From pnacl-llvm-0048-273-7b01f5e8dffade0ca7b7d639c9f9a6a5c82d638b.patch
 
-diff -r 2f42d4623920 lib/CodeGen/IntrinsicLowering.cpp
---- a/lib/CodeGen/IntrinsicLowering.cpp	Thu Jun 23 14:56:21 2011 -0700
-+++ b/lib/CodeGen/IntrinsicLowering.cpp	Fri Jul 01 15:24:03 2011 -0700
+diff -r 2f42d4623920 llvm-trunk/lib/CodeGen/IntrinsicLowering.cpp
+--- a/llvm-trunk/lib/CodeGen/IntrinsicLowering.cpp	Thu Jun 23 14:56:21 2011 -0700
++++ b/llvm-trunk/lib/CodeGen/IntrinsicLowering.cpp	Fri Jul 01 15:24:03 2011 -0700
 @@ -31,6 +31,11 @@
                   cl::desc("Add __nacl_read_tp dependency to bitcode modules"),
                   cl::init(false));

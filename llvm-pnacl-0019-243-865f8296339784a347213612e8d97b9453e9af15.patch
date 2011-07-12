@@ -9,9 +9,9 @@ Merge 242:5fc7321392be and 238:bb23f96ef85a
 
  From llvm-pnacl-0019-243-865f8296339784a347213612e8d97b9453e9af15.patch
 
-diff -r fbf21e3891a2 lib/Target/ARM/ARMExpandPseudoInsts.cpp
---- a/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Tue Jun 07 14:19:31 2011 -0700
+diff -r fbf21e3891a2 llvm-trunk/lib/Target/ARM/ARMExpandPseudoInsts.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Mon Mar 28 17:01:59 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Tue Jun 07 14:19:31 2011 -0700
 @@ -853,17 +853,32 @@
      }
      case ARM::TPsoft: {
@@ -55,9 +55,9 @@ diff -r fbf21e3891a2 lib/Target/ARM/ARMExpandPseudoInsts.cpp
        return true;
      }
      case ARM::t2LDRHpci:
-diff -r fbf21e3891a2 lib/Target/X86/X86ISelDAGToDAG.cpp
---- a/lib/Target/X86/X86ISelDAGToDAG.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/lib/Target/X86/X86ISelDAGToDAG.cpp	Tue Jun 07 14:19:31 2011 -0700
+diff -r fbf21e3891a2 llvm-trunk/lib/Target/X86/X86ISelDAGToDAG.cpp
+--- a/llvm-trunk/lib/Target/X86/X86ISelDAGToDAG.cpp	Mon Mar 28 17:01:59 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86ISelDAGToDAG.cpp	Tue Jun 07 14:19:31 2011 -0700
 @@ -232,8 +232,9 @@
      inline void getAddressOperands(X86ISelAddressMode &AM, SDValue &Base, 
                                     SDValue &Scale, SDValue &Index,
@@ -121,9 +121,9 @@ diff -r fbf21e3891a2 lib/Target/X86/X86ISelDAGToDAG.cpp
    return true;
  }
  
-diff -r fbf21e3891a2 lib/Target/X86/X86RegisterInfo.cpp
---- a/lib/Target/X86/X86RegisterInfo.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/lib/Target/X86/X86RegisterInfo.cpp	Tue Jun 07 14:19:31 2011 -0700
+diff -r fbf21e3891a2 llvm-trunk/lib/Target/X86/X86RegisterInfo.cpp
+--- a/llvm-trunk/lib/Target/X86/X86RegisterInfo.cpp	Mon Mar 28 17:01:59 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86RegisterInfo.cpp	Tue Jun 07 14:19:31 2011 -0700
 @@ -310,18 +310,14 @@
  
  const TargetRegisterClass *
@@ -145,9 +145,9 @@ diff -r fbf21e3891a2 lib/Target/X86/X86RegisterInfo.cpp
        return &X86::GR64_NOSPRegClass;
      return &X86::GR32_NOSPRegClass;
    }
-diff -r fbf21e3891a2 tools/llc/nacl_file.cpp
---- a/tools/llc/nacl_file.cpp	Mon Mar 28 17:01:59 2011 -0700
-+++ b/tools/llc/nacl_file.cpp	Tue Jun 07 14:19:31 2011 -0700
+diff -r fbf21e3891a2 llvm-trunk/tools/llc/nacl_file.cpp
+--- a/llvm-trunk/tools/llc/nacl_file.cpp	Mon Mar 28 17:01:59 2011 -0700
++++ b/llvm-trunk/tools/llc/nacl_file.cpp	Tue Jun 07 14:19:31 2011 -0700
 @@ -124,7 +124,11 @@
    }
    entry->real_fd = fd;

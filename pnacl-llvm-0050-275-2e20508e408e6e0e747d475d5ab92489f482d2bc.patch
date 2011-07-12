@@ -8,9 +8,9 @@ Backport upstream r124282 to fix memory corruption error
 
  From pnacl-llvm-0050-275-2e20508e408e6e0e747d475d5ab92489f482d2bc.patch
 
-diff -r 7eb6d6b34663 lib/Analysis/ScalarEvolution.cpp
---- a/lib/Analysis/ScalarEvolution.cpp	Mon Jun 27 11:39:09 2011 -0700
-+++ b/lib/Analysis/ScalarEvolution.cpp	Mon Jul 11 16:15:57 2011 -0700
+diff -r 7eb6d6b34663 llvm-trunk/lib/Analysis/ScalarEvolution.cpp
+--- a/llvm-trunk/lib/Analysis/ScalarEvolution.cpp	Mon Jun 27 11:39:09 2011 -0700
++++ b/llvm-trunk/lib/Analysis/ScalarEvolution.cpp	Mon Jul 11 16:15:57 2011 -0700
 @@ -831,6 +831,7 @@
      }
      if (!hasTrunc)

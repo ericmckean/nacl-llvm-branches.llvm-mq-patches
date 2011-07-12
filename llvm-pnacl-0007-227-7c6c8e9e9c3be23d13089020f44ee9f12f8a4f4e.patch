@@ -22,9 +22,9 @@ Added a few FIXME's for future naming fixups in ARMInstrInfo.td
 
  From llvm-pnacl-0007-227-7c6c8e9e9c3be23d13089020f44ee9f12f8a4f4e.patch
 
-diff -r dfeeea06e037 lib/MC/ELFObjectWriter.cpp
---- a/lib/MC/ELFObjectWriter.cpp	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:19:10 2011 -0700
+diff -r dfeeea06e037 llvm-trunk/lib/MC/ELFObjectWriter.cpp
+--- a/llvm-trunk/lib/MC/ELFObjectWriter.cpp	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:19:10 2011 -0700
 @@ -1555,7 +1555,7 @@
          break;
        }
@@ -60,9 +60,9 @@ diff -r dfeeea06e037 lib/MC/ELFObjectWriter.cpp
      case ARM::fixup_arm_movt_hi16:
        Type = ELF::R_ARM_MOVT_ABS;
        break;
-diff -r dfeeea06e037 lib/MC/MachObjectWriter.cpp
---- a/lib/MC/MachObjectWriter.cpp	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/MC/MachObjectWriter.cpp	Tue Jun 07 14:19:10 2011 -0700
+diff -r dfeeea06e037 llvm-trunk/lib/MC/MachObjectWriter.cpp
+--- a/llvm-trunk/lib/MC/MachObjectWriter.cpp	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/lib/MC/MachObjectWriter.cpp	Tue Jun 07 14:19:10 2011 -0700
 @@ -940,7 +940,8 @@
      case ARM::fixup_arm_ldst_pcrel_12:
      case ARM::fixup_arm_pcrel_10:
@@ -73,9 +73,9 @@ diff -r dfeeea06e037 lib/MC/MachObjectWriter.cpp
        RelocType = unsigned(macho::RIT_ARM_Branch24Bit);
        // Report as 'long', even though that is not quite accurate.
        Log2Size = llvm::Log2_32(4);
-diff -r dfeeea06e037 lib/Target/ARM/ARMAsmBackend.cpp
---- a/lib/Target/ARM/ARMAsmBackend.cpp	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/Target/ARM/ARMAsmBackend.cpp	Tue Jun 07 14:19:10 2011 -0700
+diff -r dfeeea06e037 llvm-trunk/lib/Target/ARM/ARMAsmBackend.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMAsmBackend.cpp	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/lib/Target/ARM/ARMAsmBackend.cpp	Tue Jun 07 14:19:10 2011 -0700
 @@ -67,7 +67,8 @@
  { "fixup_arm_adr_pcrel_12",  1,            24,  MCFixupKindInfo::FKF_IsPCRel },
  { "fixup_t2_adr_pcrel_12",   0,            32,  MCFixupKindInfo::FKF_IsPCRel |
@@ -106,9 +106,9 @@ diff -r dfeeea06e037 lib/Target/ARM/ARMAsmBackend.cpp
      return 3;
  
    case FK_Data_4:
-diff -r dfeeea06e037 lib/Target/ARM/ARMCodeEmitter.cpp
---- a/lib/Target/ARM/ARMCodeEmitter.cpp	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/Target/ARM/ARMCodeEmitter.cpp	Tue Jun 07 14:19:10 2011 -0700
+diff -r dfeeea06e037 llvm-trunk/lib/Target/ARM/ARMCodeEmitter.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMCodeEmitter.cpp	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/lib/Target/ARM/ARMCodeEmitter.cpp	Tue Jun 07 14:19:10 2011 -0700
 @@ -187,6 +187,8 @@
        const { return 0; }
      unsigned getUnconditionalBranchTargetOpValue(const MachineInstr &MI,
@@ -118,9 +118,9 @@ diff -r dfeeea06e037 lib/Target/ARM/ARMCodeEmitter.cpp
      unsigned getCCOutOpValue(const MachineInstr &MI, unsigned Op)
        const { return 0; }
      unsigned getSOImmOpValue(const MachineInstr &MI, unsigned Op)
-diff -r dfeeea06e037 lib/Target/ARM/ARMFixupKinds.h
---- a/lib/Target/ARM/ARMFixupKinds.h	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/Target/ARM/ARMFixupKinds.h	Tue Jun 07 14:19:10 2011 -0700
+diff -r dfeeea06e037 llvm-trunk/lib/Target/ARM/ARMFixupKinds.h
+--- a/llvm-trunk/lib/Target/ARM/ARMFixupKinds.h	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/lib/Target/ARM/ARMFixupKinds.h	Tue Jun 07 14:19:10 2011 -0700
 @@ -40,9 +40,12 @@
    // fixup_t2_adr_pcrel_12 - 12-bit PC relative relocation for the ADR
    // instruction.
@@ -137,9 +137,9 @@ diff -r dfeeea06e037 lib/Target/ARM/ARMFixupKinds.h
    // fixup_t2_condbranch - 20-bit PC relative relocation for Thumb2 direct
    // uconditional branch instructions.
    fixup_t2_condbranch,
-diff -r dfeeea06e037 lib/Target/ARM/ARMInstrInfo.td
---- a/lib/Target/ARM/ARMInstrInfo.td	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/Target/ARM/ARMInstrInfo.td	Tue Jun 07 14:19:10 2011 -0700
+diff -r dfeeea06e037 llvm-trunk/lib/Target/ARM/ARMInstrInfo.td
+--- a/llvm-trunk/lib/Target/ARM/ARMInstrInfo.td	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/lib/Target/ARM/ARMInstrInfo.td	Tue Jun 07 14:19:10 2011 -0700
 @@ -306,20 +306,36 @@
  //
  
@@ -204,9 +204,9 @@ diff -r dfeeea06e037 lib/Target/ARM/ARMInstrInfo.td
                 IIC_Br, "b", "\t$target",
                 [/*(ARMbrcond bb:$target, imm:$cc, CCR:$ccr)*/]> {
      bits<24> target;
-diff -r dfeeea06e037 lib/Target/ARM/ARMMCCodeEmitter.cpp
---- a/lib/Target/ARM/ARMMCCodeEmitter.cpp	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/Target/ARM/ARMMCCodeEmitter.cpp	Tue Jun 07 14:19:10 2011 -0700
+diff -r dfeeea06e037 llvm-trunk/lib/Target/ARM/ARMMCCodeEmitter.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMMCCodeEmitter.cpp	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/lib/Target/ARM/ARMMCCodeEmitter.cpp	Tue Jun 07 14:19:10 2011 -0700
 @@ -99,6 +99,10 @@
    uint32_t getUnconditionalBranchTargetOpValue(const MCInst &MI, unsigned OpIdx,
                                    SmallVectorImpl<MCFixup> &Fixups) const;
@@ -268,9 +268,9 @@ diff -r dfeeea06e037 lib/Target/ARM/ARMMCCodeEmitter.cpp
  /// getUnconditionalBranchTargetOpValue - Return encoding info for 24-bit
  /// immediate branch target.
  uint32_t ARMMCCodeEmitter::
-diff -r dfeeea06e037 utils/TableGen/EDEmitter.cpp
---- a/utils/TableGen/EDEmitter.cpp	Wed Feb 23 15:36:34 2011 -0800
-+++ b/utils/TableGen/EDEmitter.cpp	Tue Jun 07 14:19:10 2011 -0700
+diff -r dfeeea06e037 llvm-trunk/utils/TableGen/EDEmitter.cpp
+--- a/llvm-trunk/utils/TableGen/EDEmitter.cpp	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/utils/TableGen/EDEmitter.cpp	Tue Jun 07 14:19:10 2011 -0700
 @@ -326,6 +326,9 @@
    PCR("uncondbrtarget");
    PCR("bltarget");

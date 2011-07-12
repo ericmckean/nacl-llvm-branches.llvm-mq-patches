@@ -9,9 +9,9 @@ http://codereview.chromium.org/6602011/
 
  From llvm-pnacl-0013-233-8b90cf891e03714c9ea8aa42c008f58a89f0c0f6.patch
 
-diff -r aadd2bdaf43e include/llvm/Intrinsics.td
---- a/include/llvm/Intrinsics.td	Fri Feb 25 09:54:29 2011 -0500
-+++ b/include/llvm/Intrinsics.td	Tue Jun 07 14:19:20 2011 -0700
+diff -r aadd2bdaf43e llvm-trunk/include/llvm/Intrinsics.td
+--- a/llvm-trunk/include/llvm/Intrinsics.td	Fri Feb 25 09:54:29 2011 -0500
++++ b/llvm-trunk/include/llvm/Intrinsics.td	Tue Jun 07 14:19:20 2011 -0700
 @@ -480,6 +480,19 @@
  def int_convertuu  : Intrinsic<[llvm_anyint_ty],
                                 [llvm_anyint_ty, llvm_i32_ty, llvm_i32_ty]>;
@@ -32,9 +32,9 @@ diff -r aadd2bdaf43e include/llvm/Intrinsics.td
  //===----------------------------------------------------------------------===//
  // Target-specific intrinsics
  //===----------------------------------------------------------------------===//
-diff -r aadd2bdaf43e lib/Target/ARM/ARMInstrInfo.td
---- a/lib/Target/ARM/ARMInstrInfo.td	Fri Feb 25 09:54:29 2011 -0500
-+++ b/lib/Target/ARM/ARMInstrInfo.td	Tue Jun 07 14:19:20 2011 -0700
+diff -r aadd2bdaf43e llvm-trunk/lib/Target/ARM/ARMInstrInfo.td
+--- a/llvm-trunk/lib/Target/ARM/ARMInstrInfo.td	Fri Feb 25 09:54:29 2011 -0500
++++ b/llvm-trunk/lib/Target/ARM/ARMInstrInfo.td	Tue Jun 07 14:19:20 2011 -0700
 @@ -4026,3 +4026,71 @@
    let Inst{23-20} = 0b0110;
    let Inst{7-4} = 0b0000;
@@ -107,9 +107,9 @@ diff -r aadd2bdaf43e lib/Target/ARM/ARMInstrInfo.td
 +                       [(int_nacl_longjmp R0, R1)]>;
 +}
 +// @LOCALMOD-END
-diff -r aadd2bdaf43e lib/Target/X86/X86InstrNaCl.cpp
---- a/lib/Target/X86/X86InstrNaCl.cpp	Fri Feb 25 09:54:29 2011 -0500
-+++ b/lib/Target/X86/X86InstrNaCl.cpp	Tue Jun 07 14:19:20 2011 -0700
+diff -r aadd2bdaf43e llvm-trunk/lib/Target/X86/X86InstrNaCl.cpp
+--- a/llvm-trunk/lib/Target/X86/X86InstrNaCl.cpp	Fri Feb 25 09:54:29 2011 -0500
++++ b/llvm-trunk/lib/Target/X86/X86InstrNaCl.cpp	Tue Jun 07 14:19:20 2011 -0700
 @@ -32,6 +32,7 @@
                             MCStreamer &Out) {
    Out.EmitBundleAlignEnd();
@@ -584,9 +584,9 @@ diff -r aadd2bdaf43e lib/Target/X86/X86InstrNaCl.cpp
    }
  
    if (PrefixSaved) {
-diff -r aadd2bdaf43e lib/Target/X86/X86InstrNaCl.td
---- a/lib/Target/X86/X86InstrNaCl.td	Fri Feb 25 09:54:29 2011 -0500
-+++ b/lib/Target/X86/X86InstrNaCl.td	Tue Jun 07 14:19:20 2011 -0700
+diff -r aadd2bdaf43e llvm-trunk/lib/Target/X86/X86InstrNaCl.td
+--- a/llvm-trunk/lib/Target/X86/X86InstrNaCl.td	Fri Feb 25 09:54:29 2011 -0500
++++ b/llvm-trunk/lib/Target/X86/X86InstrNaCl.td	Tue Jun 07 14:19:20 2011 -0700
 @@ -29,7 +29,7 @@
  // These instructions cannot be encoded (written into an object file) by the
  // MCCodeEmitter. Instead, during direct object emission, they get lowered to
@@ -723,9 +723,9 @@ diff -r aadd2bdaf43e lib/Target/X86/X86InstrNaCl.td
 +                       [(int_nacl_longjmp EDI, EAX)]>,
 +                       Requires<[IsNaCl64]>, TB;
 +}
-diff -r aadd2bdaf43e lib/Target/X86/X86NaClRewritePass.cpp
---- a/lib/Target/X86/X86NaClRewritePass.cpp	Fri Feb 25 09:54:29 2011 -0500
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Tue Jun 07 14:19:20 2011 -0700
+diff -r aadd2bdaf43e llvm-trunk/lib/Target/X86/X86NaClRewritePass.cpp
+--- a/llvm-trunk/lib/Target/X86/X86NaClRewritePass.cpp	Fri Feb 25 09:54:29 2011 -0500
++++ b/llvm-trunk/lib/Target/X86/X86NaClRewritePass.cpp	Tue Jun 07 14:19:20 2011 -0700
 @@ -10,6 +10,10 @@
  // This file contains a pass that ensures stores and loads and stack/frame
  // pointer addresses are within the NaCl sandbox (for x86-64).

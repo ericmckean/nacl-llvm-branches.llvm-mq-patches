@@ -10,9 +10,9 @@ http://codereview.chromium.org/6469099/
 
  From llvm-pnacl-0005-225-31f979b87330b0728d81b5fbf4490e03d90e0657.patch
 
-diff -r 2036b4ebf857 lib/Target/X86/X86InstrNaCl.cpp
---- a/lib/Target/X86/X86InstrNaCl.cpp	Fri Feb 18 12:34:39 2011 -0800
-+++ b/lib/Target/X86/X86InstrNaCl.cpp	Tue Jun 07 14:19:06 2011 -0700
+diff -r 2036b4ebf857 llvm-trunk/lib/Target/X86/X86InstrNaCl.cpp
+--- a/llvm-trunk/lib/Target/X86/X86InstrNaCl.cpp	Fri Feb 18 12:34:39 2011 -0800
++++ b/llvm-trunk/lib/Target/X86/X86InstrNaCl.cpp	Tue Jun 07 14:19:06 2011 -0700
 @@ -20,6 +20,11 @@
  
  using namespace llvm;

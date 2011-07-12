@@ -28,9 +28,9 @@ TODO:
 
  From llvm-pnacl-0017-238-7ff9dbd5eedf7c112b5efad4d52027208d0f9e99.patch
 
-diff -r 925eb3cf4a82 lib/MC/ELFObjectWriter.cpp
---- a/lib/MC/ELFObjectWriter.cpp	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:19:27 2011 -0700
+diff -r 925eb3cf4a82 llvm-trunk/lib/MC/ELFObjectWriter.cpp
+--- a/llvm-trunk/lib/MC/ELFObjectWriter.cpp	Mon Mar 28 17:01:54 2011 -0700
++++ b/llvm-trunk/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:19:27 2011 -0700
 @@ -1535,7 +1535,7 @@
    unsigned e_flag = ELF::EF_ARM_EABIMASK & DefaultEABIVersion;
    switch (TargetObjectWriter->getOSType()) {
@@ -40,9 +40,9 @@ diff -r 925eb3cf4a82 lib/MC/ELFObjectWriter.cpp
      break;
    default: break;
    }
-diff -r 925eb3cf4a82 lib/Target/ARM/ARMAsmBackend.cpp
---- a/lib/Target/ARM/ARMAsmBackend.cpp	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmBackend.cpp	Tue Jun 07 14:19:27 2011 -0700
+diff -r 925eb3cf4a82 llvm-trunk/lib/Target/ARM/ARMAsmBackend.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMAsmBackend.cpp	Mon Mar 28 17:01:54 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMAsmBackend.cpp	Tue Jun 07 14:19:27 2011 -0700
 @@ -10,6 +10,7 @@
  #include "ARM.h"
  #include "ARMAddressingModes.h"
@@ -71,9 +71,9 @@ diff -r 925eb3cf4a82 lib/Target/ARM/ARMAsmBackend.cpp
   // @LOCALMOD-END
  
    MCObjectWriter *createObjectWriter(raw_ostream &OS) const {
-diff -r 925eb3cf4a82 lib/Target/ARM/ARMAsmPrinter.cpp
---- a/lib/Target/ARM/ARMAsmPrinter.cpp	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmPrinter.cpp	Tue Jun 07 14:19:27 2011 -0700
+diff -r 925eb3cf4a82 llvm-trunk/lib/Target/ARM/ARMAsmPrinter.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMAsmPrinter.cpp	Mon Mar 28 17:01:54 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMAsmPrinter.cpp	Tue Jun 07 14:19:27 2011 -0700
 @@ -243,7 +243,9 @@
    int alignment = MF->getAlignment();
    if (alignment < 4) alignment = 4;
@@ -145,9 +145,9 @@ diff -r 925eb3cf4a82 lib/Target/ARM/ARMAsmPrinter.cpp
      }
      // @LOCALMOD-END
      OutStreamer.EmitLabel(GetCPISymbol(LabelId));
-diff -r 925eb3cf4a82 lib/Target/ARM/ARMAsmPrinter.h
---- a/lib/Target/ARM/ARMAsmPrinter.h	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmPrinter.h	Tue Jun 07 14:19:27 2011 -0700
+diff -r 925eb3cf4a82 llvm-trunk/lib/Target/ARM/ARMAsmPrinter.h
+--- a/llvm-trunk/lib/Target/ARM/ARMAsmPrinter.h	Mon Mar 28 17:01:54 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMAsmPrinter.h	Tue Jun 07 14:19:27 2011 -0700
 @@ -81,6 +81,8 @@
    void EmitStartOfAsmFile(Module &M);
    void EmitEndOfAsmFile(Module &M);
@@ -157,9 +157,9 @@ diff -r 925eb3cf4a82 lib/Target/ARM/ARMAsmPrinter.h
    // @LOCALMOD-START
    virtual bool UseReadOnlyJumpTables() const {
      return true; // should be IsNaCl
-diff -r 925eb3cf4a82 lib/Target/ARM/ARMInstrInfo.td
---- a/lib/Target/ARM/ARMInstrInfo.td	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/ARM/ARMInstrInfo.td	Tue Jun 07 14:19:27 2011 -0700
+diff -r 925eb3cf4a82 llvm-trunk/lib/Target/ARM/ARMInstrInfo.td
+--- a/llvm-trunk/lib/Target/ARM/ARMInstrInfo.td	Mon Mar 28 17:01:54 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMInstrInfo.td	Tue Jun 07 14:19:27 2011 -0700
 @@ -190,6 +190,8 @@
  def UseFPVMLx        : Predicate<"Subtarget->useFPVMLx()">;
  
@@ -181,9 +181,9 @@ diff -r 925eb3cf4a82 lib/Target/ARM/ARMInstrInfo.td
  def SFI_GUARD_STORE :
  PseudoInst<(outs GPR:$dst), (ins GPR:$a, pred:$p), NoItinerary, []>;
  
-diff -r 925eb3cf4a82 lib/Target/ARM/ARMInstrNaCl.cpp
+diff -r 925eb3cf4a82 llvm-trunk/lib/Target/ARM/ARMInstrNaCl.cpp
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Target/ARM/ARMInstrNaCl.cpp	Tue Jun 07 14:19:27 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMInstrNaCl.cpp	Tue Jun 07 14:19:27 2011 -0700
 @@ -0,0 +1,291 @@
 +//=== ARMInstrNaCl.cpp - Expansion of NaCl pseudo-instructions  --*- C++ -*-=//
 +//
@@ -476,9 +476,9 @@ diff -r 925eb3cf4a82 lib/Target/ARM/ARMInstrNaCl.cpp
 +}
 +
 +} // namespace llvm
-diff -r 925eb3cf4a82 lib/Target/ARM/ARMInstrNaCl.h
+diff -r 925eb3cf4a82 llvm-trunk/lib/Target/ARM/ARMInstrNaCl.h
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Target/ARM/ARMInstrNaCl.h	Tue Jun 07 14:19:27 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMInstrNaCl.h	Tue Jun 07 14:19:27 2011 -0700
 @@ -0,0 +1,19 @@
 +//===-- ARMInstrNaCl.h - Prototype for CustomExpandInstNaClARM ---*- C++ -*-===//
 +//
@@ -499,9 +499,9 @@ diff -r 925eb3cf4a82 lib/Target/ARM/ARMInstrNaCl.h
 +}
 +
 +#endif
-diff -r 925eb3cf4a82 lib/Target/ARM/ARMInstrNaCl.td
+diff -r 925eb3cf4a82 llvm-trunk/lib/Target/ARM/ARMInstrNaCl.td
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Target/ARM/ARMInstrNaCl.td	Tue Jun 07 14:19:27 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMInstrNaCl.td	Tue Jun 07 14:19:27 2011 -0700
 @@ -0,0 +1,145 @@
 +//====- ARMInstrNaCl.td - Describe NaCl Instructions ----*- tablegen -*-===//
 +//
@@ -648,9 +648,9 @@ diff -r 925eb3cf4a82 lib/Target/ARM/ARMInstrNaCl.td
 +
 +
 +**************************************************************************/
-diff -r 925eb3cf4a82 lib/Target/ARM/ARMSubtarget.h
---- a/lib/Target/ARM/ARMSubtarget.h	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/ARM/ARMSubtarget.h	Tue Jun 07 14:19:27 2011 -0700
+diff -r 925eb3cf4a82 llvm-trunk/lib/Target/ARM/ARMSubtarget.h
+--- a/llvm-trunk/lib/Target/ARM/ARMSubtarget.h	Mon Mar 28 17:01:54 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMSubtarget.h	Tue Jun 07 14:19:27 2011 -0700
 @@ -222,6 +222,9 @@
    // @LOCALMOD
    bool useConstPool() const { return !FlagSfiDisableCP; }
@@ -661,9 +661,9 @@ diff -r 925eb3cf4a82 lib/Target/ARM/ARMSubtarget.h
    bool allowsUnalignedMem() const { return AllowsUnalignedMem; }
  
    const std::string & getCPUString() const { return CPUString; }
-diff -r 925eb3cf4a82 lib/Target/ARM/CMakeLists.txt
---- a/lib/Target/ARM/CMakeLists.txt	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/ARM/CMakeLists.txt	Tue Jun 07 14:19:27 2011 -0700
+diff -r 925eb3cf4a82 llvm-trunk/lib/Target/ARM/CMakeLists.txt
+--- a/llvm-trunk/lib/Target/ARM/CMakeLists.txt	Mon Mar 28 17:01:54 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/CMakeLists.txt	Tue Jun 07 14:19:27 2011 -0700
 @@ -33,6 +33,7 @@
    ARMISelDAGToDAG.cpp
    ARMISelLowering.cpp
@@ -672,9 +672,9 @@ diff -r 925eb3cf4a82 lib/Target/ARM/CMakeLists.txt
    ARMJITInfo.cpp
    ARMMCCodeEmitter.cpp
    ARMMCExpr.cpp
-diff -r 925eb3cf4a82 lib/Target/X86/X86AsmBackend.cpp
---- a/lib/Target/X86/X86AsmBackend.cpp	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/X86/X86AsmBackend.cpp	Tue Jun 07 14:19:27 2011 -0700
+diff -r 925eb3cf4a82 llvm-trunk/lib/Target/X86/X86AsmBackend.cpp
+--- a/llvm-trunk/lib/Target/X86/X86AsmBackend.cpp	Mon Mar 28 17:01:54 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86AsmBackend.cpp	Tue Jun 07 14:19:27 2011 -0700
 @@ -302,13 +302,14 @@
    }
  
@@ -691,9 +691,9 @@ diff -r 925eb3cf4a82 lib/Target/X86/X86AsmBackend.cpp
      }
      return false;
    }
-diff -r 925eb3cf4a82 lib/Target/X86/X86InstrInfo.td
---- a/lib/Target/X86/X86InstrInfo.td	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/X86/X86InstrInfo.td	Tue Jun 07 14:19:27 2011 -0700
+diff -r 925eb3cf4a82 llvm-trunk/lib/Target/X86/X86InstrInfo.td
+--- a/llvm-trunk/lib/Target/X86/X86InstrInfo.td	Mon Mar 28 17:01:54 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86InstrInfo.td	Tue Jun 07 14:19:27 2011 -0700
 @@ -443,6 +443,7 @@
  def IsWin64      : Predicate<"Subtarget->isTargetWin64()">;
  def NotWin64     : Predicate<"!Subtarget->isTargetWin64()">;
@@ -702,9 +702,9 @@ diff -r 925eb3cf4a82 lib/Target/X86/X86InstrInfo.td
  def IsNaCl       : Predicate<"Subtarget->isTargetNaCl()">, AssemblerPredicate;
  def IsNaCl32     : Predicate<"Subtarget->isTargetNaCl32()">, AssemblerPredicate;
  def IsNaCl64     : Predicate<"Subtarget->isTargetNaCl64()">, AssemblerPredicate;
-diff -r 925eb3cf4a82 lib/Target/X86/X86InstrNaCl.cpp
---- a/lib/Target/X86/X86InstrNaCl.cpp	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.cpp	Tue Jun 07 14:19:27 2011 -0700
+diff -r 925eb3cf4a82 llvm-trunk/lib/Target/X86/X86InstrNaCl.cpp
+--- a/llvm-trunk/lib/Target/X86/X86InstrNaCl.cpp	Mon Mar 28 17:01:54 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86InstrNaCl.cpp	Tue Jun 07 14:19:27 2011 -0700
 @@ -104,7 +104,7 @@
    Out.EmitInstruction(JMPInst);
  }
@@ -739,9 +739,9 @@ diff -r 925eb3cf4a82 lib/Target/X86/X86InstrNaCl.cpp
    switch (Opc) {
    case X86::LOCK_PREFIX:
    case X86::REP_PREFIX:
-diff -r 925eb3cf4a82 lib/Target/X86/X86InstrNaCl.h
---- a/lib/Target/X86/X86InstrNaCl.h	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.h	Tue Jun 07 14:19:27 2011 -0700
+diff -r 925eb3cf4a82 llvm-trunk/lib/Target/X86/X86InstrNaCl.h
+--- a/llvm-trunk/lib/Target/X86/X86InstrNaCl.h	Mon Mar 28 17:01:54 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86InstrNaCl.h	Tue Jun 07 14:19:27 2011 -0700
 @@ -1,4 +1,4 @@
 -//===-- X86InstrNaCl.h - Prototype for CustomExpandInstNaCl    ---*- C++ -*-===//
 +//===-- X86InstrNaCl.h - Prototype for CustomExpandInstNaClX86 ---*- C++ -*-===//

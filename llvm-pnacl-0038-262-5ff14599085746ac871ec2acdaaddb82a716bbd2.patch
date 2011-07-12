@@ -8,9 +8,9 @@ Refactor TLS support (issue 7078016)
 
  From llvm-pnacl-0038-262-5ff14599085746ac871ec2acdaaddb82a716bbd2.patch
 
-diff -r ca534264509b lib/CodeGen/SelectionDAG/TargetLowering.cpp
---- a/lib/CodeGen/SelectionDAG/TargetLowering.cpp	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/CodeGen/SelectionDAG/TargetLowering.cpp	Tue Jun 07 14:20:04 2011 -0700
+diff -r ca534264509b llvm-trunk/lib/CodeGen/SelectionDAG/TargetLowering.cpp
+--- a/llvm-trunk/lib/CodeGen/SelectionDAG/TargetLowering.cpp	Thu May 26 16:05:17 2011 -0700
++++ b/llvm-trunk/lib/CodeGen/SelectionDAG/TargetLowering.cpp	Tue Jun 07 14:20:04 2011 -0700
 @@ -26,12 +26,21 @@
  #include "llvm/CodeGen/MachineFunction.h"
  #include "llvm/CodeGen/SelectionDAG.h"
@@ -42,9 +42,9 @@ diff -r ca534264509b lib/CodeGen/SelectionDAG/TargetLowering.cpp
      if (isLocal || isHidden)
        return TLSModel::LocalDynamic;
      else
-diff -r ca534264509b lib/Target/X86/X86ISelLowering.cpp
---- a/lib/Target/X86/X86ISelLowering.cpp	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Tue Jun 07 14:20:04 2011 -0700
+diff -r ca534264509b llvm-trunk/lib/Target/X86/X86ISelLowering.cpp
+--- a/llvm-trunk/lib/Target/X86/X86ISelLowering.cpp	Thu May 26 16:05:17 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86ISelLowering.cpp	Tue Jun 07 14:20:04 2011 -0700
 @@ -6064,7 +6064,7 @@
  static SDValue
  GetTLSADDR(SelectionDAG &DAG, SDValue Chain, GlobalAddressSDNode *GA,
@@ -198,9 +198,9 @@ diff -r ca534264509b lib/Target/X86/X86ISelLowering.cpp
    case X86ISD::EH_RETURN:          return "X86ISD::EH_RETURN";
    case X86ISD::TC_RETURN:          return "X86ISD::TC_RETURN";
    case X86ISD::FNSTCW16m:          return "X86ISD::FNSTCW16m";
-diff -r ca534264509b lib/Target/X86/X86ISelLowering.h
---- a/lib/Target/X86/X86ISelLowering.h	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.h	Tue Jun 07 14:20:04 2011 -0700
+diff -r ca534264509b llvm-trunk/lib/Target/X86/X86ISelLowering.h
+--- a/llvm-trunk/lib/Target/X86/X86ISelLowering.h	Thu May 26 16:05:17 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86ISelLowering.h	Tue Jun 07 14:20:04 2011 -0700
 @@ -181,15 +181,18 @@
        // TLSADDR - Thread Local Storage.
        TLSADDR,
@@ -225,9 +225,9 @@ diff -r ca534264509b lib/Target/X86/X86ISelLowering.h
        // EH_RETURN - Exception Handling helpers.
        EH_RETURN,
  
-diff -r ca534264509b lib/Target/X86/X86InstrInfo.td
---- a/lib/Target/X86/X86InstrInfo.td	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86InstrInfo.td	Tue Jun 07 14:20:04 2011 -0700
+diff -r ca534264509b llvm-trunk/lib/Target/X86/X86InstrInfo.td
+--- a/llvm-trunk/lib/Target/X86/X86InstrInfo.td	Thu May 26 16:05:17 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86InstrInfo.td	Tue Jun 07 14:20:04 2011 -0700
 @@ -191,6 +191,14 @@
  def X86tlsaddr : SDNode<"X86ISD::TLSADDR", SDT_X86TLSADDR,
                          [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]>;
@@ -243,9 +243,9 @@ diff -r ca534264509b lib/Target/X86/X86InstrInfo.td
  def X86ehret : SDNode<"X86ISD::EH_RETURN", SDT_X86EHRET,
                          [SDNPHasChain]>;
  
-diff -r ca534264509b lib/Target/X86/X86InstrNaCl.td
---- a/lib/Target/X86/X86InstrNaCl.td	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Tue Jun 07 14:20:04 2011 -0700
+diff -r ca534264509b llvm-trunk/lib/Target/X86/X86InstrNaCl.td
+--- a/llvm-trunk/lib/Target/X86/X86InstrNaCl.td	Thu May 26 16:05:17 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86InstrNaCl.td	Tue Jun 07 14:20:04 2011 -0700
 @@ -17,11 +17,6 @@
  // NaCl specific DAG Nodes.
  //
@@ -322,9 +322,9 @@ diff -r ca534264509b lib/Target/X86/X86InstrNaCl.td
  
  let usesCustomInserter = 1, Defs = [EFLAGS] in
  def NACL_CG_VAARG_64 : I<0, Pseudo,
-diff -r ca534264509b lib/Target/X86/X86NaClRewritePass.cpp
---- a/lib/Target/X86/X86NaClRewritePass.cpp	Thu May 26 16:05:17 2011 -0700
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Tue Jun 07 14:20:04 2011 -0700
+diff -r ca534264509b llvm-trunk/lib/Target/X86/X86NaClRewritePass.cpp
+--- a/llvm-trunk/lib/Target/X86/X86NaClRewritePass.cpp	Thu May 26 16:05:17 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86NaClRewritePass.cpp	Tue Jun 07 14:20:04 2011 -0700
 @@ -556,17 +556,6 @@
      return true;
    }

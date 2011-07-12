@@ -36,9 +36,9 @@ TEST=utman.sh test-arm-pic
 
  From llvm-pnacl-0024-248-6960fea5debd1c1c8aac5f0af79c5551d677b091.patch
 
-diff -r 20f15f5775b8 lib/MC/ELFObjectWriter.cpp
---- a/lib/MC/ELFObjectWriter.cpp	Fri Apr 15 18:11:24 2011 -0400
-+++ b/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:19:40 2011 -0700
+diff -r 20f15f5775b8 llvm-trunk/lib/MC/ELFObjectWriter.cpp
+--- a/llvm-trunk/lib/MC/ELFObjectWriter.cpp	Fri Apr 15 18:11:24 2011 -0400
++++ b/llvm-trunk/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:19:40 2011 -0700
 @@ -31,13 +31,25 @@
  #include "llvm/Support/ELF.h"
  #include "llvm/Target/TargetAsmBackend.h"

@@ -16,9 +16,9 @@ tools/llvm/utman.sh install-translators srpc
 
  From llvm-pnacl-0033-257-7726f48f8a4d33ec0dbe24680242833f4a415d0e.patch
 
-diff -r 42cd4b71423f tools/llc/Makefile
---- a/tools/llc/Makefile	Fri May 13 15:44:03 2011 -0400
-+++ b/tools/llc/Makefile	Tue Jun 07 14:19:55 2011 -0700
+diff -r 42cd4b71423f llvm-trunk/tools/llc/Makefile
+--- a/llvm-trunk/tools/llc/Makefile	Fri May 13 15:44:03 2011 -0400
++++ b/llvm-trunk/tools/llc/Makefile	Tue Jun 07 14:19:55 2011 -0700
 @@ -17,9 +17,5 @@
  
  LINK_COMPONENTS := $(TARGETS_TO_BUILD) bitreader asmparser
@@ -29,9 +29,9 @@ diff -r 42cd4b71423f tools/llc/Makefile
 -
  include $(LLVM_SRC_ROOT)/Makefile.rules
  
-diff -r 42cd4b71423f tools/llc/llc.cpp
---- a/tools/llc/llc.cpp	Fri May 13 15:44:03 2011 -0400
-+++ b/tools/llc/llc.cpp	Tue Jun 07 14:19:55 2011 -0700
+diff -r 42cd4b71423f llvm-trunk/tools/llc/llc.cpp
+--- a/llvm-trunk/tools/llc/llc.cpp	Fri May 13 15:44:03 2011 -0400
++++ b/llvm-trunk/tools/llc/llc.cpp	Tue Jun 07 14:19:55 2011 -0700
 @@ -40,17 +40,24 @@
  #include "llvm/Target/TargetSelect.h"
  #include <memory>
@@ -159,9 +159,9 @@ diff -r 42cd4b71423f tools/llc/llc.cpp
  
    return 0;
  }
-diff -r 42cd4b71423f tools/llc/nacl_file.cpp
---- a/tools/llc/nacl_file.cpp	Fri May 13 15:44:03 2011 -0400
-+++ b/tools/llc/nacl_file.cpp	Tue Jun 07 14:19:55 2011 -0700
+diff -r 42cd4b71423f llvm-trunk/tools/llc/nacl_file.cpp
+--- a/llvm-trunk/tools/llc/nacl_file.cpp	Fri May 13 15:44:03 2011 -0400
++++ b/llvm-trunk/tools/llc/nacl_file.cpp	Tue Jun 07 14:19:55 2011 -0700
 @@ -17,603 +17,152 @@
  
  #if defined(__native_client__) && defined(NACL_SRPC)

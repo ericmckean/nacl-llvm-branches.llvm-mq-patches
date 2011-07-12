@@ -26,9 +26,9 @@ Added reminder fixme to tests for future conversion to .s form.
 
  From llvm-pnacl-0010-230-85a53e22a73c22aaae7ab761580fd5ffe3788ec5.patch
 
-diff -r 1eab39472b0f lib/MC/ELFObjectWriter.cpp
---- a/lib/MC/ELFObjectWriter.cpp	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:19:15 2011 -0700
+diff -r 1eab39472b0f llvm-trunk/lib/MC/ELFObjectWriter.cpp
+--- a/llvm-trunk/lib/MC/ELFObjectWriter.cpp	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/lib/MC/ELFObjectWriter.cpp	Tue Jun 07 14:19:15 2011 -0700
 @@ -30,6 +30,7 @@
  #include "llvm/Support/ErrorHandling.h"
  #include "llvm/Support/ELF.h"
@@ -117,9 +117,9 @@ diff -r 1eab39472b0f lib/MC/ELFObjectWriter.cpp
  unsigned ARMELFObjectWriter::GetRelocType(const MCValue &Target,
                                            const MCFixup &Fixup,
                                            bool IsPCRel,
-diff -r 1eab39472b0f test/MC/ARM/elf-reloc-01.ll
+diff -r 1eab39472b0f llvm-trunk/test/MC/ARM/elf-reloc-01.ll
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/test/MC/ARM/elf-reloc-01.ll	Tue Jun 07 14:19:15 2011 -0700
++++ b/llvm-trunk/test/MC/ARM/elf-reloc-01.ll	Tue Jun 07 14:19:15 2011 -0700
 @@ -0,0 +1,71 @@
 +;; RUN: llc -mtriple=armv7-linux-gnueabi -O3  \
 +;; RUN:    -mcpu=cortex-a8 -mattr=-neon -mattr=+vfp2  -arm-reserve-r9  \
@@ -192,9 +192,9 @@ diff -r 1eab39472b0f test/MC/ARM/elf-reloc-01.ll
 +;; OBJ-NEXT:     'r_offset', 
 +;; OBJ-NEXT:     'r_sym', 0x00000002
 +;; OBJ-NEXT:     'r_type', 0x0000002b
-diff -r 1eab39472b0f test/MC/ARM/elf-reloc-02.ll
+diff -r 1eab39472b0f llvm-trunk/test/MC/ARM/elf-reloc-02.ll
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/test/MC/ARM/elf-reloc-02.ll	Tue Jun 07 14:19:15 2011 -0700
++++ b/llvm-trunk/test/MC/ARM/elf-reloc-02.ll	Tue Jun 07 14:19:15 2011 -0700
 @@ -0,0 +1,51 @@
 +;; RUN: llc -mtriple=armv7-linux-gnueabi -O3  \
 +;; RUN:    -mcpu=cortex-a8 -mattr=-neon -mattr=+vfp2  -arm-reserve-r9  \
@@ -247,9 +247,9 @@ diff -r 1eab39472b0f test/MC/ARM/elf-reloc-02.ll
 +;; OBJ-NEXT:    'r_offset', 
 +;; OBJ-NEXT:    'r_sym', 0x00000002
 +;; OBJ-NEXT:    'r_type', 0x0000002b
-diff -r 1eab39472b0f test/MC/ARM/elf-reloc-03.ll
+diff -r 1eab39472b0f llvm-trunk/test/MC/ARM/elf-reloc-03.ll
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/test/MC/ARM/elf-reloc-03.ll	Tue Jun 07 14:19:15 2011 -0700
++++ b/llvm-trunk/test/MC/ARM/elf-reloc-03.ll	Tue Jun 07 14:19:15 2011 -0700
 @@ -0,0 +1,98 @@
 +;; RUN: llc -mtriple=armv7-linux-gnueabi -O3  \
 +;; RUN:    -mcpu=cortex-a8 -mattr=-neon -mattr=+vfp2  -arm-reserve-r9  \
