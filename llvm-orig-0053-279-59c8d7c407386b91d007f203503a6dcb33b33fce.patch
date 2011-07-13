@@ -1,0 +1,35 @@
+# HG changeset patch
+# User David Meyer <pdox@google.com>
+# Date 1310538653 25200
+# Branch pnacl-sfi
+# Node ID 59c8d7c407386b91d007f203503a6dcb33b33fce
+# Parent 60dbcd63b633d356756271259a834b0befc80a05
+Apply an upstream bugfix to tools/gold/Makefile
+
+ From llvm-orig-0053-279-59c8d7c407386b91d007f203503a6dcb33b33fce.patch
+
+diff -r 60dbcd63b633 llvm-trunk/tools/gold/Makefile
+--- a/llvm-trunk/tools/gold/Makefile	Fri Jul 08 16:27:10 2011 -0700
++++ b/llvm-trunk/tools/gold/Makefile	Wed Jul 13 10:16:14 2011 -0700
+@@ -22,10 +22,17 @@
+ LOADABLE_MODULE = 1
+ 
+ LINK_COMPONENTS := support
+-LIBS += -llto
+ 
+-# Because off_t is used in the public API, the largefile parts are required for
+-# ABI compatibility.
+-CXXFLAGS+=-I$(BINUTILS_INCDIR) -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -lLTO
++#################################################
++# @LOCALMOD-BEGIN
++#
++# This bugfix has been upstreamed as of LLVM revision 132352.
++# All local changes to this file can be removed after merging.
++
++CXXFLAGS+=-I$(BINUTILS_INCDIR) -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
++CXXFLAGS+=$(SharedLibDir)/$(SharedPrefix)LTO$(SHLIBEXT)
++
++# @LOCALMOD-END
++#################################################
+ 
+ include $(LEVEL)/Makefile.common
