@@ -10,9 +10,9 @@ Add libplatform and libgio to LLVM self-build
 
  From .hg/patches/llvm-pnacl-0029-253-cb04533056093333fdb7377eb95b72b883527249.patch.stripped
 
-diff -r da40a23f1505 Makefile.rules
---- a/Makefile.rules	Thu Apr 28 13:00:37 2011 -0700
-+++ b/Makefile.rules	Fri Jun 24 14:23:46 2011 -0700
+diff -r da40a23f1505 llvm-trunk/Makefile.rules
+--- a/llvm-trunk/Makefile.rules	Thu Apr 28 13:00:37 2011 -0700
++++ b/llvm-trunk/Makefile.rules	Fri Jun 24 14:23:46 2011 -0700
 @@ -578,7 +578,7 @@
  endif
  

@@ -12,9 +12,9 @@
 
  From .hg/patches/llvm-pnacl-0018-240-bb23f96ef85abf5287e4aad9ed511efd7300705f.patch.stripped
 
-diff -r 9e1051d62c43 lib/Support/Triple.cpp
---- a/lib/Support/Triple.cpp	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Support/Triple.cpp	Fri Jun 24 14:06:56 2011 -0700
+diff -r 9e1051d62c43 llvm-trunk/lib/Support/Triple.cpp
+--- a/llvm-trunk/lib/Support/Triple.cpp	Mon Mar 28 17:01:56 2011 -0700
++++ b/llvm-trunk/lib/Support/Triple.cpp	Fri Jun 24 14:06:56 2011 -0700
 @@ -317,8 +317,8 @@
      return FreeBSD;
    else if (OSName.startswith("linux"))
@@ -26,9 +26,9 @@ diff -r 9e1051d62c43 lib/Support/Triple.cpp
    else if (OSName.startswith("lv2"))
      return Lv2;
    else if (OSName.startswith("mingw32"))
-diff -r 9e1051d62c43 lib/Target/ARM/ARMAsmPrinter.cpp
---- a/lib/Target/ARM/ARMAsmPrinter.cpp	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmPrinter.cpp	Fri Jun 24 14:06:56 2011 -0700
+diff -r 9e1051d62c43 llvm-trunk/lib/Target/ARM/ARMAsmPrinter.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMAsmPrinter.cpp	Mon Mar 28 17:01:56 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMAsmPrinter.cpp	Fri Jun 24 14:06:56 2011 -0700
 @@ -58,8 +58,8 @@
  
  // @LOCALMOD-START
@@ -58,9 +58,9 @@ diff -r 9e1051d62c43 lib/Target/ARM/ARMAsmPrinter.cpp
          SmallString<128> Str;
          raw_svector_ostream OS(Str);
          OS << "sfi_illegal_if_at_bundle_begining  @ ========== SFI (" << 
-diff -r 9e1051d62c43 lib/Target/ARM/ARMAsmPrinter.h
---- a/lib/Target/ARM/ARMAsmPrinter.h	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmPrinter.h	Fri Jun 24 14:06:56 2011 -0700
+diff -r 9e1051d62c43 llvm-trunk/lib/Target/ARM/ARMAsmPrinter.h
+--- a/llvm-trunk/lib/Target/ARM/ARMAsmPrinter.h	Mon Mar 28 17:01:56 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMAsmPrinter.h	Fri Jun 24 14:06:56 2011 -0700
 @@ -73,7 +73,8 @@
    // For the sfi case we do not use the custom logic and fall back
    // to the default implementation.
@@ -71,9 +71,9 @@ diff -r 9e1051d62c43 lib/Target/ARM/ARMAsmPrinter.h
    }
    // @LOCALMOD-END
  
-diff -r 9e1051d62c43 lib/Target/ARM/ARMBaseRegisterInfo.cpp
---- a/lib/Target/ARM/ARMBaseRegisterInfo.cpp	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/ARM/ARMBaseRegisterInfo.cpp	Fri Jun 24 14:06:56 2011 -0700
+diff -r 9e1051d62c43 llvm-trunk/lib/Target/ARM/ARMBaseRegisterInfo.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMBaseRegisterInfo.cpp	Mon Mar 28 17:01:56 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMBaseRegisterInfo.cpp	Fri Jun 24 14:06:56 2011 -0700
 @@ -848,7 +848,7 @@
    // Sadly, the ARM backend is not very consistent about using this
    // pseudo instr. and hence checking this is not sufficient.
@@ -83,9 +83,9 @@ diff -r 9e1051d62c43 lib/Target/ARM/ARMBaseRegisterInfo.cpp
    // @LOCALMOD-END
    MachineFunction &MF = *MBB.getParent();
    MachineConstantPool *ConstantPool = MF.getConstantPool();
-diff -r 9e1051d62c43 lib/Target/ARM/ARMConstantIslandPass.cpp
---- a/lib/Target/ARM/ARMConstantIslandPass.cpp	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/ARM/ARMConstantIslandPass.cpp	Fri Jun 24 14:06:56 2011 -0700
+diff -r 9e1051d62c43 llvm-trunk/lib/Target/ARM/ARMConstantIslandPass.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMConstantIslandPass.cpp	Mon Mar 28 17:01:56 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMConstantIslandPass.cpp	Fri Jun 24 14:06:56 2011 -0700
 @@ -319,7 +319,6 @@
  }
  
@@ -113,9 +113,9 @@ diff -r 9e1051d62c43 lib/Target/ARM/ARMConstantIslandPass.cpp
  
    // JUMP TABLE TARGETS
    MachineJumpTableInfo *jt_info = MF.getJumpTableInfo();
-diff -r 9e1051d62c43 lib/Target/ARM/ARMExpandPseudoInsts.cpp
---- a/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Fri Jun 24 14:06:56 2011 -0700
+diff -r 9e1051d62c43 llvm-trunk/lib/Target/ARM/ARMExpandPseudoInsts.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Mon Mar 28 17:01:56 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Fri Jun 24 14:06:56 2011 -0700
 @@ -730,8 +730,8 @@
    // We need to know if it matters that references are pc-relative
    // (e.g., to be PIC).
@@ -127,9 +127,9 @@ diff -r 9e1051d62c43 lib/Target/ARM/ARMExpandPseudoInsts.cpp
    if (ShouldUseMOV16PIC) {
      if (isThumb2)
        llvm_unreachable("FIXME: add PIC versions of t2MOVi16");
-diff -r 9e1051d62c43 lib/Target/ARM/ARMFastISel.cpp
---- a/lib/Target/ARM/ARMFastISel.cpp	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/ARM/ARMFastISel.cpp	Fri Jun 24 14:06:56 2011 -0700
+diff -r 9e1051d62c43 llvm-trunk/lib/Target/ARM/ARMFastISel.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMFastISel.cpp	Mon Mar 28 17:01:56 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMFastISel.cpp	Fri Jun 24 14:06:56 2011 -0700
 @@ -566,7 +566,8 @@
    // @LOCALMOD-START
    // In the sfi case we do not want to use the ARM custom cp handling.
@@ -140,9 +140,9 @@ diff -r 9e1051d62c43 lib/Target/ARM/ARMFastISel.cpp
    // @LOCALMOD-END
    EVT VT = TLI.getValueType(C->getType(), true);
  
-diff -r 9e1051d62c43 lib/Target/ARM/ARMISelDAGToDAG.cpp
---- a/lib/Target/ARM/ARMISelDAGToDAG.cpp	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/ARM/ARMISelDAGToDAG.cpp	Fri Jun 24 14:06:56 2011 -0700
+diff -r 9e1051d62c43 llvm-trunk/lib/Target/ARM/ARMISelDAGToDAG.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMISelDAGToDAG.cpp	Mon Mar 28 17:01:56 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMISelDAGToDAG.cpp	Fri Jun 24 14:06:56 2011 -0700
 @@ -38,7 +38,7 @@
  // @LOCALMOD-START
  #include "llvm/Support/CommandLine.h"
@@ -216,9 +216,9 @@ diff -r 9e1051d62c43 lib/Target/ARM/ARMISelDAGToDAG.cpp
  
      if (UseCP) {
        SDValue CPIdx =
-diff -r 9e1051d62c43 lib/Target/ARM/ARMISelLowering.cpp
---- a/lib/Target/ARM/ARMISelLowering.cpp	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/ARM/ARMISelLowering.cpp	Fri Jun 24 14:06:56 2011 -0700
+diff -r 9e1051d62c43 llvm-trunk/lib/Target/ARM/ARMISelLowering.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMISelLowering.cpp	Mon Mar 28 17:01:56 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMISelLowering.cpp	Fri Jun 24 14:06:56 2011 -0700
 @@ -55,8 +55,8 @@
  // @LOCALMOD-START
  #include "llvm/Support/CommandLine.h"
@@ -275,9 +275,9 @@ diff -r 9e1051d62c43 lib/Target/ARM/ARMISelLowering.cpp
      return false;
    }
    // @LOCALMOD-END
-diff -r 9e1051d62c43 lib/Target/ARM/ARMNaClHeaders.cpp
---- a/lib/Target/ARM/ARMNaClHeaders.cpp	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Fri Jun 24 14:06:56 2011 -0700
+diff -r 9e1051d62c43 llvm-trunk/lib/Target/ARM/ARMNaClHeaders.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMNaClHeaders.cpp	Mon Mar 28 17:01:56 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMNaClHeaders.cpp	Fri Jun 24 14:06:56 2011 -0700
 @@ -20,10 +20,10 @@
  
  void EmitSFIHeaders(raw_ostream &O) {
@@ -311,9 +311,9 @@ diff -r 9e1051d62c43 lib/Target/ARM/ARMNaClHeaders.cpp
      O << " @ ========================================\n";
  
      O <<
-diff -r 9e1051d62c43 lib/Target/ARM/ARMNaClRewritePass.cpp
---- a/lib/Target/ARM/ARMNaClRewritePass.cpp	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/ARM/ARMNaClRewritePass.cpp	Fri Jun 24 14:06:56 2011 -0700
+diff -r 9e1051d62c43 llvm-trunk/lib/Target/ARM/ARMNaClRewritePass.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMNaClRewritePass.cpp	Mon Mar 28 17:01:56 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMNaClRewritePass.cpp	Fri Jun 24 14:06:56 2011 -0700
 @@ -42,16 +42,17 @@
  FlagSfiZeroMask("sfi-zero-mask");
  
@@ -349,9 +349,9 @@ diff -r 9e1051d62c43 lib/Target/ARM/ARMNaClRewritePass.cpp
    }
    DEBUG(LightweightVerify(MF));
    return Modified;
-diff -r 9e1051d62c43 lib/Target/ARM/ARMNaClRewritePass.h
---- a/lib/Target/ARM/ARMNaClRewritePass.h	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/ARM/ARMNaClRewritePass.h	Fri Jun 24 14:06:56 2011 -0700
+diff -r 9e1051d62c43 llvm-trunk/lib/Target/ARM/ARMNaClRewritePass.h
+--- a/llvm-trunk/lib/Target/ARM/ARMNaClRewritePass.h	Mon Mar 28 17:01:56 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMNaClRewritePass.h	Fri Jun 24 14:06:56 2011 -0700
 @@ -16,10 +16,10 @@
  
  namespace llvm {
@@ -367,9 +367,9 @@ diff -r 9e1051d62c43 lib/Target/ARM/ARMNaClRewritePass.h
  }
  
  namespace ARM_SFI {
-diff -r 9e1051d62c43 lib/Target/ARM/ARMSubtarget.h
---- a/lib/Target/ARM/ARMSubtarget.h	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/ARM/ARMSubtarget.h	Fri Jun 24 14:06:56 2011 -0700
+diff -r 9e1051d62c43 llvm-trunk/lib/Target/ARM/ARMSubtarget.h
+--- a/llvm-trunk/lib/Target/ARM/ARMSubtarget.h	Mon Mar 28 17:01:56 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMSubtarget.h	Fri Jun 24 14:06:56 2011 -0700
 @@ -23,7 +23,7 @@
  // @LOCALMOD-BEGIN
  #include "llvm/Support/CommandLine.h"
@@ -397,9 +397,9 @@ diff -r 9e1051d62c43 lib/Target/ARM/ARMSubtarget.h
  
    bool allowsUnalignedMem() const { return AllowsUnalignedMem; }
  
-diff -r 9e1051d62c43 lib/Target/ARM/ARMTargetMachine.cpp
---- a/lib/Target/ARM/ARMTargetMachine.cpp	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/ARM/ARMTargetMachine.cpp	Fri Jun 24 14:06:56 2011 -0700
+diff -r 9e1051d62c43 llvm-trunk/lib/Target/ARM/ARMTargetMachine.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMTargetMachine.cpp	Mon Mar 28 17:01:56 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMTargetMachine.cpp	Fri Jun 24 14:06:56 2011 -0700
 @@ -26,8 +26,15 @@
  
  // @LOCALMOD-START
@@ -454,9 +454,9 @@ diff -r 9e1051d62c43 lib/Target/ARM/ARMTargetMachine.cpp
    // @LOCALMOD-END
   
    return true;
-diff -r 9e1051d62c43 lib/Target/ARM/ARMTargetMachine.h
---- a/lib/Target/ARM/ARMTargetMachine.h	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/ARM/ARMTargetMachine.h	Fri Jun 24 14:06:56 2011 -0700
+diff -r 9e1051d62c43 llvm-trunk/lib/Target/ARM/ARMTargetMachine.h
+--- a/llvm-trunk/lib/Target/ARM/ARMTargetMachine.h	Mon Mar 28 17:01:56 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMTargetMachine.h	Fri Jun 24 14:06:56 2011 -0700
 @@ -32,7 +32,7 @@
  // @LOCALMOD-START
  #include "llvm/Support/CommandLine.h"

@@ -10,9 +10,9 @@ Fix minor bug to enable relocation Fixups in DWARF data.
 
  From .hg/patches/llvm-pnacl-0016-236-985777e2e62f6daca9aec8dab851eb61715f045f.patch.stripped
 
-diff -r d40ec3ce14e5 lib/Target/ARM/ARMAsmBackend.cpp
---- a/lib/Target/ARM/ARMAsmBackend.cpp	Fri Mar 18 08:34:35 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmBackend.cpp	Fri Jun 24 14:06:55 2011 -0700
+diff -r d40ec3ce14e5 llvm-trunk/lib/Target/ARM/ARMAsmBackend.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMAsmBackend.cpp	Fri Mar 18 08:34:35 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMAsmBackend.cpp	Fri Jun 24 14:06:55 2011 -0700
 @@ -410,7 +410,7 @@
    if (!Value) return;           // Doesn't change encoding.
  

@@ -14,9 +14,9 @@ arm-mc-elf-s38-fixtest.patch
 
  From .hg/patches/llvm-pnacl-0008-228-23b356d8f22bfc53f1de444964e85935f242a253.patch.stripped
 
-diff -r b4e5ed6492af test/MC/ARM/arm_fixups.s
---- a/test/MC/ARM/arm_fixups.s	Wed Feb 23 15:36:34 2011 -0800
-+++ b/test/MC/ARM/arm_fixups.s	Tue Jun 07 14:28:27 2011 -0700
+diff -r b4e5ed6492af llvm-trunk/test/MC/ARM/arm_fixups.s
+--- a/llvm-trunk/test/MC/ARM/arm_fixups.s	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/test/MC/ARM/arm_fixups.s	Tue Jun 07 14:28:27 2011 -0700
 @@ -2,6 +2,6 @@
  // RUN: FileCheck < %t %s
  

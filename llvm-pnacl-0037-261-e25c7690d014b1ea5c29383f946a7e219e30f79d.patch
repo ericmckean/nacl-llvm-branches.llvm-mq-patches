@@ -10,9 +10,9 @@ Revert removing __nacl_read_tp
 
  From .hg/patches/llvm-pnacl-0037-261-e25c7690d014b1ea5c29383f946a7e219e30f79d.patch.stripped
 
-diff -r 3af5e9768463 lib/CodeGen/IntrinsicLowering.cpp
---- a/lib/CodeGen/IntrinsicLowering.cpp	Thu May 26 13:02:07 2011 -0700
-+++ b/lib/CodeGen/IntrinsicLowering.cpp	Fri Jun 24 14:23:52 2011 -0700
+diff -r 3af5e9768463 llvm-trunk/lib/CodeGen/IntrinsicLowering.cpp
+--- a/llvm-trunk/lib/CodeGen/IntrinsicLowering.cpp	Thu May 26 13:02:07 2011 -0700
++++ b/llvm-trunk/lib/CodeGen/IntrinsicLowering.cpp	Fri Jun 24 14:23:52 2011 -0700
 @@ -129,11 +129,8 @@
    // assert that __nacl_read_tp exists.
    // Insert a correctly-typed definition now.

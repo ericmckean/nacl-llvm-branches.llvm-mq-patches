@@ -38,9 +38,9 @@ TEST=utman.sh test-arm-pic
 
  From .hg/patches/llvm-pnacl-0024-248-6960fea5debd1c1c8aac5f0af79c5551d677b091.patch.stripped
 
-diff -r 6d5a0653d5ff lib/MC/ELFObjectWriter.cpp
---- a/lib/MC/ELFObjectWriter.cpp	Fri Apr 15 18:11:24 2011 -0400
-+++ b/lib/MC/ELFObjectWriter.cpp	Fri Jun 24 14:23:42 2011 -0700
+diff -r 6d5a0653d5ff llvm-trunk/lib/MC/ELFObjectWriter.cpp
+--- a/llvm-trunk/lib/MC/ELFObjectWriter.cpp	Fri Apr 15 18:11:24 2011 -0400
++++ b/llvm-trunk/lib/MC/ELFObjectWriter.cpp	Fri Jun 24 14:23:42 2011 -0700
 @@ -25,6 +25,8 @@
  #include "llvm/Support/ELF.h"
  #include "llvm/Target/TargetAsmBackend.h"
@@ -293,9 +293,9 @@ diff -r 6d5a0653d5ff lib/MC/ELFObjectWriter.cpp
    return Type;
  }
  
-diff -r 6d5a0653d5ff lib/MC/ELFObjectWriter.h
---- a/lib/MC/ELFObjectWriter.h	Fri Apr 15 18:11:24 2011 -0400
-+++ b/lib/MC/ELFObjectWriter.h	Fri Jun 24 14:23:42 2011 -0700
+diff -r 6d5a0653d5ff llvm-trunk/lib/MC/ELFObjectWriter.h
+--- a/llvm-trunk/lib/MC/ELFObjectWriter.h	Fri Apr 15 18:11:24 2011 -0400
++++ b/llvm-trunk/lib/MC/ELFObjectWriter.h	Fri Jun 24 14:23:42 2011 -0700
 @@ -139,16 +139,21 @@
  
      unsigned ShstrtabIndex;

@@ -24,9 +24,9 @@ Added a few FIXME's for future naming fixups in ARMInstrInfo.td
 
  From .hg/patches/llvm-pnacl-0007-227-7c6c8e9e9c3be23d13089020f44ee9f12f8a4f4e.patch.stripped
 
-diff -r f9c26b96b58f lib/MC/ELFObjectWriter.cpp
---- a/lib/MC/ELFObjectWriter.cpp	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/MC/ELFObjectWriter.cpp	Thu Jun 09 15:35:46 2011 -0700
+diff -r f9c26b96b58f llvm-trunk/lib/MC/ELFObjectWriter.cpp
+--- a/llvm-trunk/lib/MC/ELFObjectWriter.cpp	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/lib/MC/ELFObjectWriter.cpp	Thu Jun 09 15:35:46 2011 -0700
 @@ -1616,6 +1616,9 @@
      case ARM::fixup_arm_condbranch:
        Type = ELF::R_ARM_JUMP24;
@@ -47,9 +47,9 @@ diff -r f9c26b96b58f lib/MC/ELFObjectWriter.cpp
      case ARM::fixup_arm_movt_hi16:
        Type = ELF::R_ARM_MOVT_ABS;
        break;
-diff -r f9c26b96b58f lib/Target/ARM/ARMMCCodeEmitter.cpp
---- a/lib/Target/ARM/ARMMCCodeEmitter.cpp	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/Target/ARM/ARMMCCodeEmitter.cpp	Thu Jun 09 15:35:46 2011 -0700
+diff -r f9c26b96b58f llvm-trunk/lib/Target/ARM/ARMMCCodeEmitter.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMMCCodeEmitter.cpp	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/lib/Target/ARM/ARMMCCodeEmitter.cpp	Thu Jun 09 15:35:46 2011 -0700
 @@ -113,6 +113,10 @@
    uint32_t getT2AdrLabelOpValue(const MCInst &MI, unsigned OpIdx,
                                SmallVectorImpl<MCFixup> &Fixups) const;
@@ -85,9 +85,9 @@ diff -r f9c26b96b58f lib/Target/ARM/ARMMCCodeEmitter.cpp
  /// getBranchTargetOpValue - Return encoding info for 24-bit immediate branch
  /// target.
  uint32_t ARMMCCodeEmitter::
-diff -r f9c26b96b58f utils/TableGen/EDEmitter.cpp
---- a/utils/TableGen/EDEmitter.cpp	Wed Feb 23 15:36:34 2011 -0800
-+++ b/utils/TableGen/EDEmitter.cpp	Thu Jun 09 15:35:46 2011 -0700
+diff -r f9c26b96b58f llvm-trunk/utils/TableGen/EDEmitter.cpp
+--- a/llvm-trunk/utils/TableGen/EDEmitter.cpp	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/utils/TableGen/EDEmitter.cpp	Thu Jun 09 15:35:46 2011 -0700
 @@ -653,6 +653,9 @@
    MISC("t_addrmode_sp", "kOperandTypeThumbAddrModeSP");           // R, I
    MISC("t_addrmode_pc", "kOperandTypeThumbAddrModePC");           // R, I

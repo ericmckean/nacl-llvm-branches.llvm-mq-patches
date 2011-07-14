@@ -12,9 +12,9 @@ http://codereview.chromium.org/6882124/
 
  From .hg/patches/llvm-pnacl-0026-250-a4c09ba0275cf0a5243a1790fb5fab5d97aaf561.patch.stripped
 
-diff -r bb7ea94673b8 lib/Target/X86/X86ISelLowering.cpp
---- a/lib/Target/X86/X86ISelLowering.cpp	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Fri Jun 24 14:23:44 2011 -0700
+diff -r bb7ea94673b8 llvm-trunk/lib/Target/X86/X86ISelLowering.cpp
+--- a/llvm-trunk/lib/Target/X86/X86ISelLowering.cpp	Thu Apr 21 12:24:31 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86ISelLowering.cpp	Fri Jun 24 14:23:44 2011 -0700
 @@ -6514,11 +6514,18 @@
  }
  
@@ -122,9 +122,9 @@ diff -r bb7ea94673b8 lib/Target/X86/X86ISelLowering.cpp
    case X86ISD::EH_RETURN:          return "X86ISD::EH_RETURN";
    case X86ISD::TC_RETURN:          return "X86ISD::TC_RETURN";
    case X86ISD::FNSTCW16m:          return "X86ISD::FNSTCW16m";
-diff -r bb7ea94673b8 lib/Target/X86/X86ISelLowering.h
---- a/lib/Target/X86/X86ISelLowering.h	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.h	Fri Jun 24 14:23:44 2011 -0700
+diff -r bb7ea94673b8 llvm-trunk/lib/Target/X86/X86ISelLowering.h
+--- a/llvm-trunk/lib/Target/X86/X86ISelLowering.h	Thu Apr 21 12:24:31 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86ISelLowering.h	Fri Jun 24 14:23:44 2011 -0700
 @@ -185,6 +185,11 @@
        // thunk at the address from an earlier relocation.
        TLSCALL,
@@ -137,9 +137,9 @@ diff -r bb7ea94673b8 lib/Target/X86/X86ISelLowering.h
        // EH_RETURN - Exception Handling helpers.
        EH_RETURN,
  
-diff -r bb7ea94673b8 lib/Target/X86/X86InstrNaCl.td
---- a/lib/Target/X86/X86InstrNaCl.td	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Fri Jun 24 14:23:44 2011 -0700
+diff -r bb7ea94673b8 llvm-trunk/lib/Target/X86/X86InstrNaCl.td
+--- a/llvm-trunk/lib/Target/X86/X86InstrNaCl.td	Thu Apr 21 12:24:31 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86InstrNaCl.td	Fri Jun 24 14:23:44 2011 -0700
 @@ -14,6 +14,15 @@
  
  
@@ -211,9 +211,9 @@ diff -r bb7ea94673b8 lib/Target/X86/X86InstrNaCl.td
                           [(X86tlsaddr tls32addr:$sym)]>,
                           Requires<[IsNaCl64]>;
  
-diff -r bb7ea94673b8 lib/Target/X86/X86NaClRewritePass.cpp
---- a/lib/Target/X86/X86NaClRewritePass.cpp	Thu Apr 21 12:24:31 2011 -0700
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Fri Jun 24 14:23:44 2011 -0700
+diff -r bb7ea94673b8 llvm-trunk/lib/Target/X86/X86NaClRewritePass.cpp
+--- a/llvm-trunk/lib/Target/X86/X86NaClRewritePass.cpp	Thu Apr 21 12:24:31 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86NaClRewritePass.cpp	Fri Jun 24 14:23:44 2011 -0700
 @@ -556,6 +556,17 @@
      return true;
    }

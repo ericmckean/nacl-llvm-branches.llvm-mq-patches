@@ -1,9 +1,9 @@
 # HG changeset patch
 # Parent c2f2db656031b4813ba725a6107b1da3ab1d27a1
 
-diff -r c2f2db656031 tools/gold/gold-plugin.cpp
---- a/tools/gold/gold-plugin.cpp	Thu Jun 30 17:44:08 2011 -0700
-+++ b/tools/gold/gold-plugin.cpp	Thu Jun 30 17:52:39 2011 -0700
+diff -r c2f2db656031 llvm-trunk/tools/gold/gold-plugin.cpp
+--- a/llvm-trunk/tools/gold/gold-plugin.cpp	Thu Jun 30 17:44:08 2011 -0700
++++ b/llvm-trunk/tools/gold/gold-plugin.cpp	Thu Jun 30 17:52:39 2011 -0700
 @@ -228,10 +228,11 @@
  /// claim_file_hook - called by gold to see whether this file is one that
  /// our plugin can handle. We'll try to open it and register all the symbols
@@ -46,9 +46,9 @@ diff -r c2f2db656031 tools/gold/gold-plugin.cpp
        if (I->syms[i].resolution == LDPR_PREVAILING_DEF) {
          lto_codegen_add_must_preserve_symbol(code_gen, I->syms[i].name);
          anySymbolsPreserved = true;
-diff -r c2f2db656031 tools/lto/LTOModule.cpp
---- a/tools/lto/LTOModule.cpp	Thu Jun 30 17:44:08 2011 -0700
-+++ b/tools/lto/LTOModule.cpp	Thu Jun 30 17:52:39 2011 -0700
+diff -r c2f2db656031 llvm-trunk/tools/lto/LTOModule.cpp
+--- a/llvm-trunk/tools/lto/LTOModule.cpp	Thu Jun 30 17:44:08 2011 -0700
++++ b/llvm-trunk/tools/lto/LTOModule.cpp	Thu Jun 30 17:52:39 2011 -0700
 @@ -140,8 +140,8 @@
    }
  

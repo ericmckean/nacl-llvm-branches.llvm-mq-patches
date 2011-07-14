@@ -15,9 +15,9 @@ CL http://codereview.chromium.org/6969069
 
  From .hg/patches/llvm-pnacl-0032-256-bbaa8bbe8e9ec5b235a85f43d714842c17c35898.patch.stripped
 
-diff -r 396af609b71e Makefile.rules
---- a/Makefile.rules	Thu May 12 16:39:54 2011 -0700
-+++ b/Makefile.rules	Fri Jun 24 14:23:48 2011 -0700
+diff -r 396af609b71e llvm-trunk/Makefile.rules
+--- a/llvm-trunk/Makefile.rules	Thu May 12 16:39:54 2011 -0700
++++ b/llvm-trunk/Makefile.rules	Fri Jun 24 14:23:48 2011 -0700
 @@ -578,7 +578,7 @@
  endif
  
@@ -27,9 +27,9 @@ diff -r 396af609b71e Makefile.rules
  else
    LIBS +=
  endif
-diff -r 396af609b71e lib/Support/Unix/Path.inc
---- a/lib/Support/Unix/Path.inc	Thu May 12 16:39:54 2011 -0700
-+++ b/lib/Support/Unix/Path.inc	Fri Jun 24 14:23:48 2011 -0700
+diff -r 396af609b71e llvm-trunk/lib/Support/Unix/Path.inc
+--- a/llvm-trunk/lib/Support/Unix/Path.inc	Thu May 12 16:39:54 2011 -0700
++++ b/llvm-trunk/lib/Support/Unix/Path.inc	Fri Jun 24 14:23:48 2011 -0700
 @@ -787,9 +787,11 @@
  
  bool
@@ -42,9 +42,9 @@ diff -r 396af609b71e lib/Support/Unix/Path.inc
    return false;
  }
  
-diff -r 396af609b71e lib/Support/Unix/PathV2.inc
---- a/lib/Support/Unix/PathV2.inc	Thu May 12 16:39:54 2011 -0700
-+++ b/lib/Support/Unix/PathV2.inc	Fri Jun 24 14:23:48 2011 -0700
+diff -r 396af609b71e llvm-trunk/lib/Support/Unix/PathV2.inc
+--- a/llvm-trunk/lib/Support/Unix/PathV2.inc	Thu May 12 16:39:54 2011 -0700
++++ b/llvm-trunk/lib/Support/Unix/PathV2.inc	Fri Jun 24 14:23:48 2011 -0700
 @@ -94,7 +94,9 @@
  
  error_code current_path(SmallVectorImpl<char> &result) {

@@ -22,9 +22,9 @@ Added a few FIXME's for future naming fixups in ARMInstrInfo.td
 
  From .hg/patches/llvm-pnacl-0009-229-da182c26641a461d6093d1d9f275762cd7694f69.patch.stripped
 
-diff -r d5490e412857 lib/Target/ARM/ARMAsmPrinter.cpp
---- a/lib/Target/ARM/ARMAsmPrinter.cpp	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/Target/ARM/ARMAsmPrinter.cpp	Tue Jun 07 14:28:28 2011 -0700
+diff -r d5490e412857 llvm-trunk/lib/Target/ARM/ARMAsmPrinter.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMAsmPrinter.cpp	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/lib/Target/ARM/ARMAsmPrinter.cpp	Tue Jun 07 14:28:28 2011 -0700
 @@ -73,6 +73,7 @@
    public:
      virtual void MaybeSwitchVendor(StringRef Vendor) = 0;
@@ -137,9 +137,9 @@ diff -r d5490e412857 lib/Target/ARM/ARMAsmPrinter.cpp
  
    AttrEmitter->Finish();
    delete AttrEmitter;
-diff -r d5490e412857 lib/Target/ARM/ARMBuildAttrs.h
---- a/lib/Target/ARM/ARMBuildAttrs.h	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/Target/ARM/ARMBuildAttrs.h	Tue Jun 07 14:28:28 2011 -0700
+diff -r d5490e412857 llvm-trunk/lib/Target/ARM/ARMBuildAttrs.h
+--- a/llvm-trunk/lib/Target/ARM/ARMBuildAttrs.h	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/lib/Target/ARM/ARMBuildAttrs.h	Tue Jun 07 14:28:28 2011 -0700
 @@ -92,6 +92,40 @@
      v7E_M    = 13   // v7_M with DSP extensions
    };
@@ -181,9 +181,9 @@ diff -r d5490e412857 lib/Target/ARM/ARMBuildAttrs.h
  }
  
  #endif // __TARGET_ARMBUILDATTRS_H__
-diff -r d5490e412857 test/CodeGen/ARM/2010-09-29-mc-asm-header-test.ll
---- a/test/CodeGen/ARM/2010-09-29-mc-asm-header-test.ll	Wed Feb 23 15:36:34 2011 -0800
-+++ b/test/CodeGen/ARM/2010-09-29-mc-asm-header-test.ll	Tue Jun 07 14:28:28 2011 -0700
+diff -r d5490e412857 llvm-trunk/test/CodeGen/ARM/2010-09-29-mc-asm-header-test.ll
+--- a/llvm-trunk/test/CodeGen/ARM/2010-09-29-mc-asm-header-test.ll	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/test/CodeGen/ARM/2010-09-29-mc-asm-header-test.ll	Tue Jun 07 14:28:28 2011 -0700
 @@ -2,11 +2,11 @@
  ; This tests that MC/asm header conversion is smooth
  ;
@@ -201,9 +201,9 @@ diff -r d5490e412857 test/CodeGen/ARM/2010-09-29-mc-asm-header-test.ll
  
  define i32 @f(i64 %z) {
  	ret i32 0
-diff -r d5490e412857 test/CodeGen/ARM/2010-10-19-mc-elf-objheader.ll
---- a/test/CodeGen/ARM/2010-10-19-mc-elf-objheader.ll	Wed Feb 23 15:36:34 2011 -0800
-+++ b/test/CodeGen/ARM/2010-10-19-mc-elf-objheader.ll	Tue Jun 07 14:28:28 2011 -0700
+diff -r d5490e412857 llvm-trunk/test/CodeGen/ARM/2010-10-19-mc-elf-objheader.ll
+--- a/llvm-trunk/test/CodeGen/ARM/2010-10-19-mc-elf-objheader.ll	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/test/CodeGen/ARM/2010-10-19-mc-elf-objheader.ll	Tue Jun 07 14:28:28 2011 -0700
 @@ -1,18 +1,36 @@
  ; RUN: llc  %s -mtriple=arm-linux-gnueabi -filetype=obj -o - | \
 -; RUN:    elf-dump --dump-section-data | FileCheck %s
