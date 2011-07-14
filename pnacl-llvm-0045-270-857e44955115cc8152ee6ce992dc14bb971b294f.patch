@@ -3,14 +3,14 @@
 # Date 1308785130 25200
 # Branch pnacl-sfi
 # Node ID 857e44955115cc8152ee6ce992dc14bb971b294f
-# Parent be94fa40272c7aaf4f2531dd9befb1ad49f8b4d1
+# Parent cfea13aff35ba421c630a123f22f58acf9c52223
 Add metadata for soname and output format to bitcode
 
  From pnacl-llvm-0045-270-857e44955115cc8152ee6ce992dc14bb971b294f.patch
 
-diff -r be94fa40272c llvm-trunk/Makefile.rules
+diff -r cfea13aff35b llvm-trunk/Makefile.rules
 --- a/llvm-trunk/Makefile.rules	Fri Jun 17 12:48:00 2011 -0700
-+++ b/llvm-trunk/Makefile.rules	Thu Jul 14 15:18:53 2011 -0700
++++ b/llvm-trunk/Makefile.rules	Thu Jul 14 16:48:34 2011 -0700
 @@ -578,7 +578,7 @@
  endif
  
@@ -20,9 +20,9 @@ diff -r be94fa40272c llvm-trunk/Makefile.rules
  else
    LIBS +=
  endif
-diff -r be94fa40272c llvm-trunk/include/llvm-c/lto.h
+diff -r cfea13aff35b llvm-trunk/include/llvm-c/lto.h
 --- a/llvm-trunk/include/llvm-c/lto.h	Fri Jun 17 12:48:00 2011 -0700
-+++ b/llvm-trunk/include/llvm-c/lto.h	Thu Jul 14 15:18:53 2011 -0700
++++ b/llvm-trunk/include/llvm-c/lto.h	Thu Jul 14 16:48:34 2011 -0700
 @@ -53,6 +53,13 @@
      LTO_CODEGEN_PIC_MODEL_DYNAMIC_NO_PIC = 2
  } lto_codegen_model;
@@ -105,9 +105,9 @@ diff -r be94fa40272c llvm-trunk/include/llvm-c/lto.h
  
  /**
   * Writes a new object file at the specified path that contains the
-diff -r be94fa40272c llvm-trunk/include/llvm/Module.h
+diff -r cfea13aff35b llvm-trunk/include/llvm/Module.h
 --- a/llvm-trunk/include/llvm/Module.h	Fri Jun 17 12:48:00 2011 -0700
-+++ b/llvm-trunk/include/llvm/Module.h	Thu Jul 14 15:18:53 2011 -0700
++++ b/llvm-trunk/include/llvm/Module.h	Thu Jul 14 16:48:34 2011 -0700
 @@ -132,6 +132,15 @@
    /// An enumeration for describing the size of a pointer on the target machine.
    enum PointerSize { AnyPointerSize, Pointer32, Pointer64 };
@@ -170,9 +170,9 @@ diff -r be94fa40272c llvm-trunk/include/llvm/Module.h
    /// Set the module-scope inline assembly blocks.
    void setModuleInlineAsm(StringRef Asm) {
      GlobalScopeAsm = Asm;
-diff -r be94fa40272c llvm-trunk/lib/VMCore/Module.cpp
+diff -r cfea13aff35b llvm-trunk/lib/VMCore/Module.cpp
 --- a/llvm-trunk/lib/VMCore/Module.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/llvm-trunk/lib/VMCore/Module.cpp	Thu Jul 14 15:18:53 2011 -0700
++++ b/llvm-trunk/lib/VMCore/Module.cpp	Thu Jul 14 16:48:34 2011 -0700
 @@ -21,6 +21,7 @@
  #include "llvm/ADT/STLExtras.h"
  #include "llvm/ADT/StringExtras.h"
@@ -251,9 +251,9 @@ diff -r be94fa40272c llvm-trunk/lib/VMCore/Module.cpp
 +  llvm_unreachable("Invalid module compile type in getOutputFormat()");
 +}
 +// @LOCALMOD-END
-diff -r be94fa40272c llvm-trunk/tools/gold/gold-plugin.cpp
+diff -r cfea13aff35b llvm-trunk/tools/gold/gold-plugin.cpp
 --- a/llvm-trunk/tools/gold/gold-plugin.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/llvm-trunk/tools/gold/gold-plugin.cpp	Thu Jul 14 15:18:53 2011 -0700
++++ b/llvm-trunk/tools/gold/gold-plugin.cpp	Thu Jul 14 16:48:34 2011 -0700
 @@ -51,6 +51,19 @@
    ld_plugin_add_input_library add_input_library = NULL;
    ld_plugin_set_extra_library_path set_extra_library_path = NULL;
@@ -325,14 +325,14 @@ diff -r be94fa40272c llvm-trunk/tools/gold/gold-plugin.cpp
 +      abort();
 +      break;
 +  }
-+  lto_codegen_set_merged_module_output_format(cg, format);
++  lto_codegen_set_merged_module_output_format(code_gen, format);
 +  // @LOCALMOD-END
 +
 +  // @LOCALMOD-BEGIN
 +  // For -shared linking, store the soname into the bitcode.
 +  if (linker_output == LDPO_DYN) {
 +    const char *soname = (*get_soname)();
-+    lto_codegen_set_merged_module_soname(cg, soname);
++    lto_codegen_set_merged_module_soname(code_gen, soname);
 +  }
 +  // @LOCALMOD-END
 +
@@ -341,15 +341,15 @@ diff -r be94fa40272c llvm-trunk/tools/gold/gold-plugin.cpp
 +  unsigned int num_needed = (*get_num_needed)();
 +  for (unsigned i=0; i < num_needed; ++i) {
 +    const char *soname = (*get_needed)(i);
-+    lto_codegen_add_merged_module_library_dep(cg, soname);
++    lto_codegen_add_merged_module_library_dep(code_gen, soname);
 +  }
 +  // @LOCALMOD-END
    if (options::generate_bc_file != options::BC_NO) {
      std::string path;
      if (options::generate_bc_file == options::BC_ONLY)
-diff -r be94fa40272c llvm-trunk/tools/llc/llc.cpp
+diff -r cfea13aff35b llvm-trunk/tools/llc/llc.cpp
 --- a/llvm-trunk/tools/llc/llc.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/llvm-trunk/tools/llc/llc.cpp	Thu Jul 14 15:18:53 2011 -0700
++++ b/llvm-trunk/tools/llc/llc.cpp	Thu Jul 14 16:48:34 2011 -0700
 @@ -78,6 +78,21 @@
           cl::ZeroOrMore,
           cl::init(' '));
@@ -435,9 +435,9 @@ diff -r be94fa40272c llvm-trunk/tools/llc/llc.cpp
    // If we are supposed to override the target triple, do so now.
    if (!TargetTriple.empty())
      mod.setTargetTriple(Triple::normalize(TargetTriple));
-diff -r be94fa40272c llvm-trunk/tools/lto/LTOCodeGenerator.cpp
+diff -r cfea13aff35b llvm-trunk/tools/lto/LTOCodeGenerator.cpp
 --- a/llvm-trunk/tools/lto/LTOCodeGenerator.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/llvm-trunk/tools/lto/LTOCodeGenerator.cpp	Thu Jul 14 15:18:53 2011 -0700
++++ b/llvm-trunk/tools/lto/LTOCodeGenerator.cpp	Thu Jul 14 16:48:34 2011 -0700
 @@ -152,6 +152,37 @@
      _mustPreserveSymbols[sym] = 1;
  }
@@ -476,9 +476,9 @@ diff -r be94fa40272c llvm-trunk/tools/lto/LTOCodeGenerator.cpp
  
  bool LTOCodeGenerator::writeMergedModules(const char *path,
                                            std::string &errMsg) {
-diff -r be94fa40272c llvm-trunk/tools/lto/LTOCodeGenerator.h
+diff -r cfea13aff35b llvm-trunk/tools/lto/LTOCodeGenerator.h
 --- a/llvm-trunk/tools/lto/LTOCodeGenerator.h	Fri Jun 17 12:48:00 2011 -0700
-+++ b/llvm-trunk/tools/lto/LTOCodeGenerator.h	Thu Jul 14 15:18:53 2011 -0700
++++ b/llvm-trunk/tools/lto/LTOCodeGenerator.h	Thu Jul 14 16:48:34 2011 -0700
 @@ -39,6 +39,11 @@
      bool                setCodePICModel(lto_codegen_model, std::string& errMsg);
      void                setCpu(const char *cpu);
@@ -491,9 +491,9 @@ diff -r be94fa40272c llvm-trunk/tools/lto/LTOCodeGenerator.h
      bool                writeMergedModules(const char* path, 
                                                             std::string& errMsg);
      const void*         compile(size_t* length, std::string& errMsg);
-diff -r be94fa40272c llvm-trunk/tools/lto/LTOModule.cpp
+diff -r cfea13aff35b llvm-trunk/tools/lto/LTOModule.cpp
 --- a/llvm-trunk/tools/lto/LTOModule.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/llvm-trunk/tools/lto/LTOModule.cpp	Thu Jul 14 15:18:53 2011 -0700
++++ b/llvm-trunk/tools/lto/LTOModule.cpp	Thu Jul 14 16:48:34 2011 -0700
 @@ -28,6 +28,7 @@
  #include "llvm/Support/Process.h"
  #include "llvm/Support/SourceMgr.h"
@@ -538,9 +538,9 @@ diff -r be94fa40272c llvm-trunk/tools/lto/LTOModule.cpp
  void LTOModule::addDefinedFunctionSymbol(Function *f, Mangler &mangler) {
    // add to list of defined symbols
    addDefinedSymbol(f, mangler, true);
-diff -r be94fa40272c llvm-trunk/tools/lto/LTOModule.h
+diff -r cfea13aff35b llvm-trunk/tools/lto/LTOModule.h
 --- a/llvm-trunk/tools/lto/LTOModule.h	Fri Jun 17 12:48:00 2011 -0700
-+++ b/llvm-trunk/tools/lto/LTOModule.h	Thu Jul 14 15:18:53 2011 -0700
++++ b/llvm-trunk/tools/lto/LTOModule.h	Thu Jul 14 16:48:34 2011 -0700
 @@ -64,6 +64,14 @@
  
      const char*              getTargetTriple();
@@ -556,9 +556,9 @@ diff -r be94fa40272c llvm-trunk/tools/lto/LTOModule.h
      uint32_t                 getSymbolCount();
      lto_symbol_attributes    getSymbolAttributes(uint32_t index);
      const char*              getSymbolName(uint32_t index);
-diff -r be94fa40272c llvm-trunk/tools/lto/lto.cpp
+diff -r cfea13aff35b llvm-trunk/tools/lto/lto.cpp
 --- a/llvm-trunk/tools/lto/lto.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/llvm-trunk/tools/lto/lto.cpp	Thu Jul 14 15:18:53 2011 -0700
++++ b/llvm-trunk/tools/lto/lto.cpp	Thu Jul 14 16:48:34 2011 -0700
 @@ -169,6 +169,44 @@
      return mod->setTargetTriple(triple);
  }
@@ -645,9 +645,9 @@ diff -r be94fa40272c llvm-trunk/tools/lto/lto.cpp
    cg->setCodeGenDebugOptions(opt);
  }
 +
-diff -r be94fa40272c llvm-trunk/tools/lto/lto.exports
+diff -r cfea13aff35b llvm-trunk/tools/lto/lto.exports
 --- a/llvm-trunk/tools/lto/lto.exports	Fri Jun 17 12:48:00 2011 -0700
-+++ b/llvm-trunk/tools/lto/lto.exports	Thu Jul 14 15:18:53 2011 -0700
++++ b/llvm-trunk/tools/lto/lto.exports	Thu Jul 14 16:48:34 2011 -0700
 @@ -11,6 +11,10 @@
  lto_module_get_symbol_name
  lto_module_get_target_triple
