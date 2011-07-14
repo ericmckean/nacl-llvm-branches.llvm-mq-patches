@@ -37,9 +37,6 @@ llvm-pnacl-0035-259-2e67a11d533c84a4e75bce0200cfcb5a7000a54e.patch
 llvm-pnacl-0036-260-7cf9f3a52aaf5630750b55ba713ac8aa3b685e35.patch
 llvm-pnacl-0037-261-e25c7690d014b1ea5c29383f946a7e219e30f79d.patch
 llvm-pnacl-0038-262-5ff14599085746ac871ec2acdaaddb82a716bbd2.patch
-llvm-pnacl-0039-new-emitbundle.patch
-llvm-pnacl-0040-lsdasection.patch
-llvm-pnacl-0041-lto-full.patch
 pnacl-llvm-0039-263-0d3856fc6b19c070f408d5e6a36d89ff180a2141.patch
 pnacl-llvm-0040-264-54be72e3436a8f6dc6e46fa3bb1f5627e7970632.patch
 pnacl-llvm-0041-265-6789ea6de2530e312bc4f14b5a1e720490fe5b7b.patch
@@ -54,3 +51,6 @@ pnacl-llvm-0049-274-69da56e5597a5c882b6862932054208f1fb5b8b0.patch
 pnacl-llvm-0050-275-2e20508e408e6e0e747d475d5ab92489f482d2bc.patch
 pnacl-llvm-0051-276-85f1eac20d0b873bd0a24e0f614d57f956e3a791.patch
 pnacl-llvm-0052-277-d2d82032032b4c447d87b383e299cd998b83b360.patch
+llvm-pnacl-0039-new-emitbundle.patch
+llvm-pnacl-0040-lsdasection.patch
+llvm-pnacl-0041-lto-full.patch
