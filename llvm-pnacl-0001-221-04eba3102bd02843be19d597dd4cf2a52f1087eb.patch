@@ -10,9 +10,9 @@ Sandbox arbitrary moves to RBP
 
  From .hg/patches/llvm-pnacl-0001-221-04eba3102bd02843be19d597dd4cf2a52f1087eb.patch.stripped
 
-diff -r 7b0e19a453ac lib/Target/X86/X86NaClRewritePass.cpp
---- a/lib/Target/X86/X86NaClRewritePass.cpp	Wed Feb 02 19:05:20 2011 -0800
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Mon Jul 11 09:33:31 2011 -0700
+diff -r 7b0e19a453ac llvm-trunk/lib/Target/X86/X86NaClRewritePass.cpp
+--- a/llvm-trunk/lib/Target/X86/X86NaClRewritePass.cpp	Wed Feb 02 19:05:20 2011 -0800
++++ b/llvm-trunk/lib/Target/X86/X86NaClRewritePass.cpp	Mon Jul 11 09:33:31 2011 -0700
 @@ -296,12 +296,41 @@
      return false;
  

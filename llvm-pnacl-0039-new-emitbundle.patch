@@ -5,9 +5,9 @@ Make EmitBundle(Lock|Unlock|AlignStart|AlignEnd) into small asserting routines.
 This is needed because of an upstream change which added new uses of MCStreamer
 Keep local changes bundled together.
 
-diff -r 3f9b914a17b6 include/llvm/MC/MCStreamer.h
---- a/include/llvm/MC/MCStreamer.h	Thu Jul 14 01:27:25 2011 -0700
-+++ b/include/llvm/MC/MCStreamer.h	Thu Jul 14 16:27:21 2011 -0700
+diff -r 3f9b914a17b6 llvm-trunk/include/llvm/MC/MCStreamer.h
+--- a/llvm-trunk/include/llvm/MC/MCStreamer.h	Thu Jul 14 01:27:25 2011 -0700
++++ b/llvm-trunk/include/llvm/MC/MCStreamer.h	Thu Jul 14 16:27:21 2011 -0700
 @@ -414,18 +414,18 @@
  
      /// EmitBundleLock - Begin a group of instructions which cannot

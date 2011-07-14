@@ -26,9 +26,9 @@ it on the new -mtls-use-call command-line option.
 
  From pnacl-llvm-0043-267-5af6a2efc455176da1327dd66f497be9237bb4b6.patch
 
-diff -r b9a24dd224fb lib/Target/ARM/ARMExpandPseudoInsts.cpp
---- a/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Tue Jun 14 14:56:02 2011 -0400
-+++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Thu Jul 14 15:16:18 2011 -0700
+diff -r b9a24dd224fb llvm-trunk/lib/Target/ARM/ARMExpandPseudoInsts.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Tue Jun 14 14:56:02 2011 -0400
++++ b/llvm-trunk/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Thu Jul 14 15:16:18 2011 -0700
 @@ -936,32 +936,17 @@
      }
      case ARM::TPsoft: {

@@ -10,9 +10,9 @@ Review URL: http://codereview.chromium.org/7329023/
 
  From pnacl-llvm-0051-276-85f1eac20d0b873bd0a24e0f614d57f956e3a791.patch
 
-diff -r 509e20fa1676 Makefile.rules
---- a/Makefile.rules	Thu Jul 07 13:32:32 2011 -0700
-+++ b/Makefile.rules	Thu Jul 14 15:24:51 2011 -0700
+diff -r 509e20fa1676 llvm-trunk/Makefile.rules
+--- a/llvm-trunk/Makefile.rules	Thu Jul 07 13:32:32 2011 -0700
++++ b/llvm-trunk/Makefile.rules	Thu Jul 14 15:24:51 2011 -0700
 @@ -578,7 +578,13 @@
  endif
  

@@ -19,9 +19,9 @@ PNaCl lib/MC/ELFObjectwriter.cpp had a @LOCALMOD to deal with the NaCl specific 
 
  From .hg/patches/llvm-pnacl-0006-226-0337a0cbbcaf3199d3585caa58099601525fad8f.patch.stripped
 
-diff -r a7a7bb9fbd8d lib/MC/ELFObjectWriter.cpp
---- a/lib/MC/ELFObjectWriter.cpp	Tue Feb 22 17:59:22 2011 -0500
-+++ b/lib/MC/ELFObjectWriter.cpp	Mon Jul 11 09:35:45 2011 -0700
+diff -r a7a7bb9fbd8d llvm-trunk/lib/MC/ELFObjectWriter.cpp
+--- a/llvm-trunk/lib/MC/ELFObjectWriter.cpp	Tue Feb 22 17:59:22 2011 -0500
++++ b/llvm-trunk/lib/MC/ELFObjectWriter.cpp	Mon Jul 11 09:35:45 2011 -0700
 @@ -1248,7 +1248,16 @@
  
  // FIXME: get the real EABI Version from the Triple.

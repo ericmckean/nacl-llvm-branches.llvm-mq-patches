@@ -9,9 +9,9 @@ http://codereview.chromium.org/7248021/
 
  From pnacl-llvm-0047-272-2f18272824f28307bf6efa1ac5c272d1625a10d6.patch
 
-diff -r ec55985cc019 lib/Target/ARM/ARMISelLowering.cpp
---- a/lib/Target/ARM/ARMISelLowering.cpp	Wed Jun 22 16:35:27 2011 -0700
-+++ b/lib/Target/ARM/ARMISelLowering.cpp	Thu Jul 14 15:22:59 2011 -0700
+diff -r ec55985cc019 llvm-trunk/lib/Target/ARM/ARMISelLowering.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMISelLowering.cpp	Wed Jun 22 16:35:27 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMISelLowering.cpp	Thu Jul 14 15:22:59 2011 -0700
 @@ -1940,9 +1940,9 @@
  SDValue ARMTargetLowering::LowerNaClTpAlign(SDValue Op,
                                              SelectionDAG &DAG) const {

@@ -12,9 +12,9 @@ TEST=none (yet)
 
  From .hg/patches/llvm-pnacl-0015-235-eeaa12fb82b94aff06dd5edd2e39ba32abc12238.patch.stripped
 
-diff -r b10a91361f35 include/llvm/Intrinsics.td
---- a/include/llvm/Intrinsics.td	Thu Mar 17 17:49:59 2011 -0700
-+++ b/include/llvm/Intrinsics.td	Mon Jul 11 09:35:51 2011 -0700
+diff -r b10a91361f35 llvm-trunk/include/llvm/Intrinsics.td
+--- a/llvm-trunk/include/llvm/Intrinsics.td	Thu Mar 17 17:49:59 2011 -0700
++++ b/llvm-trunk/include/llvm/Intrinsics.td	Mon Jul 11 09:35:51 2011 -0700
 @@ -491,6 +491,20 @@
                        GCCBuiltin<"__builtin_nacl_setjmp">;
  def int_nacl_longjmp : Intrinsic<[],  [llvm_ptr_ty, llvm_i32_ty]>,
@@ -36,9 +36,9 @@ diff -r b10a91361f35 include/llvm/Intrinsics.td
  // @LOCALMOD-END
  
  //===----------------------------------------------------------------------===//
-diff -r b10a91361f35 lib/Target/ARM/ARMInstrInfo.td
---- a/lib/Target/ARM/ARMInstrInfo.td	Thu Mar 17 17:49:59 2011 -0700
-+++ b/lib/Target/ARM/ARMInstrInfo.td	Mon Jul 11 09:35:51 2011 -0700
+diff -r b10a91361f35 llvm-trunk/lib/Target/ARM/ARMInstrInfo.td
+--- a/llvm-trunk/lib/Target/ARM/ARMInstrInfo.td	Thu Mar 17 17:49:59 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMInstrInfo.td	Mon Jul 11 09:35:51 2011 -0700
 @@ -3784,7 +3784,10 @@
                             "sfi_nops_to_force_slot2; "
                             "sfi_code_mask r4; "
@@ -101,9 +101,9 @@ diff -r b10a91361f35 lib/Target/ARM/ARMInstrInfo.td
  // @LOCALMOD-END
  
  // Move from ARM core register to Special Register
-diff -r b10a91361f35 lib/Target/X86/X86InstrNaCl.td
---- a/lib/Target/X86/X86InstrNaCl.td	Thu Mar 17 17:49:59 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Mon Jul 11 09:35:51 2011 -0700
+diff -r b10a91361f35 llvm-trunk/lib/Target/X86/X86InstrNaCl.td
+--- a/llvm-trunk/lib/Target/X86/X86InstrNaCl.td	Thu Mar 17 17:49:59 2011 -0700
++++ b/llvm-trunk/lib/Target/X86/X86InstrNaCl.td	Mon Jul 11 09:35:51 2011 -0700
 @@ -437,3 +437,59 @@
                         [(int_nacl_longjmp EDI, EAX)]>,
                         Requires<[IsNaCl64]>, TB;

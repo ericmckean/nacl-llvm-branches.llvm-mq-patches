@@ -70,9 +70,9 @@ This change agrees with what GNU as does, and makes the PIC code run.
 
  From .hg/patches/llvm-pnacl-0031-255-19c5680568b4d5af396453646b2796753dac2b28.patch.stripped
 
-diff -r c3eb4e1fcb7d lib/Target/ARM/ARMAsmBackend.cpp
---- a/lib/Target/ARM/ARMAsmBackend.cpp	Thu May 05 16:52:14 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmBackend.cpp	Mon Jul 11 09:37:34 2011 -0700
+diff -r c3eb4e1fcb7d llvm-trunk/lib/Target/ARM/ARMAsmBackend.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMAsmBackend.cpp	Thu May 05 16:52:14 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMAsmBackend.cpp	Mon Jul 11 09:37:34 2011 -0700
 @@ -172,10 +172,10 @@
    case FK_Data_4:
      return Value;

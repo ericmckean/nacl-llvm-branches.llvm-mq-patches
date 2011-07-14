@@ -9,9 +9,9 @@ http://codereview.chromium.org/7024036/
 
  From pnacl-llvm-0041-265-6789ea6de2530e312bc4f14b5a1e720490fe5b7b.patch
 
-diff -r 8feb75830840 lib/Target/X86/X86ISelLowering.cpp
---- a/lib/Target/X86/X86ISelLowering.cpp	Thu Jun 09 16:38:44 2011 -0400
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Thu Jul 14 15:16:16 2011 -0700
+diff -r 8feb75830840 llvm-trunk/lib/Target/X86/X86ISelLowering.cpp
+--- a/llvm-trunk/lib/Target/X86/X86ISelLowering.cpp	Thu Jun 09 16:38:44 2011 -0400
++++ b/llvm-trunk/lib/Target/X86/X86ISelLowering.cpp	Thu Jul 14 15:16:16 2011 -0700
 @@ -56,6 +56,16 @@
  
  STATISTIC(NumTailCalls, "Number of tail calls");
@@ -116,9 +116,9 @@ diff -r 8feb75830840 lib/Target/X86/X86ISelLowering.cpp
      }
    } else if (Subtarget->isTargetDarwin()) {
      // Darwin only has one model of TLS.  Lower to that.
-diff -r 8feb75830840 lib/Target/X86/X86InstrNaCl.td
---- a/lib/Target/X86/X86InstrNaCl.td	Thu Jun 09 16:38:44 2011 -0400
-+++ b/lib/Target/X86/X86InstrNaCl.td	Thu Jul 14 15:16:16 2011 -0700
+diff -r 8feb75830840 llvm-trunk/lib/Target/X86/X86InstrNaCl.td
+--- a/llvm-trunk/lib/Target/X86/X86InstrNaCl.td	Thu Jun 09 16:38:44 2011 -0400
++++ b/llvm-trunk/lib/Target/X86/X86InstrNaCl.td	Thu Jul 14 15:16:16 2011 -0700
 @@ -312,6 +312,13 @@
  def NACL_CG_IE_TLS_addr64 : I<0, Pseudo, (outs), (ins i32mem:$sym), "",
                              [(X86tlsaddr_ie tls32addr:$sym)]>,
@@ -133,9 +133,9 @@ diff -r 8feb75830840 lib/Target/X86/X86InstrNaCl.td
  }
  
  let usesCustomInserter = 1, Defs = [EFLAGS] in
-diff -r 8feb75830840 lib/Target/X86/X86NaClRewritePass.cpp
---- a/lib/Target/X86/X86NaClRewritePass.cpp	Thu Jun 09 16:38:44 2011 -0400
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Thu Jul 14 15:16:16 2011 -0700
+diff -r 8feb75830840 llvm-trunk/lib/Target/X86/X86NaClRewritePass.cpp
+--- a/llvm-trunk/lib/Target/X86/X86NaClRewritePass.cpp	Thu Jun 09 16:38:44 2011 -0400
++++ b/llvm-trunk/lib/Target/X86/X86NaClRewritePass.cpp	Thu Jul 14 15:16:16 2011 -0700
 @@ -599,16 +599,27 @@
    }
  

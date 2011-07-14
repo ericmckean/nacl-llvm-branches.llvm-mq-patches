@@ -15,9 +15,9 @@ review: http://codereview.chromium.org/6576046/
 
  From .hg/patches/llvm-pnacl-0012-232-6ed4ada37f726191f5dbc8e1ab6dfc2765e301d9.patch.stripped
 
-diff -r ef258a79ec67 lib/Target/ARM/ARMNaClHeaders.cpp
---- a/lib/Target/ARM/ARMNaClHeaders.cpp	Wed Feb 23 15:36:34 2011 -0800
-+++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Mon Jul 11 09:35:47 2011 -0700
+diff -r ef258a79ec67 llvm-trunk/lib/Target/ARM/ARMNaClHeaders.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMNaClHeaders.cpp	Wed Feb 23 15:36:34 2011 -0800
++++ b/llvm-trunk/lib/Target/ARM/ARMNaClHeaders.cpp	Mon Jul 11 09:35:47 2011 -0700
 @@ -69,6 +69,9 @@
  
    O << " @ ========================================\n";

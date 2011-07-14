@@ -8,9 +8,9 @@ Apply an upstream bugfix to tools/gold/Makefile
 
  From pnacl-llvm-0053-279-59c8d7c407386b91d007f203503a6dcb33b33fce.patch
 
-diff -r c3ac2e39c6f0 tools/gold/Makefile
---- a/tools/gold/Makefile	Fri Jul 08 16:27:10 2011 -0700
-+++ b/tools/gold/Makefile	Thu Jul 14 16:27:18 2011 -0700
+diff -r c3ac2e39c6f0 llvm-trunk/tools/gold/Makefile
+--- a/llvm-trunk/tools/gold/Makefile	Fri Jul 08 16:27:10 2011 -0700
++++ b/llvm-trunk/tools/gold/Makefile	Thu Jul 14 16:27:18 2011 -0700
 @@ -22,10 +22,17 @@
  LOADABLE_MODULE = 1
  

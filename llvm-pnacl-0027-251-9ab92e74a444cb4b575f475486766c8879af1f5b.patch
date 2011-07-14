@@ -10,9 +10,9 @@ Preserve intrinsic symbols and ignore unused declarations
 
  From .hg/patches/llvm-pnacl-0027-251-9ab92e74a444cb4b575f475486766c8879af1f5b.patch.stripped
 
-diff -r 5fe37542a002 tools/gold/gold-plugin.cpp
---- a/tools/gold/gold-plugin.cpp	Mon Apr 25 14:13:45 2011 -0700
-+++ b/tools/gold/gold-plugin.cpp	Mon Jul 11 09:37:30 2011 -0700
+diff -r 5fe37542a002 llvm-trunk/tools/gold/gold-plugin.cpp
+--- a/llvm-trunk/tools/gold/gold-plugin.cpp	Mon Apr 25 14:13:45 2011 -0700
++++ b/llvm-trunk/tools/gold/gold-plugin.cpp	Mon Jul 11 09:37:30 2011 -0700
 @@ -61,7 +61,6 @@
    };
  
@@ -88,9 +88,9 @@ diff -r 5fe37542a002 tools/gold/gold-plugin.cpp
    if (options::generate_api_file)
      api_file.close();
  
-diff -r 5fe37542a002 tools/lto/LTOModule.cpp
---- a/tools/lto/LTOModule.cpp	Mon Apr 25 14:13:45 2011 -0700
-+++ b/tools/lto/LTOModule.cpp	Mon Jul 11 09:37:30 2011 -0700
+diff -r 5fe37542a002 llvm-trunk/tools/lto/LTOModule.cpp
+--- a/llvm-trunk/tools/lto/LTOModule.cpp	Mon Apr 25 14:13:45 2011 -0700
++++ b/llvm-trunk/tools/lto/LTOModule.cpp	Mon Jul 11 09:37:30 2011 -0700
 @@ -428,6 +428,14 @@
    if (decl->getName().startswith("llvm."))
      return;
