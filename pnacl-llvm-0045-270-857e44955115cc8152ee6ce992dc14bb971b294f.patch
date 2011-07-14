@@ -3,14 +3,14 @@
 # Date 1308785130 25200
 # Branch pnacl-sfi
 # Node ID 857e44955115cc8152ee6ce992dc14bb971b294f
-# Parent 080ee3840fb10cc5cbf9cffb3e23cdca9f6c474d
+# Parent be94fa40272c7aaf4f2531dd9befb1ad49f8b4d1
 Add metadata for soname and output format to bitcode
 
  From pnacl-llvm-0045-270-857e44955115cc8152ee6ce992dc14bb971b294f.patch
 
-diff -r 080ee3840fb1 Makefile.rules
+diff -r be94fa40272c Makefile.rules
 --- a/Makefile.rules	Fri Jun 17 12:48:00 2011 -0700
-+++ b/Makefile.rules	Fri Jul 01 15:23:58 2011 -0700
++++ b/Makefile.rules	Thu Jul 14 15:18:53 2011 -0700
 @@ -578,7 +578,7 @@
  endif
  
@@ -20,10 +20,10 @@ diff -r 080ee3840fb1 Makefile.rules
  else
    LIBS +=
  endif
-diff -r 080ee3840fb1 include/llvm-c/lto.h
+diff -r be94fa40272c include/llvm-c/lto.h
 --- a/include/llvm-c/lto.h	Fri Jun 17 12:48:00 2011 -0700
-+++ b/include/llvm-c/lto.h	Fri Jul 01 15:23:58 2011 -0700
-@@ -52,6 +52,13 @@
++++ b/include/llvm-c/lto.h	Thu Jul 14 15:18:53 2011 -0700
+@@ -53,6 +53,13 @@
      LTO_CODEGEN_PIC_MODEL_DYNAMIC_NO_PIC = 2
  } lto_codegen_model;
  
@@ -37,7 +37,7 @@ diff -r 080ee3840fb1 include/llvm-c/lto.h
  
  /** opaque reference to a loaded object module */
  typedef struct LTOModule*         lto_module_t;
-@@ -153,6 +160,36 @@
+@@ -169,6 +176,36 @@
  extern void
  lto_module_set_target_triple(lto_module_t mod, const char *triple);
  
@@ -74,7 +74,7 @@ diff -r 080ee3840fb1 include/llvm-c/lto.h
  
  /**
   * Returns the number of symbols in the object module.
-@@ -246,6 +283,30 @@
+@@ -262,6 +299,30 @@
  extern void
  lto_codegen_add_must_preserve_symbol(lto_code_gen_t cg, const char* symbol);
  
@@ -105,9 +105,9 @@ diff -r 080ee3840fb1 include/llvm-c/lto.h
  
  /**
   * Writes a new object file at the specified path that contains the
-diff -r 080ee3840fb1 include/llvm/Module.h
+diff -r be94fa40272c include/llvm/Module.h
 --- a/include/llvm/Module.h	Fri Jun 17 12:48:00 2011 -0700
-+++ b/include/llvm/Module.h	Fri Jul 01 15:23:58 2011 -0700
++++ b/include/llvm/Module.h	Thu Jul 14 15:18:53 2011 -0700
 @@ -132,6 +132,15 @@
    /// An enumeration for describing the size of a pointer on the target machine.
    enum PointerSize { AnyPointerSize, Pointer32, Pointer64 };
@@ -168,11 +168,11 @@ diff -r 080ee3840fb1 include/llvm/Module.h
 +  /// @LOCALMOD-END
 +
    /// Set the module-scope inline assembly blocks.
-   void setModuleInlineAsm(StringRef Asm) { GlobalScopeAsm = Asm; }
- 
-diff -r 080ee3840fb1 lib/VMCore/Module.cpp
+   void setModuleInlineAsm(StringRef Asm) {
+     GlobalScopeAsm = Asm;
+diff -r be94fa40272c lib/VMCore/Module.cpp
 --- a/lib/VMCore/Module.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/lib/VMCore/Module.cpp	Fri Jul 01 15:23:58 2011 -0700
++++ b/lib/VMCore/Module.cpp	Thu Jul 14 15:18:53 2011 -0700
 @@ -21,6 +21,7 @@
  #include "llvm/ADT/STLExtras.h"
  #include "llvm/ADT/StringExtras.h"
@@ -251,9 +251,9 @@ diff -r 080ee3840fb1 lib/VMCore/Module.cpp
 +  llvm_unreachable("Invalid module compile type in getOutputFormat()");
 +}
 +// @LOCALMOD-END
-diff -r 080ee3840fb1 tools/gold/gold-plugin.cpp
+diff -r be94fa40272c tools/gold/gold-plugin.cpp
 --- a/tools/gold/gold-plugin.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/gold/gold-plugin.cpp	Fri Jul 01 15:23:58 2011 -0700
++++ b/tools/gold/gold-plugin.cpp	Thu Jul 14 15:18:53 2011 -0700
 @@ -51,6 +51,19 @@
    ld_plugin_add_input_library add_input_library = NULL;
    ld_plugin_set_extra_library_path set_extra_library_path = NULL;
@@ -274,7 +274,7 @@ diff -r 080ee3840fb1 tools/gold/gold-plugin.cpp
  
    int api_version = 0;
    int gold_version = 0;
-@@ -159,6 +172,10 @@
+@@ -146,6 +159,10 @@
          output_name = tv->tv_u.tv_string;
          break;
        case LDPT_LINKER_OUTPUT:
@@ -285,7 +285,7 @@ diff -r 080ee3840fb1 tools/gold/gold-plugin.cpp
          switch (tv->tv_u.tv_val) {
            case LDPO_REL:  // .o
            case LDPO_DYN:  // .so
-@@ -216,6 +233,17 @@
+@@ -205,6 +222,17 @@
        case LDPT_SET_EXTRA_LIBRARY_PATH:
          set_extra_library_path = tv->tv_u.tv_set_extra_library_path;
          break;
@@ -303,7 +303,7 @@ diff -r 080ee3840fb1 tools/gold/gold-plugin.cpp
        case LDPT_MESSAGE:
          message = tv->tv_u.tv_message;
          break;
-@@ -457,6 +485,43 @@
+@@ -406,6 +434,43 @@
      }
    }
  
@@ -344,12 +344,12 @@ diff -r 080ee3840fb1 tools/gold/gold-plugin.cpp
 +    lto_codegen_add_merged_module_library_dep(cg, soname);
 +  }
 +  // @LOCALMOD-END
- 
    if (options::generate_bc_file != options::BC_NO) {
      std::string path;
-diff -r 080ee3840fb1 tools/llc/llc.cpp
+     if (options::generate_bc_file == options::BC_ONLY)
+diff -r be94fa40272c tools/llc/llc.cpp
 --- a/tools/llc/llc.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/llc/llc.cpp	Fri Jul 01 15:23:58 2011 -0700
++++ b/tools/llc/llc.cpp	Thu Jul 14 15:18:53 2011 -0700
 @@ -78,6 +78,21 @@
           cl::ZeroOrMore,
           cl::init(' '));
@@ -435,10 +435,10 @@ diff -r 080ee3840fb1 tools/llc/llc.cpp
    // If we are supposed to override the target triple, do so now.
    if (!TargetTriple.empty())
      mod.setTargetTriple(Triple::normalize(TargetTriple));
-diff -r 080ee3840fb1 tools/lto/LTOCodeGenerator.cpp
+diff -r be94fa40272c tools/lto/LTOCodeGenerator.cpp
 --- a/tools/lto/LTOCodeGenerator.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/lto/LTOCodeGenerator.cpp	Fri Jul 01 15:23:58 2011 -0700
-@@ -157,6 +157,37 @@
++++ b/tools/lto/LTOCodeGenerator.cpp	Thu Jul 14 15:18:53 2011 -0700
+@@ -152,6 +152,37 @@
      _mustPreserveSymbols[sym] = 1;
  }
  
@@ -476,12 +476,12 @@ diff -r 080ee3840fb1 tools/lto/LTOCodeGenerator.cpp
  
  bool LTOCodeGenerator::writeMergedModules(const char *path,
                                            std::string &errMsg) {
-diff -r 080ee3840fb1 tools/lto/LTOCodeGenerator.h
+diff -r be94fa40272c tools/lto/LTOCodeGenerator.h
 --- a/tools/lto/LTOCodeGenerator.h	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/lto/LTOCodeGenerator.h	Fri Jul 01 15:23:58 2011 -0700
-@@ -40,6 +40,11 @@
-     void                setAssemblerPath(const char* path);
-     void                setAssemblerArgs(const char** args, int nargs);
++++ b/tools/lto/LTOCodeGenerator.h	Thu Jul 14 15:18:53 2011 -0700
+@@ -39,6 +39,11 @@
+     bool                setCodePICModel(lto_codegen_model, std::string& errMsg);
+     void                setCpu(const char *cpu);
      void                addMustPreserveSymbol(const char* sym);
 +    // @LOCALMOD-BEGIN
 +    void                setMergedModuleOutputFormat(lto_output_format format);
@@ -491,18 +491,18 @@ diff -r 080ee3840fb1 tools/lto/LTOCodeGenerator.h
      bool                writeMergedModules(const char* path, 
                                                             std::string& errMsg);
      const void*         compile(size_t* length, std::string& errMsg);
-diff -r 080ee3840fb1 tools/lto/LTOModule.cpp
+diff -r be94fa40272c tools/lto/LTOModule.cpp
 --- a/tools/lto/LTOModule.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/lto/LTOModule.cpp	Fri Jul 01 15:23:58 2011 -0700
-@@ -27,6 +27,7 @@
- #include "llvm/Support/Path.h"
++++ b/tools/lto/LTOModule.cpp	Thu Jul 14 15:18:53 2011 -0700
+@@ -28,6 +28,7 @@
  #include "llvm/Support/Process.h"
+ #include "llvm/Support/SourceMgr.h"
  #include "llvm/Support/system_error.h"
 +#include "llvm/Support/ErrorHandling.h" // @LOCALMOD
  #include "llvm/Target/Mangler.h"
  #include "llvm/Target/SubtargetFeature.h"
  #include "llvm/MC/MCAsmInfo.h"
-@@ -153,6 +154,35 @@
+@@ -186,6 +187,35 @@
    _module->setTargetTriple(triple);
  }
  
@@ -538,10 +538,10 @@ diff -r 080ee3840fb1 tools/lto/LTOModule.cpp
  void LTOModule::addDefinedFunctionSymbol(Function *f, Mangler &mangler) {
    // add to list of defined symbols
    addDefinedSymbol(f, mangler, true);
-diff -r 080ee3840fb1 tools/lto/LTOModule.h
+diff -r be94fa40272c tools/lto/LTOModule.h
 --- a/tools/lto/LTOModule.h	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/lto/LTOModule.h	Fri Jul 01 15:23:58 2011 -0700
-@@ -56,6 +56,14 @@
++++ b/tools/lto/LTOModule.h	Thu Jul 14 15:18:53 2011 -0700
+@@ -64,6 +64,14 @@
  
      const char*              getTargetTriple();
      void                     setTargetTriple(const char*);
@@ -556,10 +556,10 @@ diff -r 080ee3840fb1 tools/lto/LTOModule.h
      uint32_t                 getSymbolCount();
      lto_symbol_attributes    getSymbolAttributes(uint32_t index);
      const char*              getSymbolName(uint32_t index);
-diff -r 080ee3840fb1 tools/lto/lto.cpp
+diff -r be94fa40272c tools/lto/lto.cpp
 --- a/tools/lto/lto.cpp	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/lto/lto.cpp	Fri Jul 01 15:23:58 2011 -0700
-@@ -148,6 +148,44 @@
++++ b/tools/lto/lto.cpp	Thu Jul 14 15:18:53 2011 -0700
+@@ -169,6 +169,44 @@
      return mod->setTargetTriple(triple);
  }
  
@@ -604,7 +604,7 @@ diff -r 080ee3840fb1 tools/lto/lto.cpp
  
  //
  // returns the number of symbols in the object module
-@@ -266,6 +304,35 @@
+@@ -287,6 +325,35 @@
    cg->addMustPreserveSymbol(symbol);
  }
  
@@ -640,15 +640,15 @@ diff -r 080ee3840fb1 tools/lto/lto.cpp
  
  //
  // writes a new file at the specified path that contains the
-@@ -301,3 +368,4 @@
+@@ -322,3 +389,4 @@
  {
    cg->setCodeGenDebugOptions(opt);
  }
 +
-diff -r 080ee3840fb1 tools/lto/lto.exports
+diff -r be94fa40272c tools/lto/lto.exports
 --- a/tools/lto/lto.exports	Fri Jun 17 12:48:00 2011 -0700
-+++ b/tools/lto/lto.exports	Fri Jul 01 15:23:58 2011 -0700
-@@ -9,6 +9,10 @@
++++ b/tools/lto/lto.exports	Thu Jul 14 15:18:53 2011 -0700
+@@ -11,6 +11,10 @@
  lto_module_get_symbol_name
  lto_module_get_target_triple
  lto_module_set_target_triple
@@ -659,7 +659,7 @@ diff -r 080ee3840fb1 tools/lto/lto.exports
  lto_module_is_object_file
  lto_module_is_object_file_for_target
  lto_module_is_object_file_in_memory
-@@ -29,3 +33,6 @@
+@@ -31,3 +35,6 @@
  lto_codegen_set_assembler_args
  lto_codegen_set_assembler_path
  lto_codegen_set_cpu
