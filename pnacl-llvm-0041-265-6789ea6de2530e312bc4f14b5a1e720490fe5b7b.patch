@@ -3,15 +3,15 @@
 # Date 1307989269 25200
 # Branch pnacl-sfi
 # Node ID 6789ea6de2530e312bc4f14b5a1e720490fe5b7b
-# Parent d728f8d32c163962fe85932b7b39e6347a0d0e7e
+# Parent f9fb337f6d9a2440b66034a133cd1352f47e74e6
 Add -mtls-use-call to llvm to test building the IRT for x86-32.
 http://codereview.chromium.org/7024036/
 
  From pnacl-llvm-0041-265-6789ea6de2530e312bc4f14b5a1e720490fe5b7b.patch
 
-diff -r d728f8d32c16 lib/Target/X86/X86ISelLowering.cpp
+diff -r f9fb337f6d9a lib/Target/X86/X86ISelLowering.cpp
 --- a/lib/Target/X86/X86ISelLowering.cpp	Thu Jun 09 16:38:44 2011 -0400
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Fri Jul 01 15:15:02 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.cpp	Thu Jul 14 15:05:19 2011 -0700
 @@ -56,6 +56,16 @@
  
  STATISTIC(NumTailCalls, "Number of tail calls");
@@ -29,7 +29,7 @@ diff -r d728f8d32c16 lib/Target/X86/X86ISelLowering.cpp
  // Forward declarations.
  static SDValue getMOVL(SelectionDAG &DAG, DebugLoc dl, EVT VT, SDValue V1,
                         SDValue V2);
-@@ -6064,7 +6074,8 @@
+@@ -6468,7 +6478,8 @@
  static SDValue
  GetTLSADDR(SelectionDAG &DAG, SDValue Chain, GlobalAddressSDNode *GA,
             SDValue *InFlag, const EVT PtrVT, unsigned ReturnReg,
@@ -39,7 +39,7 @@ diff -r d728f8d32c16 lib/Target/X86/X86ISelLowering.cpp
    MachineFrameInfo *MFI = DAG.getMachineFunction().getFrameInfo();
    SDVTList NodeTys = DAG.getVTList(MVT::Other, MVT::Glue);
    DebugLoc dl = GA->getDebugLoc();
-@@ -6072,10 +6083,6 @@
+@@ -6476,10 +6487,6 @@
                                             GA->getValueType(0),
                                             GA->getOffset(),
                                             OperandFlags);
@@ -50,7 +50,7 @@ diff -r d728f8d32c16 lib/Target/X86/X86ISelLowering.cpp
    if (InFlag) {
      SDValue Ops[] = { Chain,  TGA, *InFlag };
      Chain = DAG.getNode(Opcode, dl, NodeTys, Ops, 3); // @LOCALMOD
-@@ -6114,7 +6121,30 @@
+@@ -6518,7 +6525,30 @@
  }
  
  // @LOCALMOD-START
@@ -82,7 +82,7 @@ diff -r d728f8d32c16 lib/Target/X86/X86ISelLowering.cpp
  static SDValue
  LowerToTLSNaCl64(GlobalAddressSDNode *GA, SelectionDAG &DAG,
                   const EVT PtrVT, TLSModel::Model model) {
-@@ -6125,14 +6155,8 @@
+@@ -6529,14 +6559,8 @@
    if (model == TLSModel::GeneralDynamic || model == TLSModel::LocalDynamic) {
      TargetFlag = X86II::MO_TLSGD;
      Opcode = X86ISD::TLSADDR;
@@ -98,7 +98,7 @@ diff -r d728f8d32c16 lib/Target/X86/X86ISelLowering.cpp
    }
  
    return GetTLSADDR(DAG, DAG.getEntryNode(), GA, NULL, PtrVT,
-@@ -6218,8 +6242,15 @@
+@@ -6622,8 +6646,15 @@
          return LowerToTLSGeneralDynamicModel32(GA, DAG, getPointerTy());
        case TLSModel::InitialExec:
        case TLSModel::LocalExec:
@@ -116,9 +116,9 @@ diff -r d728f8d32c16 lib/Target/X86/X86ISelLowering.cpp
      }
    } else if (Subtarget->isTargetDarwin()) {
      // Darwin only has one model of TLS.  Lower to that.
-diff -r d728f8d32c16 lib/Target/X86/X86InstrNaCl.td
+diff -r f9fb337f6d9a lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Thu Jun 09 16:38:44 2011 -0400
-+++ b/lib/Target/X86/X86InstrNaCl.td	Fri Jul 01 15:15:02 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Thu Jul 14 15:05:19 2011 -0700
 @@ -312,6 +312,13 @@
  def NACL_CG_IE_TLS_addr64 : I<0, Pseudo, (outs), (ins i32mem:$sym), "",
                              [(X86tlsaddr_ie tls32addr:$sym)]>,
@@ -133,9 +133,9 @@ diff -r d728f8d32c16 lib/Target/X86/X86InstrNaCl.td
  }
  
  let usesCustomInserter = 1, Defs = [EFLAGS] in
-diff -r d728f8d32c16 lib/Target/X86/X86NaClRewritePass.cpp
+diff -r f9fb337f6d9a lib/Target/X86/X86NaClRewritePass.cpp
 --- a/lib/Target/X86/X86NaClRewritePass.cpp	Thu Jun 09 16:38:44 2011 -0400
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Fri Jul 01 15:15:02 2011 -0700
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Thu Jul 14 15:05:19 2011 -0700
 @@ -599,16 +599,27 @@
    }
  
