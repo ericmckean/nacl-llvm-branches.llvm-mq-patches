@@ -1,0 +1,22 @@
+# HG changeset patch
+# User David Meyer <pdox@google.com>
+# Date 1310632045 25200
+# Branch pnacl-sfi
+# Node ID 2c5d50edfa146edcba65ce3008822db6379354be
+# Parent 9bd68cc2ea88b1fae4a31746cac313ff1ac47c40
+Fix the libLTO soname fix
+
+ From pnacl-llvm-0055-281-2c5d50edfa146edcba65ce3008822db6379354be.patch
+
+diff -r 9bd68cc2ea88 tools/lto/Makefile
+--- a/tools/lto/Makefile	Thu Jul 14 00:08:29 2011 -0700
++++ b/tools/lto/Makefile	Thu Jul 14 15:58:36 2011 -0700
+@@ -60,5 +60,7 @@
+ #@ LOCALMOD-BEGIN
+ # This is to fix an upstream bug. It is in the process of being upstreamed.
+ # This line can be removed after it has been fixed upstream and we've merged.
+-LLVMLibsOptions := $(LLVMLibsOptions) -Wl,-soname=$(SharedPrefix)LTO$(SHLIBEXT)
++ifneq ($(HOST_OS),Darwin)
++  LLVMLibsOptions := $(LLVMLibsOptions) -Wl,-soname=$(SharedPrefix)LTO$(SHLIBEXT)
++endif
+ #@ LOCALMOD-END
