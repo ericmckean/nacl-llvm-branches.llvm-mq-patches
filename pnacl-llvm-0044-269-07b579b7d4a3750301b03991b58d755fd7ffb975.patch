@@ -1,0 +1,39 @@
+# HG changeset patch
+# User Roland McGrath <mcgrathr@chromium.org>
+# Date 1308340080 25200
+# Branch pnacl-sfi
+# Node ID 07b579b7d4a3750301b03991b58d755fd7ffb975
+# Parent 1bc2248eec060fccd825501ab5c6e528b80110a5
+# Parent  bfd021e013ade829e66d6c3c9a3f1f9cd87d4c05
+Merge
+
+ From pnacl-llvm-0044-269-07b579b7d4a3750301b03991b58d755fd7ffb975.patch
+
+diff -r 1bc2248eec06 lib/Target/ARM/ARMISelLowering.cpp
+--- a/lib/Target/ARM/ARMISelLowering.cpp	Fri Jun 17 11:43:58 2011 -0700
++++ b/lib/Target/ARM/ARMISelLowering.cpp	Fri Jul 01 15:23:57 2011 -0700
+@@ -254,8 +254,8 @@
+   setLibcallName(RTLIB::SHL_I128, 0);
+   setLibcallName(RTLIB::SRL_I128, 0);
+   setLibcallName(RTLIB::SRA_I128, 0);
+-
+-  if (Subtarget->isAAPCS_ABI()) {
++  // @LOCALMOD: use standard names and calling conventions for pnacl
++  if (!Subtarget->isTargetNaCl() && Subtarget->isAAPCS_ABI()) { 
+     // Double-precision floating-point arithmetic helper functions
+     // RTABI chapter 4.1.2, Table 2
+     setLibcallName(RTLIB::ADD_F64, "__aeabi_dadd");
+@@ -380,11 +380,8 @@
+     // Long long helper functions
+     // RTABI chapter 4.2, Table 9
+     setLibcallName(RTLIB::MUL_I64,  "__aeabi_lmul");
+-    // @LOCALMOD-start
+-    // use default names instead of the arm specific ones
+-    //setLibcallName(RTLIB::SDIV_I64, "__aeabi_ldivmod");
+-    //setLibcallName(RTLIB::UDIV_I64, "__aeabi_uldivmod");
+-    // @LOCALMOD-end
++    setLibcallName(RTLIB::SDIV_I64, "__aeabi_ldivmod");
++    setLibcallName(RTLIB::UDIV_I64, "__aeabi_uldivmod");
+     setLibcallName(RTLIB::SHL_I64, "__aeabi_llsl");
+     setLibcallName(RTLIB::SRL_I64, "__aeabi_llsr");
+     setLibcallName(RTLIB::SRA_I64, "__aeabi_lasr");

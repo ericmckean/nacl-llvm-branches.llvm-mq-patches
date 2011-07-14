@@ -1,0 +1,14 @@
+# HG changeset patch
+# User robertm@google.com
+# Date 1307651924 14400
+# Branch pnacl-sfi
+# Node ID 54be72e3436a8f6dc6e46fa3bb1f5627e7970632
+# Parent 42a71436e7debe4f5697932bbec65bebdc79e78d
+Eliminate almost all localmods from the no longer used constant island
+pass and fix a few more unnecessary deltas.
+
+CL= http://codereview.chromium.org/7134046/
+
+ From pnacl-llvm-0040-264-54be72e3436a8f6dc6e46fa3bb1f5627e7970632.patch
+ Patch has been folded
+

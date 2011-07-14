@@ -1,0 +1,668 @@
+# HG changeset patch
+# User David Meyer <pdox@google.com>
+# Date 1308785130 25200
+# Branch pnacl-sfi
+# Node ID 857e44955115cc8152ee6ce992dc14bb971b294f
+# Parent 080ee3840fb10cc5cbf9cffb3e23cdca9f6c474d
+Add metadata for soname and output format to bitcode
+
+ From pnacl-llvm-0045-270-857e44955115cc8152ee6ce992dc14bb971b294f.patch
+
+diff -r 080ee3840fb1 Makefile.rules
+--- a/Makefile.rules	Fri Jun 17 12:48:00 2011 -0700
++++ b/Makefile.rules	Fri Jul 01 15:23:58 2011 -0700
+@@ -578,7 +578,7 @@
+ endif
+ 
+ ifeq ($(NACL_SANDBOX),1)
+-  LIBS += -lsrpc -limc_syscalls -lpthread -lplatform -lgio -lm -lnacl 
++  LIBS += -lsrpc -limc_syscalls -lplatform -lgio -lpthread -lm -lnacl 
+ else
+   LIBS +=
+ endif
+diff -r 080ee3840fb1 include/llvm-c/lto.h
+--- a/include/llvm-c/lto.h	Fri Jun 17 12:48:00 2011 -0700
++++ b/include/llvm-c/lto.h	Fri Jul 01 15:23:58 2011 -0700
+@@ -52,6 +52,13 @@
+     LTO_CODEGEN_PIC_MODEL_DYNAMIC_NO_PIC = 2
+ } lto_codegen_model;
+ 
++/* @LOCALMOD-BEGIN */
++typedef enum {
++    LTO_OUTPUT_FORMAT_OBJECT = 0,  /* object file */
++    LTO_OUTPUT_FORMAT_SHARED = 1,  /* shared library */
++    LTO_OUTPUT_FORMAT_EXEC   = 2   /* executable */
++} lto_output_format;
++/* @LOCALMOD-END */
+ 
+ /** opaque reference to a loaded object module */
+ typedef struct LTOModule*         lto_module_t;
+@@ -153,6 +160,36 @@
+ extern void
+ lto_module_set_target_triple(lto_module_t mod, const char *triple);
+ 
++/* @LOCALMOD-BEGIN */
++
++/**
++ * Get the module format for this module
++ */
++extern lto_output_format
++lto_module_get_output_format(lto_module_t mod);
++
++/**
++ * Get the module soname
++ */
++extern const char*
++lto_module_get_soname(lto_module_t mod);
++
++
++/**
++ * Get the i'th library dependency.
++ * Returns NULL if i >= lto_module_get_num_library_deps()
++ */
++extern const char*
++lto_module_get_library_dep(lto_module_t mod, unsigned int i);
++
++
++/**
++ * Return the number of library dependencies of this module.
++ */
++extern unsigned int
++lto_module_get_num_library_deps(lto_module_t mod);
++
++/* @LOCALMOD-END */
+ 
+ /**
+  * Returns the number of symbols in the object module.
+@@ -246,6 +283,30 @@
+ extern void
+ lto_codegen_add_must_preserve_symbol(lto_code_gen_t cg, const char* symbol);
+ 
++/* @LOCALMOD-BEGIN */
++
++/**
++ * Sets the module type for the merged module
++ */
++extern void
++lto_codegen_set_merged_module_output_format(lto_code_gen_t cg,
++                                            lto_output_format format);
++
++/**
++ * Sets the SOName for the merged module
++ */
++extern void
++lto_codegen_set_merged_module_soname(lto_code_gen_t cg,
++                                     const char *soname);
++
++/**
++ * Add a library dependency to the merged module
++ */
++extern void
++lto_codegen_add_merged_module_library_dep(lto_code_gen_t cg,
++                                          const char *lib);
++
++/* @LOCALMOD-END */
+ 
+ /**
+  * Writes a new object file at the specified path that contains the
+diff -r 080ee3840fb1 include/llvm/Module.h
+--- a/include/llvm/Module.h	Fri Jun 17 12:48:00 2011 -0700
++++ b/include/llvm/Module.h	Fri Jul 01 15:23:58 2011 -0700
+@@ -132,6 +132,15 @@
+   /// An enumeration for describing the size of a pointer on the target machine.
+   enum PointerSize { AnyPointerSize, Pointer32, Pointer64 };
+ 
++  /// @LOCALMOD-BEGIN
++  /// An enumeration for describing the module format
++  enum OutputFormat {
++    ObjectOutputFormat,
++    SharedOutputFormat,
++    ExecutableOutputFormat
++  };
++  /// @LOCALMOD-END
++
+ /// @}
+ /// @name Member Variables
+ /// @{
+@@ -150,6 +159,9 @@
+   std::string ModuleID;           ///< Human readable identifier for the module
+   std::string TargetTriple;       ///< Platform target triple Module compiled on
+   std::string DataLayout;         ///< Target data description
++  // @LOCALMOD-BEGIN
++  mutable std::string ModuleSOName; ///< Module SOName (for shared format)
++  // @LOCALMOD-END
+   void *NamedMDSymTab;            ///< NamedMDNode names.
+ 
+   friend class Constant;
+@@ -181,6 +193,18 @@
+   /// @returns a string containing the target triple.
+   const std::string &getTargetTriple() const { return TargetTriple; }
+ 
++  // @LOCALMOD-BEGIN
++
++  /// Get the module format
++  /// @returns the module format
++  OutputFormat getOutputFormat() const;
++
++  /// Get the SOName of this module.
++  /// @returns a string containing the module soname
++  const std::string &getSOName() const;
++
++  // @LOCALMOD-END
++
+   /// Get the target endian information.
+   /// @returns Endianess - an enumeration for the endianess of the target
+   Endianness getEndianness() const;
+@@ -210,6 +234,16 @@
+   /// Set the target triple.
+   void setTargetTriple(StringRef T) { TargetTriple = T; }
+ 
++  /// @LOCALMOD-BEGIN
++
++  /// Set the module format
++  void setOutputFormat(OutputFormat F);
++
++  /// For modules with output format "shared", set the output soname.
++  void setSOName(StringRef Name);
++
++  /// @LOCALMOD-END
++
+   /// Set the module-scope inline assembly blocks.
+   void setModuleInlineAsm(StringRef Asm) { GlobalScopeAsm = Asm; }
+ 
+diff -r 080ee3840fb1 lib/VMCore/Module.cpp
+--- a/lib/VMCore/Module.cpp	Fri Jun 17 12:48:00 2011 -0700
++++ b/lib/VMCore/Module.cpp	Fri Jul 01 15:23:58 2011 -0700
+@@ -21,6 +21,7 @@
+ #include "llvm/ADT/STLExtras.h"
+ #include "llvm/ADT/StringExtras.h"
+ #include "llvm/Support/LeakDetector.h"
++#include "llvm/Support/ErrorHandling.h" // @LOCALMOD
+ #include "SymbolTableListTraitsImpl.h"
+ #include "llvm/TypeSymbolTable.h"
+ #include <algorithm>
+@@ -471,3 +472,69 @@
+       return;
+     }
+ }
++
++// @LOCALMOD-BEGIN
++
++// TODO(pdox):
++// If possible, use actual bitcode records instead of NamedMetadata.
++// This is contingent upon whether we can get these changes upstreamed
++// immediately, to avoid creating incompatibilities in the bitcode format.
++
++static std::string
++ModuleMetaGet(const Module *module, StringRef MetaName) {
++  NamedMDNode *node = module->getNamedMetadata(MetaName);
++  if (node == NULL)
++    return "";
++  assert(node->getNumOperands() == 1);
++  MDNode *subnode = node->getOperand(0);
++  assert(subnode->getNumOperands() == 1);
++  MDString *value = dyn_cast<MDString>(subnode->getOperand(0));
++  assert(value != NULL);
++  return value->getString();
++}
++
++static void
++ModuleMetaSet(Module *module, StringRef MetaName, StringRef ValueStr) {
++  NamedMDNode *node = module->getNamedMetadata(MetaName);
++  if (node)
++    module->eraseNamedMetadata(node);
++  node = module->getOrInsertNamedMetadata(MetaName);
++  MDString *value = MDString::get(module->getContext(), ValueStr);
++  Value *v[1] = { value };
++  node->addOperand(MDNode::get(module->getContext(), v, 1));
++}
++
++const std::string &Module::getSOName() const {
++  if (ModuleSOName == "")
++    ModuleSOName.assign(ModuleMetaGet(this, "SOName"));
++  return ModuleSOName;
++}
++
++void Module::setSOName(StringRef Name) {
++  ModuleMetaSet(this, "SOName", Name);
++  ModuleSOName = Name;
++}
++
++void Module::setOutputFormat(Module::OutputFormat F) {
++  const char *formatStr;
++  switch (F) {
++  case ObjectOutputFormat: formatStr = "object"; break;
++  case SharedOutputFormat: formatStr = "shared"; break;
++  case ExecutableOutputFormat: formatStr = "executable"; break;
++  default:
++    llvm_unreachable("Unrecognized output format in setOutputFormat()");
++  }
++  ModuleMetaSet(this, "OutputFormat", formatStr);
++}
++
++Module::OutputFormat Module::getOutputFormat() const {
++  std::string formatStr = ModuleMetaGet(this, "OutputFormat");
++  if (formatStr == "" || formatStr == "object")
++    return ObjectOutputFormat;
++  else if (formatStr == "shared")
++    return SharedOutputFormat;
++  else if (formatStr == "executable")
++    return ExecutableOutputFormat;
++  llvm_unreachable("Invalid module compile type in getOutputFormat()");
++}
++// @LOCALMOD-END
+diff -r 080ee3840fb1 tools/gold/gold-plugin.cpp
+--- a/tools/gold/gold-plugin.cpp	Fri Jun 17 12:48:00 2011 -0700
++++ b/tools/gold/gold-plugin.cpp	Fri Jul 01 15:23:58 2011 -0700
+@@ -51,6 +51,19 @@
+   ld_plugin_add_input_library add_input_library = NULL;
+   ld_plugin_set_extra_library_path set_extra_library_path = NULL;
+   ld_plugin_message message = discard_message;
++  // @LOCALMOD-BEGIN
++  // REL, DYN, or EXEC
++  ld_plugin_output_file_type linker_output;
++
++  // Callback for getting link soname from gold
++  ld_plugin_get_soname get_soname = NULL;
++
++  // Callback for getting needed libraries from gold
++  ld_plugin_get_needed get_needed = NULL;
++
++  // Callback for getting number of needed library from gold
++  ld_plugin_get_num_needed get_num_needed = NULL;
++  // @LOCALMOD-END
+ 
+   int api_version = 0;
+   int gold_version = 0;
+@@ -159,6 +172,10 @@
+         output_name = tv->tv_u.tv_string;
+         break;
+       case LDPT_LINKER_OUTPUT:
++        // @LOCALMOD-BEGIN
++        linker_output =
++          static_cast<ld_plugin_output_file_type>(tv->tv_u.tv_val);
++        // @LOCALMOD-END
+         switch (tv->tv_u.tv_val) {
+           case LDPO_REL:  // .o
+           case LDPO_DYN:  // .so
+@@ -216,6 +233,17 @@
+       case LDPT_SET_EXTRA_LIBRARY_PATH:
+         set_extra_library_path = tv->tv_u.tv_set_extra_library_path;
+         break;
++      // @LOCALMOD-BEGIN
++      case LDPT_GET_SONAME:
++        get_soname = tv->tv_u.tv_get_soname;
++        break;
++      case LDPT_GET_NEEDED:
++        get_needed = tv->tv_u.tv_get_needed;
++        break;
++      case LDPT_GET_NUM_NEEDED:
++        get_num_needed = tv->tv_u.tv_get_num_needed;
++        break;
++      // @LOCALMOD-END
+       case LDPT_MESSAGE:
+         message = tv->tv_u.tv_message;
+         break;
+@@ -457,6 +485,43 @@
+     }
+   }
+ 
++  // @LOCALMOD-BEGIN
++  // Store the linker output format into the bitcode.
++  lto_output_format format;
++  switch (linker_output) {
++    case LDPO_REL:
++      format = LTO_OUTPUT_FORMAT_OBJECT;
++      break;
++    case LDPO_DYN:
++      format = LTO_OUTPUT_FORMAT_SHARED;
++      break;
++    case LDPO_EXEC:
++      format = LTO_OUTPUT_FORMAT_EXEC;
++      break;
++    default:
++      (*message)(LDPL_FATAL, "Unknown linker output format (gold-plugin)");
++      abort();
++      break;
++  }
++  lto_codegen_set_merged_module_output_format(cg, format);
++  // @LOCALMOD-END
++
++  // @LOCALMOD-BEGIN
++  // For -shared linking, store the soname into the bitcode.
++  if (linker_output == LDPO_DYN) {
++    const char *soname = (*get_soname)();
++    lto_codegen_set_merged_module_soname(cg, soname);
++  }
++  // @LOCALMOD-END
++
++  // @LOCALMOD-BEGIN
++  // Add the needed libraries to the bitcode.
++  unsigned int num_needed = (*get_num_needed)();
++  for (unsigned i=0; i < num_needed; ++i) {
++    const char *soname = (*get_needed)(i);
++    lto_codegen_add_merged_module_library_dep(cg, soname);
++  }
++  // @LOCALMOD-END
+ 
+   if (options::generate_bc_file != options::BC_NO) {
+     std::string path;
+diff -r 080ee3840fb1 tools/llc/llc.cpp
+--- a/tools/llc/llc.cpp	Fri Jun 17 12:48:00 2011 -0700
++++ b/tools/llc/llc.cpp	Fri Jul 01 15:23:58 2011 -0700
+@@ -78,6 +78,21 @@
+          cl::ZeroOrMore,
+          cl::init(' '));
+ 
++// @LOCALMOD-BEGIN
++
++// Specify a file to write bitcode metadata in human-readable format.
++// (includes output format, soname, and dependencies).
++static cl::opt<std::string>
++DumpMetadata("dump-metadata", cl::desc("Dump Bitcode Metadata to file"));
++
++// Stop immediately after writing bitcode metadata.
++// (The bitcode will not be compiled.)
++static cl::opt<bool>
++OnlyDumpMetadata("only-dump-metadata",
++    cl::desc("Stop after dumping bitcode metadata (don't compile)"));
++
++// @LOCALMOD-END
++
+ static cl::opt<std::string>
+ TargetTriple("mtriple", cl::desc("Override target triple for module"));
+ 
+@@ -209,6 +224,44 @@
+   return FDOut;
+ }
+ 
++bool WriteMetadata(const char *filename, const Module &mod) {
++  std::string s;
++  raw_string_ostream ROS(s);
++  formatted_raw_ostream FOS(ROS);
++
++  FOS << "OutputFormat: ";
++  switch (mod.getOutputFormat()) {
++    case Module::ObjectOutputFormat: FOS << "object"; break;
++    case Module::SharedOutputFormat: FOS << "shared"; break;
++    case Module::ExecutableOutputFormat: FOS << "executable"; break;
++  }
++  FOS << "\n";
++  FOS << "SOName: " << mod.getSOName() << "\n";
++  for (Module::lib_iterator L = mod.lib_begin(),
++                            E = mod.lib_end();
++       L != E; ++L) {
++    FOS << "NeedsLibrary: " << (*L) << "\n";
++  }
++  FOS.flush();
++  ROS.flush();
++
++#if defined(__native_client__)
++  NaClOutputStringToFile(filename, s);
++#else
++  std::string error;
++  tool_output_file *MetaOut = new tool_output_file(filename, error, 0);
++  if (!error.empty()) {
++    errs() << error << '\n';
++    delete MetaOut;
++    return false;
++  }
++  MetaOut->os() << s;
++  MetaOut->keep();
++  delete MetaOut;
++#endif
++  return true;
++}
++
+ // main - Entry point for the llc compiler.
+ //
+ int llc_main(int argc, char **argv) {
+@@ -248,6 +301,17 @@
+   }
+   Module &mod = *M.get();
+ 
++  // @LOCALMOD-BEGIN
++  if (!DumpMetadata.empty()) {
++    bool success = WriteMetadata(DumpMetadata.c_str(), mod);
++    if (!success)
++      return 1;
++  }
++
++  if (OnlyDumpMetadata)
++    return 0;
++  // @LOCALMOD-END
++
+   // If we are supposed to override the target triple, do so now.
+   if (!TargetTriple.empty())
+     mod.setTargetTriple(Triple::normalize(TargetTriple));
+diff -r 080ee3840fb1 tools/lto/LTOCodeGenerator.cpp
+--- a/tools/lto/LTOCodeGenerator.cpp	Fri Jun 17 12:48:00 2011 -0700
++++ b/tools/lto/LTOCodeGenerator.cpp	Fri Jul 01 15:23:58 2011 -0700
+@@ -157,6 +157,37 @@
+     _mustPreserveSymbols[sym] = 1;
+ }
+ 
++// @LOCALMOD-BEGIN
++void LTOCodeGenerator::setMergedModuleOutputFormat(lto_output_format format)
++{
++  Module::OutputFormat outputFormat;
++  switch (format) {
++  case LTO_OUTPUT_FORMAT_OBJECT:
++    outputFormat = Module::ObjectOutputFormat;
++    break;
++  case LTO_OUTPUT_FORMAT_SHARED:
++    outputFormat = Module::SharedOutputFormat;
++    break;
++  case LTO_OUTPUT_FORMAT_EXEC:
++    outputFormat = Module::ExecutableOutputFormat;
++    break;
++  }
++  Module *mergedModule = _linker.getModule();
++  mergedModule->setOutputFormat(outputFormat);
++}
++
++void LTOCodeGenerator::setMergedModuleSOName(const char *soname)
++{
++  Module *mergedModule = _linker.getModule();
++  mergedModule->setSOName(soname);
++}
++
++void LTOCodeGenerator::addLibraryDep(const char *lib)
++{
++  Module *mergedModule = _linker.getModule();
++  mergedModule->addLibrary(lib);
++}
++// @LOCALMOD-END
+ 
+ bool LTOCodeGenerator::writeMergedModules(const char *path,
+                                           std::string &errMsg) {
+diff -r 080ee3840fb1 tools/lto/LTOCodeGenerator.h
+--- a/tools/lto/LTOCodeGenerator.h	Fri Jun 17 12:48:00 2011 -0700
++++ b/tools/lto/LTOCodeGenerator.h	Fri Jul 01 15:23:58 2011 -0700
+@@ -40,6 +40,11 @@
+     void                setAssemblerPath(const char* path);
+     void                setAssemblerArgs(const char** args, int nargs);
+     void                addMustPreserveSymbol(const char* sym);
++    // @LOCALMOD-BEGIN
++    void                setMergedModuleOutputFormat(lto_output_format format);
++    void                setMergedModuleSOName(const char *soname);
++    void                addLibraryDep(const char *lib);
++    // @LOCALMOD-END
+     bool                writeMergedModules(const char* path, 
+                                                            std::string& errMsg);
+     const void*         compile(size_t* length, std::string& errMsg);
+diff -r 080ee3840fb1 tools/lto/LTOModule.cpp
+--- a/tools/lto/LTOModule.cpp	Fri Jun 17 12:48:00 2011 -0700
++++ b/tools/lto/LTOModule.cpp	Fri Jul 01 15:23:58 2011 -0700
+@@ -27,6 +27,7 @@
+ #include "llvm/Support/Path.h"
+ #include "llvm/Support/Process.h"
+ #include "llvm/Support/system_error.h"
++#include "llvm/Support/ErrorHandling.h" // @LOCALMOD
+ #include "llvm/Target/Mangler.h"
+ #include "llvm/Target/SubtargetFeature.h"
+ #include "llvm/MC/MCAsmInfo.h"
+@@ -153,6 +154,35 @@
+   _module->setTargetTriple(triple);
+ }
+ 
++// @LOCALMOD-BEGIN
++
++lto_output_format LTOModule::getOutputFormat() {
++  Module::OutputFormat format = _module->getOutputFormat();
++  switch (format) {
++  case Module::ObjectOutputFormat: return LTO_OUTPUT_FORMAT_OBJECT;
++  case Module::SharedOutputFormat: return LTO_OUTPUT_FORMAT_SHARED;
++  case Module::ExecutableOutputFormat: return LTO_OUTPUT_FORMAT_EXEC;
++  }
++  llvm_unreachable("Unknown output format in LTOModule");
++}
++
++const char *LTOModule::getSOName() {
++  return _module->getSOName().c_str();
++}
++
++const char* LTOModule::getLibraryDep(uint32_t index) {
++  const Module::LibraryListType &Libs = _module->getLibraries();
++  if (index < Libs.size())
++    return Libs[index].c_str();
++  return NULL;
++}
++
++uint32_t LTOModule::getNumLibraryDeps() {
++  return _module->getLibraries().size();
++}
++
++// @LOCALMOD-END
++
+ void LTOModule::addDefinedFunctionSymbol(Function *f, Mangler &mangler) {
+   // add to list of defined symbols
+   addDefinedSymbol(f, mangler, true);
+diff -r 080ee3840fb1 tools/lto/LTOModule.h
+--- a/tools/lto/LTOModule.h	Fri Jun 17 12:48:00 2011 -0700
++++ b/tools/lto/LTOModule.h	Fri Jul 01 15:23:58 2011 -0700
+@@ -56,6 +56,14 @@
+ 
+     const char*              getTargetTriple();
+     void                     setTargetTriple(const char*);
++
++    // @LOCALMOD-BEGIN
++    lto_output_format        getOutputFormat();
++    const char*              getSOName();
++    const char*              getLibraryDep(uint32_t index);
++    uint32_t                 getNumLibraryDeps();
++    // @LOCALMOD-END
++
+     uint32_t                 getSymbolCount();
+     lto_symbol_attributes    getSymbolAttributes(uint32_t index);
+     const char*              getSymbolName(uint32_t index);
+diff -r 080ee3840fb1 tools/lto/lto.cpp
+--- a/tools/lto/lto.cpp	Fri Jun 17 12:48:00 2011 -0700
++++ b/tools/lto/lto.cpp	Fri Jul 01 15:23:58 2011 -0700
+@@ -148,6 +148,44 @@
+     return mod->setTargetTriple(triple);
+ }
+ 
++// @LOCALMOD-BEGIN
++
++//
++// Get the module format for this module
++//
++lto_output_format lto_module_get_output_format(lto_module_t mod)
++{
++  return mod->getOutputFormat();
++}
++
++//
++// Get the module soname
++//
++const char* lto_module_get_soname(lto_module_t mod)
++{
++  return mod->getSOName();
++}
++
++//
++// Get the i'th library dependency.
++// Returns NULL if i >= lto_module_get_num_library_deps()
++//
++const char *
++lto_module_get_library_dep(lto_module_t mod, unsigned int i)
++{
++  return mod->getLibraryDep(i);
++}
++
++//
++// Return the number of library dependencies of this module.
++//
++unsigned int
++lto_module_get_num_library_deps(lto_module_t mod)
++{
++  return mod->getNumLibraryDeps();
++}
++
++// @LOCALMOD-END
+ 
+ //
+ // returns the number of symbols in the object module
+@@ -266,6 +304,35 @@
+   cg->addMustPreserveSymbol(symbol);
+ }
+ 
++// @LOCALMOD-BEGIN
++
++//
++// Set the module format for the merged module
++//
++void lto_codegen_set_merged_module_output_format(lto_code_gen_t cg,
++                                                 lto_output_format format)
++{
++  cg->setMergedModuleOutputFormat(format);
++}
++
++//
++// Set the module soname (for shared library bitcode)
++//
++void lto_codegen_set_merged_module_soname(lto_code_gen_t cg,
++                                          const char* soname)
++{
++  cg->setMergedModuleSOName(soname);
++}
++
++//
++// Add a library dependency to the linked bitcode module.
++//
++void lto_codegen_add_merged_module_library_dep(lto_code_gen_t cg,
++                                               const char* soname)
++{
++  cg->addLibraryDep(soname);
++}
++// @LOCALMOD-END
+ 
+ //
+ // writes a new file at the specified path that contains the
+@@ -301,3 +368,4 @@
+ {
+   cg->setCodeGenDebugOptions(opt);
+ }
++
+diff -r 080ee3840fb1 tools/lto/lto.exports
+--- a/tools/lto/lto.exports	Fri Jun 17 12:48:00 2011 -0700
++++ b/tools/lto/lto.exports	Fri Jul 01 15:23:58 2011 -0700
+@@ -9,6 +9,10 @@
+ lto_module_get_symbol_name
+ lto_module_get_target_triple
+ lto_module_set_target_triple
++lto_module_get_output_format
++lto_module_get_soname
++lto_module_get_library_dep
++lto_module_get_num_library_deps
+ lto_module_is_object_file
+ lto_module_is_object_file_for_target
+ lto_module_is_object_file_in_memory
+@@ -29,3 +33,6 @@
+ lto_codegen_set_assembler_args
+ lto_codegen_set_assembler_path
+ lto_codegen_set_cpu
++lto_codegen_set_merged_module_output_format
++lto_codegen_set_merged_module_soname
++lto_codegen_add_merged_module_library_dep

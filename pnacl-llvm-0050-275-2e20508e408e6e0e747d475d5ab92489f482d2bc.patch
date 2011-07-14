@@ -1,0 +1,29 @@
+# HG changeset patch
+# User Derek Schuff <dschuff@google.com>
+# Date 1310070752 25200
+# Branch pnacl-sfi
+# Node ID 2e20508e408e6e0e747d475d5ab92489f482d2bc
+# Parent 7eb6d6b346633c57a4d0f1943fad81df1c87469a
+Backport upstream r124282 to fix memory corruption error
+
+ From pnacl-llvm-0050-275-2e20508e408e6e0e747d475d5ab92489f482d2bc.patch
+
+diff -r 7eb6d6b34663 lib/Analysis/ScalarEvolution.cpp
+--- a/lib/Analysis/ScalarEvolution.cpp	Mon Jun 27 11:39:09 2011 -0700
++++ b/lib/Analysis/ScalarEvolution.cpp	Mon Jul 11 16:15:57 2011 -0700
+@@ -831,6 +831,7 @@
+     }
+     if (!hasTrunc)
+       return getAddExpr(Operands, false, false);
++    UniqueSCEVs.FindNodeOrInsertPos(ID, IP);  // Mutates IP, returns NULL.
+   }
+ 
+   // trunc(x1*x2*...*xN) --> trunc(x1)*trunc(x2)*...*trunc(xN) if we can
+@@ -845,6 +846,7 @@
+     }
+     if (!hasTrunc)
+       return getMulExpr(Operands, false, false);
++    UniqueSCEVs.FindNodeOrInsertPos(ID, IP);  // Mutates IP, returns NULL.
+   }
+ 
+   // If the input value is a chrec scev, truncate the chrec's operands.
