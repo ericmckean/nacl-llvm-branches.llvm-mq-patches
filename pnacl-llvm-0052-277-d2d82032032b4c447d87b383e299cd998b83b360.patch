@@ -1,0 +1,24 @@
+# HG changeset patch
+# User Derek Schuff <dschuff@google.com>
+# Date 1310167630 25200
+# Branch pnacl-sfi
+# Node ID d2d82032032b4c447d87b383e299cd998b83b360
+# Parent d0eeddaf9838333be01bb7e28ff4e31f993bb8cd
+Fix link line for tcmalloc
+
+ From pnacl-llvm-0052-277-d2d82032032b4c447d87b383e299cd998b83b360.patch
+
+diff -r d0eeddaf9838 llvm-trunk/Makefile.rules
+--- a/llvm-trunk/Makefile.rules	Fri Jul 08 13:36:53 2011 -0700
++++ b/llvm-trunk/Makefile.rules	Mon Jul 11 16:16:01 2011 -0700
+@@ -580,8 +580,8 @@
+ ifeq ($(NACL_SANDBOX),1)
+   LIBS += -lsrpc -limc_syscalls -lplatform -lgio -lpthread -lm -lnacl
+   ifeq ($(USE_TCMALLOC),1)
+-    # Note: -ltcmalloc needs to stay last on the link line
+-    LIBS += -ltcmalloc
++    # Note: -ltcmalloc_minimal needs to stay last on the link line
++    LIBS += -ltcmalloc_minimal
+     CXX.Flags += -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
+     C.Flags += -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
+   endif

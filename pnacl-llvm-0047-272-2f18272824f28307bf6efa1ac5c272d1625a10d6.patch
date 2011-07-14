@@ -1,0 +1,38 @@
+# HG changeset patch
+# User Jan Voung <jvoung@google.com>
+# Date 1308866181 25200
+# Branch pnacl-sfi
+# Node ID 2f18272824f28307bf6efa1ac5c272d1625a10d6
+# Parent 303e274c99cc84eb39d7cc806c0121ec4085f9e1
+Update ARM TLS constants to match tls_params.h
+http://codereview.chromium.org/7248021/
+
+ From pnacl-llvm-0047-272-2f18272824f28307bf6efa1ac5c272d1625a10d6.patch
+
+diff -r 303e274c99cc llvm-trunk/lib/Target/ARM/ARMISelLowering.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMISelLowering.cpp	Wed Jun 22 16:35:27 2011 -0700
++++ b/llvm-trunk/lib/Target/ARM/ARMISelLowering.cpp	Fri Jul 01 15:24:02 2011 -0700
+@@ -1914,9 +1914,9 @@
+ SDValue ARMTargetLowering::LowerNaClTpAlign(SDValue Op,
+                                             SelectionDAG &DAG) const {
+   // size_t __nacl_tp_alignment () {
+-  //   return 1 << 12;
++  //   return 4;
+   // }
+-  return DAG.getConstant(4096, Op.getValueType().getSimpleVT());
++  return DAG.getConstant(4, Op.getValueType().getSimpleVT());
+ }
+ 
+ SDValue ARMTargetLowering::LowerNaClTpTlsOffset(SDValue Op,
+@@ -1942,9 +1942,9 @@
+ ARMTargetLowering::LowerNaClThreadStackPadding(SDValue Op,
+                                                SelectionDAG &DAG) const {
+   // size_t __nacl_thread_stack_padding () {
+-  //   return 4;
++  //   return 0;
+   // }
+-  return DAG.getConstant(4, Op.getValueType().getSimpleVT());
++  return DAG.getConstant(0, Op.getValueType().getSimpleVT());
+ }
+ 
+ //////////////////////////////////////////////////////////////////////

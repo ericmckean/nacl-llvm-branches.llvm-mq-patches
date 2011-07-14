@@ -1,0 +1,134 @@
+# HG changeset patch
+# User Jan Voung <jvoung@google.com>
+# Date 1309199949 25200
+# Branch pnacl-sfi
+# Node ID 69da56e5597a5c882b6862932054208f1fb5b8b0
+# Parent abbb0fc07782f53025e319e8f0268aad9783d13d
+Make -mtls-use-call a target-independent option, and add back inline
+version of __aeabi_read_tp:
+http://codereview.chromium.org/7239013/
+
+ From pnacl-llvm-0049-274-69da56e5597a5c882b6862932054208f1fb5b8b0.patch
+
+diff -r abbb0fc07782 llvm-trunk/include/llvm/Target/TargetOptions.h
+--- a/llvm-trunk/include/llvm/Target/TargetOptions.h	Thu Jun 23 18:15:51 2011 -0400
++++ b/llvm-trunk/include/llvm/Target/TargetOptions.h	Fri Jul 01 15:24:05 2011 -0700
+@@ -157,6 +157,12 @@
+   /// wth earlier copy coalescing.
+   extern bool StrongPHIElim;
+ 
++  // @LOCALMOD-BEGIN
++  /// TLSUseCall - This flag enables the use of a function call to get the
++  /// thread pointer for TLS accesses, instead of using inline code.
++  extern bool TLSUseCall;
++  // @LOCALMOD-END
++
+ } // End llvm namespace
+ 
+ #endif
+diff -r abbb0fc07782 llvm-trunk/lib/Target/ARM/ARMExpandPseudoInsts.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Thu Jun 23 18:15:51 2011 -0400
++++ b/llvm-trunk/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Fri Jul 01 15:24:05 2011 -0700
+@@ -25,6 +25,7 @@
+ #include "llvm/CodeGen/MachineFunctionPass.h"
+ #include "llvm/CodeGen/MachineInstrBuilder.h"
+ #include "llvm/Target/TargetFrameLowering.h"
++#include "llvm/Target/TargetOptions.h" // @LOCALMOD for llvm::TLSUseCall
+ #include "llvm/Target/TargetRegisterInfo.h"
+ #include "llvm/Support/raw_ostream.h" // FIXME: for debug only. remove!
+ using namespace llvm;
+@@ -853,16 +854,26 @@
+     }
+     case ARM::TPsoft: {
+       // @LOCALMOD-BEGIN
+-      // Don't add implicit uses/defs for this call, otherwise
+-      // liveness analysis passes get confused.
++      if (llvm::TLSUseCall) {
++        // Don't add implicit uses/defs for this call, otherwise
++        // liveness analysis passes get confused.
++        MachineInstrBuilder MIB =
++          BuildMI_NoImp(MBB, MBBI, MI.getDebugLoc(), // @LOCALMOD
++                  TII->get(ARM::BL))
++          .addExternalSymbol("__aeabi_read_tp", 0);
++
++        (*MIB).setMemRefs(MI.memoperands_begin(), MI.memoperands_end());
++        TransferImpOps(MI, MIB, MIB);
++      } else {
++        // Inline version for native client.
++        // See native_client/src/untrusted/stubs/aeabi_read_tp.S
++        // mov r0, r9
++        AddDefaultPred(BuildMI(MBB, MBBI, MI.getDebugLoc(), TII->get(ARM::MOVr),
++                               ARM::R0)
++                       .addReg(ARM::R9))
++        .addReg(0); // Doesn't use/modify CPSR.
++      }
+       // @LOCALMOD-END
+-      MachineInstrBuilder MIB =
+-        BuildMI_NoImp(MBB, MBBI, MI.getDebugLoc(), // @LOCALMOD
+-                TII->get(ARM::BL))
+-        .addExternalSymbol("__aeabi_read_tp", 0);
+-
+-      (*MIB).setMemRefs(MI.memoperands_begin(), MI.memoperands_end());
+-      TransferImpOps(MI, MIB, MIB);
+       MI.eraseFromParent();
+       return true;
+     }
+diff -r abbb0fc07782 llvm-trunk/lib/Target/TargetMachine.cpp
+--- a/llvm-trunk/lib/Target/TargetMachine.cpp	Thu Jun 23 18:15:51 2011 -0400
++++ b/llvm-trunk/lib/Target/TargetMachine.cpp	Fri Jul 01 15:24:05 2011 -0700
+@@ -49,6 +49,7 @@
+   bool DisableJumpTables;
+   bool StrongPHIElim;
+   bool AsmVerbosityDefault(false);
++  bool TLSUseCall; // @LOCALMOD
+ }
+ 
+ static cl::opt<bool, true>
+@@ -213,6 +214,18 @@
+ FunctionSections("ffunction-sections",
+   cl::desc("Emit functions into separate sections"),
+   cl::init(false));
++
++
++// @LOCALMOD-BEGIN
++// Use a function call to get the thread pointer for TLS accesses,
++// instead of using inline code.
++static cl::opt<bool, true>
++EnableTLSUseCall("mtls-use-call",
++  cl::desc("Use a function call to get the thread pointer for TLS accesses."),
++  cl::location(TLSUseCall),
++  cl::init(false));
++// @LOCALMOD-END
++
+ //---------------------------------------------------------------------------
+ // TargetMachine Class
+ //
+diff -r abbb0fc07782 llvm-trunk/lib/Target/X86/X86ISelLowering.cpp
+--- a/llvm-trunk/lib/Target/X86/X86ISelLowering.cpp	Thu Jun 23 18:15:51 2011 -0400
++++ b/llvm-trunk/lib/Target/X86/X86ISelLowering.cpp	Fri Jul 01 15:24:05 2011 -0700
+@@ -56,16 +56,6 @@
+ 
+ STATISTIC(NumTailCalls, "Number of tail calls");
+ 
+-// @LOCALMOD-BEGIN
+-// Generate a call for TLS TP reads, instead of using a segment register.
+-namespace {
+-cl::opt<bool>
+-TLSUseCall("mtls-use-call",
+-           cl::desc("Use a function to get the TP for TLS exec models"),
+-           cl::init(false));
+-}  // namespace
+-// @LOCALMOD-END
+-
+ // Forward declarations.
+ static SDValue getMOVL(SelectionDAG &DAG, DebugLoc dl, EVT VT, SDValue V1,
+                        SDValue V2);
+@@ -6252,7 +6242,7 @@
+       case TLSModel::InitialExec:
+       case TLSModel::LocalExec:
+         // @LOCALMOD-START
+-        if (TLSUseCall) {
++        if (llvm::TLSUseCall) {
+           return LowerToTLSExecCall(GA, DAG, getPointerTy(), model,
+                                     Subtarget->is64Bit());
+         } else {

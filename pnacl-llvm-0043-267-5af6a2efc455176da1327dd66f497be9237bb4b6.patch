@@ -1,0 +1,74 @@
+# HG changeset patch
+# User Roland McGrath <mcgrathr@chromium.org>
+# Date 1308336238 25200
+# Branch pnacl-sfi
+# Node ID 5af6a2efc455176da1327dd66f497be9237bb4b6
+# Parent 22f8913112a508c7b67abb9e28af81524ea396d3
+Don't inline __aeabi_read_tp
+
+This simply reverts the parts of rev 241 and rev 242 that inline the
+__aeabi_read_tp helper function rather than calling out to it.
+
+The definition we were inlining was incorrect for the proper ABI, doing
+a bogus subtraction of 16.  Removing the inlining for now lets us change
+the definition in the library code along with cleaning up the rest of
+the library code's TLS implementation.
+
+We also want eventually to support the -mtls-use-call option to control
+whether or not we do this inlining at all.  Without the inlining, it
+becomes possible for the IRT to redefine __aeabi_read_tp to point to its
+private "second" TLS area, which is necessary for correct operation of
+the IRT without clobbering the application's TLS state.
+
+After the TLS revamp settles, we can reintroduce the inlining, using the
+correct definition (masking only, no subtraction), and conditionalizing
+it on the new -mtls-use-call command-line option.
+
+ From pnacl-llvm-0043-267-5af6a2efc455176da1327dd66f497be9237bb4b6.patch
+
+diff -r 22f8913112a5 llvm-trunk/lib/Target/ARM/ARMExpandPseudoInsts.cpp
+--- a/llvm-trunk/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Tue Jun 14 14:56:02 2011 -0400
++++ b/llvm-trunk/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Fri Jul 01 15:15:05 2011 -0700
+@@ -853,32 +853,17 @@
+     }
+     case ARM::TPsoft: {
+       // @LOCALMOD-BEGIN
+-      static const unsigned kNaClPageShift = 12;
+-      static const unsigned kNaClTlsBaseOffset = 16;
+-      // mov r0, r9, lsr #NACL_PAGESHIFT
+-      AddDefaultPred(BuildMI(MBB, MBBI, MI.getDebugLoc(), TII->get(ARM::MOVs),
+-                             ARM::R0)
+-                       .addReg(ARM::R9)
+-                       .addReg(0)
+-                       .addImm(ARM_AM::getSORegOpc(ARM_AM::lsr,
+-                                                   kNaClPageShift)))
+-        .addReg(0);
+-      // lsl r0, r0, #NACL_PAGESHIFT
+-      AddDefaultPred(BuildMI(MBB, MBBI, MI.getDebugLoc(), TII->get(ARM::MOVs),
+-                             ARM::R0)
+-                       .addReg(ARM::R0, RegState::Kill)
+-                       .addReg(0)
+-                       .addImm(ARM_AM::getSORegOpc(ARM_AM::lsl,
+-                                                   kNaClPageShift)))
+-        .addReg(0);
+-      // sub r0, r0, #16
+-      AddDefaultPred(BuildMI(MBB, MBBI, MI.getDebugLoc(), TII->get(ARM::SUBri),
+-                             ARM::R0)
+-                       .addReg(ARM::R0, RegState::Kill)
+-                       .addImm(kNaClTlsBaseOffset))
+-        .addReg(0);
++      // Don't add implicit uses/defs for this call, otherwise
++      // liveness analysis passes get confused.
++      // @LOCALMOD-END
++      MachineInstrBuilder MIB =
++        BuildMI_NoImp(MBB, MBBI, MI.getDebugLoc(), // @LOCALMOD
++                TII->get(ARM::BL))
++        .addExternalSymbol("__aeabi_read_tp", 0);
++
++      (*MIB).setMemRefs(MI.memoperands_begin(), MI.memoperands_end());
++      TransferImpOps(MI, MIB, MIB);
+       MI.eraseFromParent();
+-      // @LOCALMOD-END
+       return true;
+     }
+     case ARM::t2LDRHpci:
