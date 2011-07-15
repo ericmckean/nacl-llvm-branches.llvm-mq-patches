@@ -57,3 +57,4 @@ pnacl-llvm-0055-281-2c5d50edfa146edcba65ce3008822db6379354be.patch
 llvm-pnacl-0039-new-emitbundle.patch
 llvm-pnacl-0040-lsdasection.patch
 llvm-pnacl-0041-lto-full.patch
+unbreak_nonsrpc.patch
