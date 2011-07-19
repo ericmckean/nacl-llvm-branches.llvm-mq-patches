@@ -1,9 +1,9 @@
 # HG changeset patch
 # Parent f967294c5425f35a32741d5d16a8cc4c17af638b
 
-diff -r f967294c5425 llvm-trunk/lib/Target/ARM/ARMTargetObjectFile.cpp
---- a/llvm-trunk/lib/Target/ARM/ARMTargetObjectFile.cpp	Thu Jul 14 16:27:21 2011 -0700
-+++ b/llvm-trunk/lib/Target/ARM/ARMTargetObjectFile.cpp	Thu Jul 14 16:27:22 2011 -0700
+diff -r f967294c5425 lib/Target/ARM/ARMTargetObjectFile.cpp
+--- a/lib/Target/ARM/ARMTargetObjectFile.cpp	Thu Jul 14 16:27:21 2011 -0700
++++ b/lib/Target/ARM/ARMTargetObjectFile.cpp	Thu Jul 14 16:27:22 2011 -0700
 @@ -36,7 +36,7 @@
                                   ELF::SHF_WRITE |
                                   ELF::SHF_ALLOC,

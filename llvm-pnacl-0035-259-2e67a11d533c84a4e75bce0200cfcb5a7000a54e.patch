@@ -10,9 +10,9 @@ Make va_list 16-bytes instead of 24-bytes in X86-64 CodeGen
 
  From .hg/patches/llvm-pnacl-0035-259-2e67a11d533c84a4e75bce0200cfcb5a7000a54e.patch.stripped
 
-diff -r 565447df098a llvm-trunk/lib/Target/X86/X86ISelLowering.cpp
---- a/llvm-trunk/lib/Target/X86/X86ISelLowering.cpp	Tue May 17 16:44:51 2011 -0700
-+++ b/llvm-trunk/lib/Target/X86/X86ISelLowering.cpp	Mon Jul 11 09:37:38 2011 -0700
+diff -r 565447df098a lib/Target/X86/X86ISelLowering.cpp
+--- a/lib/Target/X86/X86ISelLowering.cpp	Tue May 17 16:44:51 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.cpp	Mon Jul 11 09:37:38 2011 -0700
 @@ -8048,6 +8048,7 @@
    //   fp_offset         (48 - 48 + 8 * 16)
    //   overflow_arg_area (point to parameters coming in memory).

@@ -15,9 +15,9 @@ Why is FlagSfiZeroMask even necessary???
 
  From .hg/patches/llvm-pnacl-0034-258-12da952867e28778780fc3bfe18fa0d37b7c78ec.patch.stripped
 
-diff -r 872dd43a3660 llvm-trunk/lib/Target/ARM/ARMInstrNaCl.cpp
---- a/llvm-trunk/lib/Target/ARM/ARMInstrNaCl.cpp	Mon May 16 17:52:22 2011 -0400
-+++ b/llvm-trunk/lib/Target/ARM/ARMInstrNaCl.cpp	Mon Jul 11 09:37:37 2011 -0700
+diff -r 872dd43a3660 lib/Target/ARM/ARMInstrNaCl.cpp
+--- a/lib/Target/ARM/ARMInstrNaCl.cpp	Mon May 16 17:52:22 2011 -0400
++++ b/lib/Target/ARM/ARMInstrNaCl.cpp	Mon Jul 11 09:37:37 2011 -0700
 @@ -20,6 +20,10 @@
  
  using namespace llvm;

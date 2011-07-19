@@ -26,9 +26,9 @@ BUG= http://code.google.com/p/nativeclient/issues/detail?id=1562
 
  From .hg/patches/llvm-pnacl-0020-244-c8ae915976a2fb44501aa08753770a66f2fa7f51.patch.stripped
 
-diff -r f024e06acb40 llvm-trunk/lib/Linker/LinkArchives.cpp
---- a/llvm-trunk/lib/Linker/LinkArchives.cpp	Mon Mar 28 17:07:16 2011 -0700
-+++ b/llvm-trunk/lib/Linker/LinkArchives.cpp	Mon Jul 11 09:37:08 2011 -0700
+diff -r f024e06acb40 lib/Linker/LinkArchives.cpp
+--- a/lib/Linker/LinkArchives.cpp	Mon Mar 28 17:07:16 2011 -0700
++++ b/lib/Linker/LinkArchives.cpp	Mon Jul 11 09:37:08 2011 -0700
 @@ -17,10 +17,24 @@
  #include "llvm/ADT/SetOperations.h"
  #include "llvm/Bitcode/Archive.h"
@@ -66,9 +66,9 @@ diff -r f024e06acb40 llvm-trunk/lib/Linker/LinkArchives.cpp
    // If the program doesn't define a main, try pulling one in from a .a file.
    // This is needed for programs where the main function is defined in an
    // archive, such f2c'd programs.
-diff -r f024e06acb40 llvm-trunk/tools/Makefile
---- a/llvm-trunk/tools/Makefile	Mon Mar 28 17:07:16 2011 -0700
-+++ b/llvm-trunk/tools/Makefile	Mon Jul 11 09:37:08 2011 -0700
+diff -r f024e06acb40 tools/Makefile
+--- a/tools/Makefile	Mon Mar 28 17:07:16 2011 -0700
++++ b/tools/Makefile	Mon Jul 11 09:37:08 2011 -0700
 @@ -19,13 +19,10 @@
  # NOTE: The tools are organized into five groups of four consisting of one
  # large and three small executables. This is done to minimize memory load
@@ -85,9 +85,9 @@ diff -r f024e06acb40 llvm-trunk/tools/Makefile
                   lli llvm-extract llvm-mc \
                   bugpoint llvm-bcanalyzer llvm-stub \
                   llvmc llvm-diff macho-dump llvm-objdump  bc-wrap \
-diff -r f024e06acb40 llvm-trunk/tools/llc/llc.cpp
---- a/llvm-trunk/tools/llc/llc.cpp	Mon Mar 28 17:07:16 2011 -0700
-+++ b/llvm-trunk/tools/llc/llc.cpp	Mon Jul 11 09:37:08 2011 -0700
+diff -r f024e06acb40 tools/llc/llc.cpp
+--- a/tools/llc/llc.cpp	Mon Mar 28 17:07:16 2011 -0700
++++ b/tools/llc/llc.cpp	Mon Jul 11 09:37:08 2011 -0700
 @@ -40,6 +40,10 @@
  #include "llvm/Target/TargetSelect.h"
  #include <memory>
@@ -109,9 +109,9 @@ diff -r f024e06acb40 llvm-trunk/tools/llc/llc.cpp
    // Build up all of the passes that we want to do to the module.
    PassManager PM;
  
-diff -r f024e06acb40 llvm-trunk/tools/llvm-ld/llvm-ld.cpp
---- a/llvm-trunk/tools/llvm-ld/llvm-ld.cpp	Mon Mar 28 17:07:16 2011 -0700
-+++ b/llvm-trunk/tools/llvm-ld/llvm-ld.cpp	Mon Jul 11 09:37:08 2011 -0700
+diff -r f024e06acb40 tools/llvm-ld/llvm-ld.cpp
+--- a/tools/llvm-ld/llvm-ld.cpp	Mon Mar 28 17:07:16 2011 -0700
++++ b/tools/llvm-ld/llvm-ld.cpp	Mon Jul 11 09:37:08 2011 -0700
 @@ -40,6 +40,11 @@
  #include "llvm/Config/config.h"
  #include <memory>

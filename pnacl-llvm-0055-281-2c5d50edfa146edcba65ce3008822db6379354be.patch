@@ -8,9 +8,9 @@ Fix the libLTO soname fix
 
  From pnacl-llvm-0055-281-2c5d50edfa146edcba65ce3008822db6379354be.patch
 
-diff -r 4b2458ba448a llvm-trunk/tools/lto/Makefile
---- a/llvm-trunk/tools/lto/Makefile	Thu Jul 14 00:08:29 2011 -0700
-+++ b/llvm-trunk/tools/lto/Makefile	Thu Jul 14 16:27:20 2011 -0700
+diff -r 4b2458ba448a tools/lto/Makefile
+--- a/tools/lto/Makefile	Thu Jul 14 00:08:29 2011 -0700
++++ b/tools/lto/Makefile	Thu Jul 14 16:27:20 2011 -0700
 @@ -60,5 +60,7 @@
  #@ LOCALMOD-BEGIN
  # This is to fix an upstream bug. It is in the process of being upstreamed.
