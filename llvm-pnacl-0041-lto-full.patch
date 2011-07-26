@@ -1,9 +1,9 @@
 # HG changeset patch
-# Parent b6bd5261a7e2585b81d8feb4c767598bb5056f58
+# Parent 93c41562c89f9e51e74daced973393afbf26a83b
 
-diff -r b6bd5261a7e2 tools/lto/LTOModule.cpp
---- a/tools/lto/LTOModule.cpp	Thu Jul 14 16:27:22 2011 -0700
-+++ b/tools/lto/LTOModule.cpp	Thu Jul 14 16:27:23 2011 -0700
+diff -r 93c41562c89f tools/lto/LTOModule.cpp
+--- a/tools/lto/LTOModule.cpp	Tue Jul 26 13:38:23 2011 -0700
++++ b/tools/lto/LTOModule.cpp	Tue Jul 26 13:38:24 2011 -0700
 @@ -141,8 +141,8 @@
    }
  

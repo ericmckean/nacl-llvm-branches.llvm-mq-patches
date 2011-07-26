@@ -3,16 +3,16 @@
 # Date 1310157413 25200
 # Branch pnacl-sfi
 # Node ID 85f1eac20d0b873bd0a24e0f614d57f956e3a791
-# Parent 509e20fa1676a0f4793bc73932b9d12c76f2ff16
+# Parent 3adf40de651609336dd905fe3e1b149d26a87d34
 Add option to LLVM makefile to link with tcmalloc
 
 Review URL: http://codereview.chromium.org/7329023/
 
  From pnacl-llvm-0051-276-85f1eac20d0b873bd0a24e0f614d57f956e3a791.patch
 
-diff -r 509e20fa1676 Makefile.rules
---- a/Makefile.rules	Thu Jul 07 13:32:32 2011 -0700
-+++ b/Makefile.rules	Thu Jul 14 15:24:51 2011 -0700
+diff -r 3adf40de6516 Makefile.rules
+--- a/Makefile.rules	Tue Jul 26 13:38:18 2011 -0700
++++ b/Makefile.rules	Tue Jul 26 13:38:19 2011 -0700
 @@ -578,7 +578,13 @@
  endif
  

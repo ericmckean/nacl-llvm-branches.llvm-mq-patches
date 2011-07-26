@@ -3,14 +3,14 @@
 # Date 1310167630 25200
 # Branch pnacl-sfi
 # Node ID d2d82032032b4c447d87b383e299cd998b83b360
-# Parent 6da167933da5e6e1b5862465e9b6b1afb35cab4b
+# Parent 7f2f4c4fb5310cfe99a5fcd18d4ab3bb231a1ef4
 Fix link line for tcmalloc
 
  From pnacl-llvm-0052-277-d2d82032032b4c447d87b383e299cd998b83b360.patch
 
-diff -r 6da167933da5 Makefile.rules
+diff -r 7f2f4c4fb531 Makefile.rules
 --- a/Makefile.rules	Fri Jul 08 13:36:53 2011 -0700
-+++ b/Makefile.rules	Thu Jul 14 15:24:52 2011 -0700
++++ b/Makefile.rules	Tue Jul 26 13:38:19 2011 -0700
 @@ -580,8 +580,8 @@
  ifeq ($(NACL_SANDBOX),1)
    LIBS += -lsrpc -limc_syscalls -lplatform -lgio -lpthread -lm -lnacl

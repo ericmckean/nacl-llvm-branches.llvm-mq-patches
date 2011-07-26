@@ -3,15 +3,15 @@
 # Date 1308785727 25200
 # Branch pnacl-sfi
 # Node ID f126cff1897d1866b5d66f8f38328007e8de9008
-# Parent 6bd0854b9be4a5826245987c81b6aa1a7cc0bafc
+# Parent fac3d7e81e182cbfa4affa2b3b8ee075d9bfab78
 Change nacl tls layout intrinsics to a higher level / new interface.
 http://codereview.chromium.org/7217002/
 
  From pnacl-llvm-0046-271-f126cff1897d1866b5d66f8f38328007e8de9008.patch
 
-diff -r 6bd0854b9be4 include/llvm/CodeGen/ISDOpcodes.h
+diff -r fac3d7e81e18 include/llvm/CodeGen/ISDOpcodes.h
 --- a/include/llvm/CodeGen/ISDOpcodes.h	Wed Jun 22 16:25:30 2011 -0700
-+++ b/include/llvm/CodeGen/ISDOpcodes.h	Thu Jul 14 15:22:20 2011 -0700
++++ b/include/llvm/CodeGen/ISDOpcodes.h	Tue Jul 26 13:38:15 2011 -0700
 @@ -618,6 +618,16 @@
      ATOMIC_LOAD_UMIN,
      ATOMIC_LOAD_UMAX,
@@ -29,9 +29,9 @@ diff -r 6bd0854b9be4 include/llvm/CodeGen/ISDOpcodes.h
      /// BUILTIN_OP_END - This must be the last enum value in this list.
      /// The target-specific pre-isel opcode values start here.
      BUILTIN_OP_END
-diff -r 6bd0854b9be4 include/llvm/Intrinsics.td
+diff -r fac3d7e81e18 include/llvm/Intrinsics.td
 --- a/include/llvm/Intrinsics.td	Wed Jun 22 16:25:30 2011 -0700
-+++ b/include/llvm/Intrinsics.td	Thu Jul 14 15:22:20 2011 -0700
++++ b/include/llvm/Intrinsics.td	Tue Jul 26 13:38:15 2011 -0700
 @@ -492,19 +492,20 @@
  def int_nacl_longjmp : Intrinsic<[],  [llvm_ptr_ty, llvm_i32_ty]>,
                         GCCBuiltin<"__builtin_nacl_longjmp">;
@@ -65,9 +65,9 @@ diff -r 6bd0854b9be4 include/llvm/Intrinsics.td
  // @LOCALMOD-END
  
  //===----------------------------------------------------------------------===//
-diff -r 6bd0854b9be4 lib/CodeGen/SelectionDAG/SelectionDAG.cpp
+diff -r fac3d7e81e18 lib/CodeGen/SelectionDAG/SelectionDAG.cpp
 --- a/lib/CodeGen/SelectionDAG/SelectionDAG.cpp	Wed Jun 22 16:25:30 2011 -0700
-+++ b/lib/CodeGen/SelectionDAG/SelectionDAG.cpp	Thu Jul 14 15:22:20 2011 -0700
++++ b/lib/CodeGen/SelectionDAG/SelectionDAG.cpp	Tue Jul 26 13:38:15 2011 -0700
 @@ -5989,6 +5989,14 @@
      case ISD::SETLE:   return "setle";
      case ISD::SETNE:   return "setne";
@@ -83,10 +83,10 @@ diff -r 6bd0854b9be4 lib/CodeGen/SelectionDAG/SelectionDAG.cpp
    }
  }
  
-diff -r 6bd0854b9be4 lib/CodeGen/SelectionDAG/SelectionDAGBuilder.cpp
+diff -r fac3d7e81e18 lib/CodeGen/SelectionDAG/SelectionDAGBuilder.cpp
 --- a/lib/CodeGen/SelectionDAG/SelectionDAGBuilder.cpp	Wed Jun 22 16:25:30 2011 -0700
-+++ b/lib/CodeGen/SelectionDAG/SelectionDAGBuilder.cpp	Thu Jul 14 15:22:20 2011 -0700
-@@ -4762,6 +4762,33 @@
++++ b/lib/CodeGen/SelectionDAG/SelectionDAGBuilder.cpp	Tue Jul 26 13:38:15 2011 -0700
+@@ -4761,6 +4761,33 @@
    case Intrinsic::lifetime_end:
      // Discard region information.
      return 0;
@@ -120,10 +120,10 @@ diff -r 6bd0854b9be4 lib/CodeGen/SelectionDAG/SelectionDAGBuilder.cpp
    }
  }
  
-diff -r 6bd0854b9be4 lib/Target/ARM/ARMISelLowering.cpp
+diff -r fac3d7e81e18 lib/Target/ARM/ARMISelLowering.cpp
 --- a/lib/Target/ARM/ARMISelLowering.cpp	Wed Jun 22 16:25:30 2011 -0700
-+++ b/lib/Target/ARM/ARMISelLowering.cpp	Thu Jul 14 15:22:20 2011 -0700
-@@ -712,6 +712,15 @@
++++ b/lib/Target/ARM/ARMISelLowering.cpp	Tue Jul 26 13:38:15 2011 -0700
+@@ -716,6 +716,15 @@
      }
    }
  
@@ -139,7 +139,7 @@ diff -r 6bd0854b9be4 lib/Target/ARM/ARMISelLowering.cpp
    // We have target-specific dag combine patterns for the following nodes:
    // ARMISD::VMOVRRD  - No need to call setTargetDAGCombine
    setTargetDAGCombine(ISD::ADD);
-@@ -1924,6 +1933,48 @@
+@@ -1928,6 +1937,48 @@
    SDValue JTI = DAG.getTargetJumpTable(JT->getIndex(), PTy);
    return DAG.getNode(ARMISD::WrapperJT2, dl, MVT::i32, JTI);
  }
@@ -188,7 +188,7 @@ diff -r 6bd0854b9be4 lib/Target/ARM/ARMISelLowering.cpp
  // @LOCALMOD-END
  
  // Lower ISD::GlobalTLSAddress using the "general dynamic" model
-@@ -4826,6 +4877,13 @@
+@@ -4934,6 +4985,13 @@
    case ISD::MUL:           return LowerMUL(Op, DAG);
    case ISD::SDIV:          return LowerSDIV(Op, DAG);
    case ISD::UDIV:          return LowerUDIV(Op, DAG);
@@ -202,9 +202,9 @@ diff -r 6bd0854b9be4 lib/Target/ARM/ARMISelLowering.cpp
    }
    return SDValue();
  }
-diff -r 6bd0854b9be4 lib/Target/ARM/ARMISelLowering.h
+diff -r fac3d7e81e18 lib/Target/ARM/ARMISelLowering.h
 --- a/lib/Target/ARM/ARMISelLowering.h	Wed Jun 22 16:25:30 2011 -0700
-+++ b/lib/Target/ARM/ARMISelLowering.h	Thu Jul 14 15:22:20 2011 -0700
++++ b/lib/Target/ARM/ARMISelLowering.h	Tue Jul 26 13:38:15 2011 -0700
 @@ -402,6 +402,10 @@
                                   bool InitialExec) const;
      SDValue LowerJumpTable(SDValue Op, SelectionDAG &DAG) const;
@@ -216,10 +216,10 @@ diff -r 6bd0854b9be4 lib/Target/ARM/ARMISelLowering.h
      // @LOCALMOD-END
  
      SDValue LowerGLOBAL_OFFSET_TABLE(SDValue Op, SelectionDAG &DAG) const;
-diff -r 6bd0854b9be4 lib/Target/ARM/ARMInstrInfo.td
+diff -r fac3d7e81e18 lib/Target/ARM/ARMInstrInfo.td
 --- a/lib/Target/ARM/ARMInstrInfo.td	Wed Jun 22 16:25:30 2011 -0700
-+++ b/lib/Target/ARM/ARMInstrInfo.td	Thu Jul 14 15:22:20 2011 -0700
-@@ -3831,50 +3831,6 @@
++++ b/lib/Target/ARM/ARMInstrInfo.td	Tue Jul 26 13:38:15 2011 -0700
+@@ -3842,50 +3842,6 @@
                         [(int_nacl_longjmp R0, R1)]>;
  }
  
@@ -270,10 +270,10 @@ diff -r 6bd0854b9be4 lib/Target/ARM/ARMInstrInfo.td
  // Move from ARM core register to Special Register
  //
  // No need to have both system and application versions, the encodings are the
-diff -r 6bd0854b9be4 lib/Target/X86/X86ISelLowering.cpp
+diff -r fac3d7e81e18 lib/Target/X86/X86ISelLowering.cpp
 --- a/lib/Target/X86/X86ISelLowering.cpp	Wed Jun 22 16:25:30 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Thu Jul 14 15:22:20 2011 -0700
-@@ -1097,6 +1097,15 @@
++++ b/lib/Target/X86/X86ISelLowering.cpp	Tue Jul 26 13:38:15 2011 -0700
+@@ -1096,6 +1096,15 @@
    if (Subtarget->is64Bit())
      setTargetDAGCombine(ISD::MUL);
  
@@ -289,7 +289,7 @@ diff -r 6bd0854b9be4 lib/Target/X86/X86ISelLowering.cpp
    computeRegisterProperties();
  
    // On Darwin, -Os means optimize for size without hurting performance,
-@@ -8198,6 +8207,49 @@
+@@ -8199,6 +8208,49 @@
                         MachinePointerInfo(DstSV), MachinePointerInfo(SrcSV));
  }
  
@@ -339,7 +339,7 @@ diff -r 6bd0854b9be4 lib/Target/X86/X86ISelLowering.cpp
  SDValue
  X86TargetLowering::LowerINTRINSIC_WO_CHAIN(SDValue Op, SelectionDAG &DAG) const {
    DebugLoc dl = Op.getDebugLoc();
-@@ -9258,6 +9310,13 @@
+@@ -9259,6 +9311,13 @@
    case ISD::ADDE:
    case ISD::SUBC:
    case ISD::SUBE:               return LowerADDC_ADDE_SUBC_SUBE(Op, DAG);
@@ -353,9 +353,9 @@ diff -r 6bd0854b9be4 lib/Target/X86/X86ISelLowering.cpp
    }
  }
  
-diff -r 6bd0854b9be4 lib/Target/X86/X86ISelLowering.h
+diff -r fac3d7e81e18 lib/Target/X86/X86ISelLowering.h
 --- a/lib/Target/X86/X86ISelLowering.h	Wed Jun 22 16:25:30 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.h	Thu Jul 14 15:22:20 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.h	Tue Jul 26 13:38:15 2011 -0700
 @@ -824,6 +824,13 @@
      SDValue LowerREADCYCLECOUNTER(SDValue Op, SelectionDAG &DAG) const;
      SDValue LowerMEMBARRIER(SDValue Op, SelectionDAG &DAG) const;
@@ -370,9 +370,9 @@ diff -r 6bd0854b9be4 lib/Target/X86/X86ISelLowering.h
      // Utility functions to help LowerVECTOR_SHUFFLE
      SDValue LowerVECTOR_SHUFFLEv8i16(SDValue Op, SelectionDAG &DAG) const;
  
-diff -r 6bd0854b9be4 lib/Target/X86/X86InstrNaCl.td
+diff -r fac3d7e81e18 lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Wed Jun 22 16:25:30 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Thu Jul 14 15:22:20 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Tue Jul 26 13:38:15 2011 -0700
 @@ -453,59 +453,3 @@
                         [(int_nacl_longjmp EDI, EAX)]>,
                         Requires<[IsNaCl64]>, TB;
