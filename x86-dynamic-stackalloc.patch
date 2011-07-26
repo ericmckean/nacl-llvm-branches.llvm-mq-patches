@@ -1,0 +1,16 @@
+# HG changeset patch
+# Parent 45a406debb5c10dccee6c836a475fdcfdcdd9a9f
+experiment with DYNAMIC_STACKALLOC to fix SB compile issue
+
+diff -r 45a406debb5c -r f7dd0cc65345 lib/Target/X86/X86ISelLowering.cpp
+--- a/lib/Target/X86/X86ISelLowering.cpp	Tue Jul 26 15:13:44 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.cpp	Tue Jul 26 15:21:29 2011 -0700
+@@ -553,7 +553,7 @@
+   setOperationAction(ISD::STACKSAVE,          MVT::Other, Expand);
+   setOperationAction(ISD::STACKRESTORE,       MVT::Other, Expand);
+   setOperationAction(ISD::DYNAMIC_STACKALLOC,
+-                     (Subtarget->is64Bit() ? MVT::i64 : MVT::i32),
++                     getPointerTy(), // @LOCALMOD
+                      (Subtarget->isTargetCOFF()
+                       && !Subtarget->isTargetEnvMacho()
+                       ? Custom : Expand));
