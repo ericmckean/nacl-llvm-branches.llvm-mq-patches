@@ -3,16 +3,16 @@
 # Date 1309199949 25200
 # Branch pnacl-sfi
 # Node ID 69da56e5597a5c882b6862932054208f1fb5b8b0
-# Parent 44de66d204266ebb8da7a46661805387164bf1e5
+# Parent 5a0517dfd1c2a1db971dbf5e67fc55adc371d2a8
 Make -mtls-use-call a target-independent option, and add back inline
 version of __aeabi_read_tp:
 http://codereview.chromium.org/7239013/
 
  From pnacl-llvm-0049-274-69da56e5597a5c882b6862932054208f1fb5b8b0.patch
 
-diff -r 44de66d20426 include/llvm/Target/TargetOptions.h
+diff -r 5a0517dfd1c2 include/llvm/Target/TargetOptions.h
 --- a/include/llvm/Target/TargetOptions.h	Thu Jun 23 18:15:51 2011 -0400
-+++ b/include/llvm/Target/TargetOptions.h	Thu Jul 14 15:23:01 2011 -0700
++++ b/include/llvm/Target/TargetOptions.h	Wed Jul 27 11:11:43 2011 -0700
 @@ -157,6 +157,12 @@
    /// wth earlier copy coalescing.
    extern bool StrongPHIElim;
@@ -26,9 +26,9 @@ diff -r 44de66d20426 include/llvm/Target/TargetOptions.h
  } // End llvm namespace
  
  #endif
-diff -r 44de66d20426 lib/Target/ARM/ARMExpandPseudoInsts.cpp
+diff -r 5a0517dfd1c2 lib/Target/ARM/ARMExpandPseudoInsts.cpp
 --- a/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Thu Jun 23 18:15:51 2011 -0400
-+++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Thu Jul 14 15:23:01 2011 -0700
++++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Wed Jul 27 11:11:43 2011 -0700
 @@ -25,6 +25,7 @@
  #include "llvm/CodeGen/MachineFunctionPass.h"
  #include "llvm/CodeGen/MachineInstrBuilder.h"
@@ -73,9 +73,9 @@ diff -r 44de66d20426 lib/Target/ARM/ARMExpandPseudoInsts.cpp
        MI.eraseFromParent();
        return true;
      }
-diff -r 44de66d20426 lib/Target/TargetMachine.cpp
+diff -r 5a0517dfd1c2 lib/Target/TargetMachine.cpp
 --- a/lib/Target/TargetMachine.cpp	Thu Jun 23 18:15:51 2011 -0400
-+++ b/lib/Target/TargetMachine.cpp	Thu Jul 14 15:23:01 2011 -0700
++++ b/lib/Target/TargetMachine.cpp	Wed Jul 27 11:11:43 2011 -0700
 @@ -49,6 +49,7 @@
    bool DisableJumpTables;
    bool StrongPHIElim;
@@ -103,9 +103,9 @@ diff -r 44de66d20426 lib/Target/TargetMachine.cpp
  //---------------------------------------------------------------------------
  // TargetMachine Class
  //
-diff -r 44de66d20426 lib/Target/X86/X86ISelLowering.cpp
+diff -r 5a0517dfd1c2 lib/Target/X86/X86ISelLowering.cpp
 --- a/lib/Target/X86/X86ISelLowering.cpp	Thu Jun 23 18:15:51 2011 -0400
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Thu Jul 14 15:23:01 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.cpp	Wed Jul 27 11:11:43 2011 -0700
 @@ -56,16 +56,6 @@
  
  STATISTIC(NumTailCalls, "Number of tail calls");

@@ -3,14 +3,14 @@
 # Date 1310627309 25200
 # Branch pnacl-sfi
 # Node ID b662e745d1ce8fab8daa2e611ff4b88691d3f1b7
-# Parent 7df43928346dcaba0322f9c0450c133ffbbf5107
+# Parent c452c37373d24b69e28a680692daf0e6d9591857
 Give libLTO a soname
 
  From pnacl-llvm-0054-280-b662e745d1ce8fab8daa2e611ff4b88691d3f1b7.patch
 
-diff -r 7df43928346d tools/lto/Makefile
+diff -r c452c37373d2 tools/lto/Makefile
 --- a/tools/lto/Makefile	Tue Jul 12 23:30:53 2011 -0700
-+++ b/tools/lto/Makefile	Thu Jul 14 16:27:19 2011 -0700
++++ b/tools/lto/Makefile	Wed Jul 27 11:11:46 2011 -0700
 @@ -56,3 +56,9 @@
                              -Wl,"@executable_path/../lib/lib$(LIBRARYNAME)$(SHLIBEXT)"
      endif

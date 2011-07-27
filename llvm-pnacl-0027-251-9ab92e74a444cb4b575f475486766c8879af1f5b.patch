@@ -3,16 +3,16 @@
 # Date 1303945638 25200
 # Branch pnacl-sfi
 # Node ID 9ab92e74a444cb4b575f475486766c8879af1f5b
-# Parent 5fe37542a0023ea9325acbc183cb04246ccce37b
+# Parent 8b63d633d6f40c899e987d8f6a31236a9f176c7d
 Preserve intrinsic symbols and ignore unused declarations
 
  From llvm-pnacl-0027-251-9ab92e74a444cb4b575f475486766c8879af1f5b.patch
 
  From .hg/patches/llvm-pnacl-0027-251-9ab92e74a444cb4b575f475486766c8879af1f5b.patch.stripped
 
-diff -r 5fe37542a002 tools/gold/gold-plugin.cpp
+diff -r 8b63d633d6f4 tools/gold/gold-plugin.cpp
 --- a/tools/gold/gold-plugin.cpp	Mon Apr 25 14:13:45 2011 -0700
-+++ b/tools/gold/gold-plugin.cpp	Mon Jul 11 09:37:30 2011 -0700
++++ b/tools/gold/gold-plugin.cpp	Wed Jul 27 11:11:25 2011 -0700
 @@ -61,7 +61,6 @@
    };
  
@@ -88,9 +88,9 @@ diff -r 5fe37542a002 tools/gold/gold-plugin.cpp
    if (options::generate_api_file)
      api_file.close();
  
-diff -r 5fe37542a002 tools/lto/LTOModule.cpp
+diff -r 8b63d633d6f4 tools/lto/LTOModule.cpp
 --- a/tools/lto/LTOModule.cpp	Mon Apr 25 14:13:45 2011 -0700
-+++ b/tools/lto/LTOModule.cpp	Mon Jul 11 09:37:30 2011 -0700
++++ b/tools/lto/LTOModule.cpp	Wed Jul 27 11:11:25 2011 -0700
 @@ -428,6 +428,14 @@
    if (decl->getName().startswith("llvm."))
      return;

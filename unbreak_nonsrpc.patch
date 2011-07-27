@@ -1,8 +1,9 @@
 # HG changeset patch
-# Parent c73db4e30bec15f0c81a6c4111026ed5a0a16d66
-diff -r c73db4e30bec -r e56fa07c58c0 tools/llc/llc.cpp
---- a/tools/llc/llc.cpp	Fri Jul 15 14:35:50 2011 -0700
-+++ b/tools/llc/llc.cpp	Fri Jul 15 15:12:12 2011 -0700
+# Parent e92e3e18897211221315027feb185a14734f3744
+
+diff -r e92e3e188972 tools/llc/llc.cpp
+--- a/tools/llc/llc.cpp	Wed Jul 27 11:11:50 2011 -0700
++++ b/tools/llc/llc.cpp	Wed Jul 27 11:11:50 2011 -0700
 @@ -245,7 +245,7 @@
    FOS.flush();
    ROS.flush();
