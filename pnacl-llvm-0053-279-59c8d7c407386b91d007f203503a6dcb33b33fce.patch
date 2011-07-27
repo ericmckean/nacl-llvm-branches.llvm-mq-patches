@@ -3,14 +3,14 @@
 # Date 1310538653 25200
 # Branch pnacl-sfi
 # Node ID 59c8d7c407386b91d007f203503a6dcb33b33fce
-# Parent 59d225231af210e44a2e2d9eaa23d390729c4698
+# Parent e8ba470af2b9e2ed18d14c7c0293fbfc810e598d
 Apply an upstream bugfix to tools/gold/Makefile
 
  From pnacl-llvm-0053-279-59c8d7c407386b91d007f203503a6dcb33b33fce.patch
 
-diff -r 59d225231af2 tools/gold/Makefile
+diff -r e8ba470af2b9 tools/gold/Makefile
 --- a/tools/gold/Makefile	Fri Jul 08 16:27:10 2011 -0700
-+++ b/tools/gold/Makefile	Wed Jul 27 11:11:46 2011 -0700
++++ b/tools/gold/Makefile	Wed Jul 27 14:41:43 2011 -0700
 @@ -22,10 +22,17 @@
  LOADABLE_MODULE = 1
  

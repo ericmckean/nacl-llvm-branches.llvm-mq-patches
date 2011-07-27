@@ -3,7 +3,7 @@
 # Date 1308867351 14400
 # Branch pnacl-sfi
 # Node ID 7b01f5e8dffade0ca7b7d639c9f9a6a5c82d638b
-# Parent 955ce621d423c1300b3b47f7bd9c78ae3b2f2d44
+# Parent 563a3fcc5d82a0d60388052fa6038d7f67fcf34a
 This CL adds a new flag "-add-libgcc-dependencies" to llc
 mimicking --add-nacl-read-tp-dependency.
 Also, slightly over commented this and previous changes
@@ -35,9 +35,9 @@ CL= http://codereview.chromium.org/7233016/
 
  From pnacl-llvm-0048-273-7b01f5e8dffade0ca7b7d639c9f9a6a5c82d638b.patch
 
-diff -r 955ce621d423 lib/CodeGen/IntrinsicLowering.cpp
+diff -r 563a3fcc5d82 lib/CodeGen/IntrinsicLowering.cpp
 --- a/lib/CodeGen/IntrinsicLowering.cpp	Thu Jun 23 14:56:21 2011 -0700
-+++ b/lib/CodeGen/IntrinsicLowering.cpp	Wed Jul 27 11:11:42 2011 -0700
++++ b/lib/CodeGen/IntrinsicLowering.cpp	Wed Jul 27 14:41:39 2011 -0700
 @@ -31,6 +31,11 @@
                   cl::desc("Add __nacl_read_tp dependency to bitcode modules"),
                   cl::init(false));

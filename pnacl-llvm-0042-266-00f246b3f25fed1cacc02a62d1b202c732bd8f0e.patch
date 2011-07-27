@@ -3,7 +3,7 @@
 # Date 1308077762 14400
 # Branch pnacl-sfi
 # Node ID 00f246b3f25fed1cacc02a62d1b202c732bd8f0e
-# Parent ff8d26cbf7e9979ad492b27f279b63cd8b71e2df
+# Parent 88d3e53081e4a0566b217c9c6103f6827a067090
 This makes the code slightly faster by not computing the unused remainder and
 more importantly works around a problem in compiler-rt - the bug has more
 details.
@@ -13,9 +13,9 @@ CL= http://codereview.chromium.org/7146002/
 
  From pnacl-llvm-0042-266-00f246b3f25fed1cacc02a62d1b202c732bd8f0e.patch
 
-diff -r ff8d26cbf7e9 lib/Target/ARM/ARMISelLowering.cpp
+diff -r 88d3e53081e4 lib/Target/ARM/ARMISelLowering.cpp
 --- a/lib/Target/ARM/ARMISelLowering.cpp	Mon Jun 13 11:21:09 2011 -0700
-+++ b/lib/Target/ARM/ARMISelLowering.cpp	Wed Jul 27 11:11:37 2011 -0700
++++ b/lib/Target/ARM/ARMISelLowering.cpp	Wed Jul 27 14:41:34 2011 -0700
 @@ -380,8 +380,11 @@
      // Long long helper functions
      // RTABI chapter 4.2, Table 9
