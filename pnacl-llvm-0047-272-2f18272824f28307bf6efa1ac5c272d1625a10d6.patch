@@ -3,15 +3,15 @@
 # Date 1308866181 25200
 # Branch pnacl-sfi
 # Node ID 2f18272824f28307bf6efa1ac5c272d1625a10d6
-# Parent c7479da8110cbda32825df45fa9d763743a73e40
+# Parent b1ccb784573615504603d34f4b47d161f5d5b2d4
 Update ARM TLS constants to match tls_params.h
 http://codereview.chromium.org/7248021/
 
  From pnacl-llvm-0047-272-2f18272824f28307bf6efa1ac5c272d1625a10d6.patch
 
-diff -r c7479da8110c lib/Target/ARM/ARMISelLowering.cpp
+diff -r b1ccb7845736 lib/Target/ARM/ARMISelLowering.cpp
 --- a/lib/Target/ARM/ARMISelLowering.cpp	Wed Jun 22 16:35:27 2011 -0700
-+++ b/lib/Target/ARM/ARMISelLowering.cpp	Wed Jul 27 14:41:38 2011 -0700
++++ b/lib/Target/ARM/ARMISelLowering.cpp	Thu Jul 28 16:24:44 2011 -0700
 @@ -1940,9 +1940,9 @@
  SDValue ARMTargetLowering::LowerNaClTpAlign(SDValue Op,
                                              SelectionDAG &DAG) const {
