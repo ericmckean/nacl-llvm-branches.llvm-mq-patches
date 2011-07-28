@@ -3,7 +3,7 @@
 # Date 1302905484 14400
 # Branch pnacl-sfi
 # Node ID b14dd43db2609a5097a54c8f2703a8ac1fd060f8
-# Parent eae27a6d7451487555e7a423d4787c7a9da0b70d
+# Parent 5ce6b4723d86fd2c5a0108867e6232fdfcefd19b
 This adds functionality for an annotated symbol dump to llvm-ld.
 
 E.g.:
@@ -30,9 +30,9 @@ Please review this at http://codereview.chromium.org/6822040/
 
  From .hg/patches/llvm-pnacl-0023-247-b14dd43db2609a5097a54c8f2703a8ac1fd060f8.patch.stripped
 
-diff -r eae27a6d7451 tools/llvm-ld/llvm-ld.cpp
+diff -r 5ce6b4723d86 tools/llvm-ld/llvm-ld.cpp
 --- a/tools/llvm-ld/llvm-ld.cpp	Fri Apr 01 11:05:59 2011 -0700
-+++ b/tools/llvm-ld/llvm-ld.cpp	Wed Jul 27 14:41:19 2011 -0700
++++ b/tools/llvm-ld/llvm-ld.cpp	Thu Jul 28 16:21:36 2011 -0700
 @@ -41,6 +41,7 @@
  #include <memory>
  #include <cstring>

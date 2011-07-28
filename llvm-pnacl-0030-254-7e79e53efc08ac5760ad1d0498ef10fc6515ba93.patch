@@ -3,16 +3,16 @@
 # Date 1304639534 25200
 # Branch pnacl-sfi
 # Node ID 7e79e53efc08ac5760ad1d0498ef10fc6515ba93
-# Parent d3f9992615cb64615a759879da07fe5daab067c7
+# Parent be7e4f03589a1e21513e2d0c610350d7c1be6de3
 Add -limc_syscalls to PNaCl self-build
 
  From llvm-pnacl-0030-254-7e79e53efc08ac5760ad1d0498ef10fc6515ba93.patch
 
  From .hg/patches/llvm-pnacl-0030-254-7e79e53efc08ac5760ad1d0498ef10fc6515ba93.patch.stripped
 
-diff -r d3f9992615cb Makefile.rules
+diff -r be7e4f03589a Makefile.rules
 --- a/Makefile.rules	Thu May 05 14:37:22 2011 -0700
-+++ b/Makefile.rules	Wed Jul 27 14:41:24 2011 -0700
++++ b/Makefile.rules	Thu Jul 28 16:21:41 2011 -0700
 @@ -578,7 +578,7 @@
  endif
  
