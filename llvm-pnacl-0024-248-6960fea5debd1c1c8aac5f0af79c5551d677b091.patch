@@ -3,7 +3,7 @@
 # Date 1303412567 25200
 # Branch pnacl-sfi
 # Node ID 6960fea5debd1c1c8aac5f0af79c5551d677b091
-# Parent ac13aa080dc58a4535b1e667c30b3016cd28c946
+# Parent 4a150a6e5edfe6515b321352b70edf9a39c213b1
 Address the last bit of relocation flag related divergence betweeen
 LLVM and binutils.
 
@@ -38,9 +38,9 @@ TEST=utman.sh test-arm-pic
 
  From .hg/patches/llvm-pnacl-0024-248-6960fea5debd1c1c8aac5f0af79c5551d677b091.patch.stripped
 
-diff -r ac13aa080dc5 lib/MC/ELFObjectWriter.cpp
+diff -r 4a150a6e5edf lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Fri Apr 15 18:11:24 2011 -0400
-+++ b/lib/MC/ELFObjectWriter.cpp	Fri Jul 29 11:18:32 2011 -0700
++++ b/lib/MC/ELFObjectWriter.cpp	Fri Jul 29 14:32:24 2011 -0700
 @@ -25,6 +25,8 @@
  #include "llvm/Support/ELF.h"
  #include "llvm/Target/TargetAsmBackend.h"
@@ -293,9 +293,9 @@ diff -r ac13aa080dc5 lib/MC/ELFObjectWriter.cpp
    return Type;
  }
  
-diff -r ac13aa080dc5 lib/MC/ELFObjectWriter.h
+diff -r 4a150a6e5edf lib/MC/ELFObjectWriter.h
 --- a/lib/MC/ELFObjectWriter.h	Fri Apr 15 18:11:24 2011 -0400
-+++ b/lib/MC/ELFObjectWriter.h	Fri Jul 29 11:18:32 2011 -0700
++++ b/lib/MC/ELFObjectWriter.h	Fri Jul 29 14:32:24 2011 -0700
 @@ -139,16 +139,21 @@
  
      unsigned ShstrtabIndex;

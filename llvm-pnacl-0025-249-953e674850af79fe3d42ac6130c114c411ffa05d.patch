@@ -3,7 +3,7 @@
 # Date 1303413871 25200
 # Branch pnacl-sfi
 # Node ID 953e674850af79fe3d42ac6130c114c411ffa05d
-# Parent 655589d342bfc7633d1f3a392920c6b702f94dbd
+# Parent d6b92347061bce71ca6c91289a030c7b0facefce
 Fix the variant NOP issue
 
 Differences in the .o files for .s -> .o and direct .o to do with NOPs.  The
@@ -19,9 +19,9 @@ TEST=utman.sh test-arm-pic
 
  From .hg/patches/llvm-pnacl-0025-249-953e674850af79fe3d42ac6130c114c411ffa05d.patch.stripped
 
-diff -r 655589d342bf lib/Target/ARM/ARMAsmBackend.cpp
+diff -r d6b92347061b lib/Target/ARM/ARMAsmBackend.cpp
 --- a/lib/Target/ARM/ARMAsmBackend.cpp	Thu Apr 21 12:02:47 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmBackend.cpp	Fri Jul 29 11:18:33 2011 -0700
++++ b/lib/Target/ARM/ARMAsmBackend.cpp	Fri Jul 29 14:32:25 2011 -0700
 @@ -144,8 +144,15 @@
    }
    // ARM mode
@@ -39,9 +39,9 @@ diff -r 655589d342bf lib/Target/ARM/ARMAsmBackend.cpp
    switch (Count % 4) {
    default: break; // No leftover bytes to write
    case 1: OW->Write8(0); break;
-diff -r 655589d342bf lib/Target/ARM/ARMNaClHeaders.cpp
+diff -r d6b92347061b lib/Target/ARM/ARMNaClHeaders.cpp
 --- a/lib/Target/ARM/ARMNaClHeaders.cpp	Thu Apr 21 12:02:47 2011 -0700
-+++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Fri Jul 29 11:18:33 2011 -0700
++++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Fri Jul 29 14:32:25 2011 -0700
 @@ -45,25 +45,25 @@
  
    O <<

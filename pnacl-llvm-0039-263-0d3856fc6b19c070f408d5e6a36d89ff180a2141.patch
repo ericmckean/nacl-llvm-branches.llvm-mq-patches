@@ -3,14 +3,14 @@
 # Date 1306973291 25200
 # Branch pnacl-sfi
 # Node ID 0d3856fc6b19c070f408d5e6a36d89ff180a2141
-# Parent 29669c278eda9d408396b21f5046f29146abde0f
+# Parent 07355f95b317e183a801fdfadb1343224f3ffb34
 Add flag -add-nacl-read-tp-dependency to LLVM
 
  From pnacl-llvm-0039-263-0d3856fc6b19c070f408d5e6a36d89ff180a2141.patch
 
-diff -r 29669c278eda include/llvm-c/lto.h
+diff -r 07355f95b317 include/llvm-c/lto.h
 --- a/include/llvm-c/lto.h	Tue May 31 12:33:49 2011 -0700
-+++ b/include/llvm-c/lto.h	Fri Jul 29 11:21:17 2011 -0700
++++ b/include/llvm-c/lto.h	Fri Jul 29 14:32:36 2011 -0700
 @@ -64,6 +64,17 @@
  extern "C" {
  #endif
@@ -29,9 +29,9 @@ diff -r 29669c278eda include/llvm-c/lto.h
  /**
   * Returns a printable string.
   */
-diff -r 29669c278eda lib/CodeGen/IntrinsicLowering.cpp
+diff -r 07355f95b317 lib/CodeGen/IntrinsicLowering.cpp
 --- a/lib/CodeGen/IntrinsicLowering.cpp	Tue May 31 12:33:49 2011 -0700
-+++ b/lib/CodeGen/IntrinsicLowering.cpp	Fri Jul 29 11:21:17 2011 -0700
++++ b/lib/CodeGen/IntrinsicLowering.cpp	Fri Jul 29 14:32:36 2011 -0700
 @@ -17,6 +17,7 @@
  #include "llvm/Type.h"
  #include "llvm/CodeGen/IntrinsicLowering.h"
@@ -72,9 +72,9 @@ diff -r 29669c278eda lib/CodeGen/IntrinsicLowering.cpp
      const Type *RetTy = Type::getInt8PtrTy(M.getContext());
      M.getOrInsertFunction("__nacl_read_tp", RetTy, (Type*)0);
    }
-diff -r 29669c278eda tools/gold/gold-plugin.cpp
+diff -r 07355f95b317 tools/gold/gold-plugin.cpp
 --- a/tools/gold/gold-plugin.cpp	Tue May 31 12:33:49 2011 -0700
-+++ b/tools/gold/gold-plugin.cpp	Fri Jul 29 11:21:17 2011 -0700
++++ b/tools/gold/gold-plugin.cpp	Fri Jul 29 14:32:36 2011 -0700
 @@ -222,6 +222,24 @@
      return LDPS_ERR;
    }
@@ -112,9 +112,9 @@ diff -r 29669c278eda tools/gold/gold-plugin.cpp
    // Pass through extra options to the code generator.
    if (!options::extra.empty()) {
      for (std::vector<std::string>::iterator it = options::extra.begin();
-diff -r 29669c278eda tools/lto/lto.cpp
+diff -r 07355f95b317 tools/lto/lto.cpp
 --- a/tools/lto/lto.cpp	Tue May 31 12:33:49 2011 -0700
-+++ b/tools/lto/lto.cpp	Fri Jul 29 11:21:17 2011 -0700
++++ b/tools/lto/lto.cpp	Fri Jul 29 14:32:36 2011 -0700
 @@ -15,6 +15,8 @@
  #include "llvm-c/lto.h"
  #include "llvm-c/Core.h"
@@ -150,9 +150,9 @@ diff -r 29669c278eda tools/lto/lto.cpp
  
  //
  // returns a printable string
-diff -r 29669c278eda tools/lto/lto.exports
+diff -r 07355f95b317 tools/lto/lto.exports
 --- a/tools/lto/lto.exports	Tue May 31 12:33:49 2011 -0700
-+++ b/tools/lto/lto.exports	Fri Jul 29 11:21:17 2011 -0700
++++ b/tools/lto/lto.exports	Fri Jul 29 14:32:36 2011 -0700
 @@ -1,3 +1,5 @@
 +lto_add_command_line_option
 +lto_parse_command_line_options

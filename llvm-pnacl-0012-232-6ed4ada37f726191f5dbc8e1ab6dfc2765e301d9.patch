@@ -3,7 +3,7 @@
 # Date 1298645669 18000
 # Branch pnacl-sfi
 # Node ID 6ed4ada37f726191f5dbc8e1ab6dfc2765e301d9
-# Parent feb90731dbd6ad49c8937d74cf1356d201c09499
+# Parent 73b8e44b18af7ab5dde074f3b5af53a05a812b50
 sfi_data_tst was not available when FlagSfiZeroMask == true
 
 This is needed for http://codereview.chromium.org/6574016
@@ -15,9 +15,9 @@ review: http://codereview.chromium.org/6576046/
 
  From .hg/patches/llvm-pnacl-0012-232-6ed4ada37f726191f5dbc8e1ab6dfc2765e301d9.patch.stripped
 
-diff -r feb90731dbd6 lib/Target/ARM/ARMNaClHeaders.cpp
---- a/lib/Target/ARM/ARMNaClHeaders.cpp	Fri Jul 29 11:18:22 2011 -0700
-+++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Fri Jul 29 11:18:22 2011 -0700
+diff -r 73b8e44b18af lib/Target/ARM/ARMNaClHeaders.cpp
+--- a/lib/Target/ARM/ARMNaClHeaders.cpp	Fri Jul 29 14:32:14 2011 -0700
++++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Fri Jul 29 14:32:14 2011 -0700
 @@ -69,6 +69,9 @@
  
    O << " @ ========================================\n";

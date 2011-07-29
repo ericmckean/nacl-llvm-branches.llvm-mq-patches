@@ -3,7 +3,7 @@
 # Date 1299527282 28800
 # Branch pnacl-sfi
 # Node ID 8b90cf891e03714c9ea8aa42c008f58a89f0c0f6
-# Parent 1c2d53ee679a9b71037274ddd6d324eb3a29c52a
+# Parent 5103a7c5238c01e2aa83ad5f7a9c4e63b08e588e
 LLVM support for intrinsics for elf starting, setjmp, and longjmp.
 http://codereview.chromium.org/6602011/
 
@@ -11,9 +11,9 @@ http://codereview.chromium.org/6602011/
 
  From .hg/patches/llvm-pnacl-0013-233-8b90cf891e03714c9ea8aa42c008f58a89f0c0f6.patch.stripped
 
-diff -r 1c2d53ee679a include/llvm/Intrinsics.td
+diff -r 5103a7c5238c include/llvm/Intrinsics.td
 --- a/include/llvm/Intrinsics.td	Fri Feb 25 09:54:29 2011 -0500
-+++ b/include/llvm/Intrinsics.td	Fri Jul 29 11:18:23 2011 -0700
++++ b/include/llvm/Intrinsics.td	Fri Jul 29 14:32:15 2011 -0700
 @@ -480,6 +480,19 @@
  def int_convertuu  : Intrinsic<[llvm_anyint_ty],
                                 [llvm_anyint_ty, llvm_i32_ty, llvm_i32_ty]>;
@@ -34,10 +34,10 @@ diff -r 1c2d53ee679a include/llvm/Intrinsics.td
  //===----------------------------------------------------------------------===//
  // Target-specific intrinsics
  //===----------------------------------------------------------------------===//
-diff -r 1c2d53ee679a lib/Target/ARM/ARMInstrInfo.td
+diff -r 5103a7c5238c lib/Target/ARM/ARMInstrInfo.td
 --- a/lib/Target/ARM/ARMInstrInfo.td	Fri Feb 25 09:54:29 2011 -0500
-+++ b/lib/Target/ARM/ARMInstrInfo.td	Fri Jul 29 11:18:23 2011 -0700
-@@ -3763,6 +3763,74 @@
++++ b/lib/Target/ARM/ARMInstrInfo.td	Fri Jul 29 14:32:15 2011 -0700
+@@ -3765,6 +3765,74 @@
    let Inst{7-4} = 0b0000;
  }
  
@@ -112,9 +112,9 @@ diff -r 1c2d53ee679a lib/Target/ARM/ARMInstrInfo.td
  // Move from ARM core register to Special Register
  //
  // No need to have both system and application versions, the encodings are the
-diff -r 1c2d53ee679a lib/Target/X86/X86InstrNaCl.cpp
+diff -r 5103a7c5238c lib/Target/X86/X86InstrNaCl.cpp
 --- a/lib/Target/X86/X86InstrNaCl.cpp	Fri Feb 25 09:54:29 2011 -0500
-+++ b/lib/Target/X86/X86InstrNaCl.cpp	Fri Jul 29 11:18:23 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.cpp	Fri Jul 29 14:32:15 2011 -0700
 @@ -39,15 +39,6 @@
    Out.EmitBundleUnlock();
  }
@@ -573,9 +573,9 @@ diff -r 1c2d53ee679a lib/Target/X86/X86InstrNaCl.cpp
    }
  
    if (PrefixSaved) {
-diff -r 1c2d53ee679a lib/Target/X86/X86InstrNaCl.td
+diff -r 5103a7c5238c lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Fri Feb 25 09:54:29 2011 -0500
-+++ b/lib/Target/X86/X86InstrNaCl.td	Fri Jul 29 11:18:23 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Fri Jul 29 14:32:15 2011 -0700
 @@ -29,7 +29,7 @@
  // These instructions cannot be encoded (written into an object file) by the
  // MCCodeEmitter. Instead, during direct object emission, they get lowered to
@@ -712,9 +712,9 @@ diff -r 1c2d53ee679a lib/Target/X86/X86InstrNaCl.td
 +                       [(int_nacl_longjmp EDI, EAX)]>,
 +                       Requires<[IsNaCl64]>, TB;
 +}
-diff -r 1c2d53ee679a lib/Target/X86/X86NaClRewritePass.cpp
+diff -r 5103a7c5238c lib/Target/X86/X86NaClRewritePass.cpp
 --- a/lib/Target/X86/X86NaClRewritePass.cpp	Fri Feb 25 09:54:29 2011 -0500
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Fri Jul 29 11:18:23 2011 -0700
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Fri Jul 29 14:32:15 2011 -0700
 @@ -10,6 +10,10 @@
  // This file contains a pass that ensures stores and loads and stack/frame
  // pointer addresses are within the NaCl sandbox (for x86-64).
