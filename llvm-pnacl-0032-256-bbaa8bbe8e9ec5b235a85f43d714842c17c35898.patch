@@ -3,7 +3,7 @@
 # Date 1305315843 14400
 # Branch pnacl-sfi
 # Node ID bbaa8bbe8e9ec5b235a85f43d714842c17c35898
-# Parent 6436983a6ad3aa5bcdc876ba6a07dee7c3f49615
+# Parent b717d12d9350b056ea47b4a29e72a62de2254b93
 This CL disables a few more file operations like rename, sym_link, etc. in llvm support lib when compiling it with
 the pnacl TC.
 
@@ -15,9 +15,9 @@ CL http://codereview.chromium.org/6969069
 
  From .hg/patches/llvm-pnacl-0032-256-bbaa8bbe8e9ec5b235a85f43d714842c17c35898.patch.stripped
 
-diff -r 6436983a6ad3 Makefile.rules
+diff -r b717d12d9350 Makefile.rules
 --- a/Makefile.rules	Thu May 12 16:39:54 2011 -0700
-+++ b/Makefile.rules	Thu Jul 28 16:23:55 2011 -0700
++++ b/Makefile.rules	Fri Jul 29 11:20:30 2011 -0700
 @@ -578,7 +578,7 @@
  endif
  
@@ -27,9 +27,9 @@ diff -r 6436983a6ad3 Makefile.rules
  else
    LIBS +=
  endif
-diff -r 6436983a6ad3 lib/Support/Unix/Path.inc
+diff -r b717d12d9350 lib/Support/Unix/Path.inc
 --- a/lib/Support/Unix/Path.inc	Thu May 12 16:39:54 2011 -0700
-+++ b/lib/Support/Unix/Path.inc	Thu Jul 28 16:23:55 2011 -0700
++++ b/lib/Support/Unix/Path.inc	Fri Jul 29 11:20:30 2011 -0700
 @@ -787,9 +787,11 @@
  
  bool
@@ -42,13 +42,13 @@ diff -r 6436983a6ad3 lib/Support/Unix/Path.inc
    return false;
  }
  
-diff -r 6436983a6ad3 lib/Support/Unix/PathV2.inc
+diff -r b717d12d9350 lib/Support/Unix/PathV2.inc
 --- a/lib/Support/Unix/PathV2.inc	Thu May 12 16:39:54 2011 -0700
-+++ b/lib/Support/Unix/PathV2.inc	Thu Jul 28 16:23:55 2011 -0700
-@@ -95,7 +95,9 @@
++++ b/lib/Support/Unix/PathV2.inc	Fri Jul 29 11:20:30 2011 -0700
+@@ -94,7 +94,9 @@
+ 
  error_code current_path(SmallVectorImpl<char> &result) {
-   // Reserve an arbitrary amount of space.
-   result.reserve(128);
+   result.reserve(MAXPATHLEN);
 -
 +#ifdef __native_client__
 +  llvm_unreachable("current_path() not implemented for Native Client");
@@ -56,7 +56,7 @@ diff -r 6436983a6ad3 lib/Support/Unix/PathV2.inc
    while (true) {
      if (::getcwd(result.data(), result.capacity()) == 0) {
        // See if there was a real error.
-@@ -108,6 +110,7 @@
+@@ -107,6 +109,7 @@
    }
  
    result.set_size(strlen(result.data()));
@@ -64,7 +64,7 @@ diff -r 6436983a6ad3 lib/Support/Unix/PathV2.inc
    return success;
  }
  
-@@ -171,6 +174,9 @@
+@@ -170,6 +173,9 @@
  }
  
  error_code create_directory(const Twine &path, bool &existed) {
@@ -74,7 +74,7 @@ diff -r 6436983a6ad3 lib/Support/Unix/PathV2.inc
    SmallString<128> path_storage;
    StringRef p = path.toNullTerminatedStringRef(path_storage);
  
-@@ -182,9 +188,13 @@
+@@ -181,9 +187,13 @@
      existed = false;
  
    return success;
@@ -88,7 +88,7 @@ diff -r 6436983a6ad3 lib/Support/Unix/PathV2.inc
    // Get arguments.
    SmallString<128> from_storage;
    SmallString<128> to_storage;
-@@ -195,9 +205,13 @@
+@@ -194,9 +204,13 @@
      return error_code(errno, system_category());
  
    return success;
@@ -102,7 +102,7 @@ diff -r 6436983a6ad3 lib/Support/Unix/PathV2.inc
    // Get arguments.
    SmallString<128> from_storage;
    SmallString<128> to_storage;
-@@ -208,9 +222,13 @@
+@@ -207,9 +221,13 @@
      return error_code(errno, system_category());
  
    return success;
@@ -116,7 +116,7 @@ diff -r 6436983a6ad3 lib/Support/Unix/PathV2.inc
    SmallString<128> path_storage;
    StringRef p = path.toNullTerminatedStringRef(path_storage);
  
-@@ -220,11 +238,14 @@
+@@ -219,11 +237,14 @@
      existed = false;
    } else
      existed = true;
@@ -132,7 +132,7 @@ diff -r 6436983a6ad3 lib/Support/Unix/PathV2.inc
    // Get arguments.
    SmallString<128> from_storage;
    SmallString<128> to_storage;
-@@ -244,6 +265,7 @@
+@@ -243,6 +264,7 @@
    }
  
    return success;
