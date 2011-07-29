@@ -3,15 +3,15 @@
 # Date 1307989269 25200
 # Branch pnacl-sfi
 # Node ID 6789ea6de2530e312bc4f14b5a1e720490fe5b7b
-# Parent 745150331de6182b84e3451a6a26c544c7d88cba
+# Parent 295c706145978b9de37ca8a13ded4f745c55d245
 Add -mtls-use-call to llvm to test building the IRT for x86-32.
 http://codereview.chromium.org/7024036/
 
  From pnacl-llvm-0041-265-6789ea6de2530e312bc4f14b5a1e720490fe5b7b.patch
 
-diff -r 745150331de6 lib/Target/X86/X86ISelLowering.cpp
---- a/lib/Target/X86/X86ISelLowering.cpp	Thu Jul 28 16:24:38 2011 -0700
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Thu Jul 28 16:24:39 2011 -0700
+diff -r 295c70614597 lib/Target/X86/X86ISelLowering.cpp
+--- a/lib/Target/X86/X86ISelLowering.cpp	Fri Jul 29 11:21:18 2011 -0700
++++ b/lib/Target/X86/X86ISelLowering.cpp	Fri Jul 29 11:21:18 2011 -0700
 @@ -56,6 +56,16 @@
  
  STATISTIC(NumTailCalls, "Number of tail calls");
@@ -116,9 +116,9 @@ diff -r 745150331de6 lib/Target/X86/X86ISelLowering.cpp
      }
    } else if (Subtarget->isTargetDarwin()) {
      // Darwin only has one model of TLS.  Lower to that.
-diff -r 745150331de6 lib/Target/X86/X86InstrNaCl.td
---- a/lib/Target/X86/X86InstrNaCl.td	Thu Jul 28 16:24:38 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Thu Jul 28 16:24:39 2011 -0700
+diff -r 295c70614597 lib/Target/X86/X86InstrNaCl.td
+--- a/lib/Target/X86/X86InstrNaCl.td	Fri Jul 29 11:21:18 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Fri Jul 29 11:21:18 2011 -0700
 @@ -312,6 +312,13 @@
  def NACL_CG_IE_TLS_addr64 : I<0, Pseudo, (outs), (ins i32mem:$sym), "",
                              [(X86tlsaddr_ie tls32addr:$sym)]>,
@@ -133,9 +133,9 @@ diff -r 745150331de6 lib/Target/X86/X86InstrNaCl.td
  }
  
  let usesCustomInserter = 1, Defs = [EFLAGS] in
-diff -r 745150331de6 lib/Target/X86/X86NaClRewritePass.cpp
---- a/lib/Target/X86/X86NaClRewritePass.cpp	Thu Jul 28 16:24:38 2011 -0700
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Thu Jul 28 16:24:39 2011 -0700
+diff -r 295c70614597 lib/Target/X86/X86NaClRewritePass.cpp
+--- a/lib/Target/X86/X86NaClRewritePass.cpp	Fri Jul 29 11:21:18 2011 -0700
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Fri Jul 29 11:21:18 2011 -0700
 @@ -599,16 +599,27 @@
    }
  
