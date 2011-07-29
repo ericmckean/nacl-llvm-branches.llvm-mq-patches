@@ -3,7 +3,7 @@
 # Date 1298061279 28800
 # Branch pnacl-sfi
 # Node ID 98e4ddb336993b15df8257b7ddd54cda34e4781c
-# Parent 0b32b45855cebb45ce8a96c8970c46448f8800bd
+# Parent 1733bbaaf5e9a4fcba572be3331d7e324869c5b1
 Add an rpc for setting LLC arguments.
 http://codereview.chromium.org/6546003/
 
@@ -11,9 +11,9 @@ http://codereview.chromium.org/6546003/
 
  From .hg/patches/llvm-pnacl-0004-224-98e4ddb336993b15df8257b7ddd54cda34e4781c.patch.stripped
 
-diff -r 0b32b45855ce tools/llc/nacl_file.cpp
+diff -r 1733bbaaf5e9 tools/llc/nacl_file.cpp
 --- a/tools/llc/nacl_file.cpp	Mon Feb 14 12:22:55 2011 -0800
-+++ b/tools/llc/nacl_file.cpp	Fri Jul 29 11:18:18 2011 -0700
++++ b/tools/llc/nacl_file.cpp	Fri Jul 29 13:13:01 2011 -0700
 @@ -55,7 +55,7 @@
    char *filename;
    int real_fd;

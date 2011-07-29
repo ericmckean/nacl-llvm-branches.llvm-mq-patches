@@ -3,7 +3,7 @@
 # Date 1308336238 25200
 # Branch pnacl-sfi
 # Node ID 5af6a2efc455176da1327dd66f497be9237bb4b6
-# Parent 8a64afb7ab8f12261f4dab9a8b3d9bf7821ae591
+# Parent 5685d10aef3a022c11290cbac4737ccafde4fe70
 Don't inline __aeabi_read_tp
 
 This simply reverts the parts of rev 241 and rev 242 that inline the
@@ -26,9 +26,9 @@ it on the new -mtls-use-call command-line option.
 
  From pnacl-llvm-0043-267-5af6a2efc455176da1327dd66f497be9237bb4b6.patch
 
-diff -r 8a64afb7ab8f lib/Target/ARM/ARMExpandPseudoInsts.cpp
+diff -r 5685d10aef3a lib/Target/ARM/ARMExpandPseudoInsts.cpp
 --- a/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Tue Jun 14 14:56:02 2011 -0400
-+++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Fri Jul 29 11:21:20 2011 -0700
++++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Fri Jul 29 13:13:32 2011 -0700
 @@ -936,32 +936,17 @@
      }
      case ARM::TPsoft: {
