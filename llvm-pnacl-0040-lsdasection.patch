@@ -1,5 +1,8 @@
 # HG changeset patch
 # Parent f967294c5425f35a32741d5d16a8cc4c17af638b
+# User Jason Kim <jasonwkim@google.com>
+
+Make EH stuff appear in .rodata. (Fixes arm failure)
 
 diff -r f967294c5425 lib/Target/ARM/ARMTargetObjectFile.cpp
 --- a/lib/Target/ARM/ARMTargetObjectFile.cpp	Thu Jul 14 16:27:21 2011 -0700

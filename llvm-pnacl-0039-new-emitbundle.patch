@@ -1,5 +1,6 @@
 # HG changeset patch
 # Parent 3f9b914a17b68a5b2e00d1bf0397c2770a3a7590
+# User Jason Kim <jasonwkim@google.com>
 
 Make EmitBundle(Lock|Unlock|AlignStart|AlignEnd) into small asserting routines.
 This is needed because of an upstream change which added new uses of MCStreamer
