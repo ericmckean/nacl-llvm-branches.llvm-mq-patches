@@ -1,0 +1,177 @@
+# HG changeset patch
+# Parent d30aac4beac0dc0e82d7f0a663ee4588d33d6e7c
+diff -r d30aac4beac0 -r e5ae83070db9 include/llvm/Intrinsics.td
+--- a/include/llvm/Intrinsics.td	Mon Aug 08 15:30:45 2011 -0700
++++ b/include/llvm/Intrinsics.td	Mon Aug 08 15:43:31 2011 -0700
+@@ -485,8 +485,6 @@
+ // TODO(sehr): conditionalize this on IsNaCl64 | IsNaCl32 | IsNaClArm.
+ // The expansions of these are in lib/Target/X86/X86InstrNacl.{td, cpp} and
+ // lib/Target/ARM/ARMInstrInfo.td.
+-def int_nacl_elf_start : Intrinsic<[], [llvm_ptr_ty]>,
+-                         GCCBuiltin<"__builtin_nacl_elf_start">;
+ def int_nacl_setjmp : Intrinsic<[llvm_i32_ty],  [llvm_ptr_ty, llvm_ptr_ty]>,
+                       GCCBuiltin<"__builtin_nacl_setjmp">;
+ def int_nacl_longjmp : Intrinsic<[],  [llvm_ptr_ty, llvm_i32_ty]>,
+diff -r d30aac4beac0 -r e5ae83070db9 lib/Target/ARM/ARMInstrInfo.td
+--- a/lib/Target/ARM/ARMInstrInfo.td	Mon Aug 08 15:30:45 2011 -0700
++++ b/lib/Target/ARM/ARMInstrInfo.td	Mon Aug 08 15:43:31 2011 -0700
+@@ -3770,34 +3770,6 @@
+ // lib/Target/X86InstrNaCl.{td, cpp}.
+ // TODO(sehr): conditionalize this on IsNaCl64 | IsNaCl32 | IsNaClArm.
+ 
+-let isTerminator = 1, isBarrier = 1, Uses = [R4, SP] in {
+-  // At ELF startup time the parameters that are eventually passed to main
+-  // need to be computed from one value on the stack.  That value, argc, is
+-  // loaded into r0.  Four bytes above that is argv[argc + 1].  And above that
+-  // is envp the start of the environment.
+-  // The bic r3, ... fragment aligns the stack 0mod8.  Remove when issue
+-  // http://code.google.com/p/nativeclient/issues/detail?id=94 is fixed.
+-  // This intrinsic loads r0 = argc, r1 = argv, and r2 = envp, expecting that
+-  // there will be a call to __nacl_startup(argc, argv, envp).
+-  def NACL_ELF_START : AXI<(outs), (ins), MiscFrm, NoItinerary,
+-                           "mov r11, #0; "            // clear frame pointer
+-                           "mov lr, #0; "             // clear link register
+-                           "ldr r0, [sp]; "           // r0 = argc
+-                           "add r1, sp, #4; "         // r1 = argv
+-                           "add r2, r1, r0, lsl #2; " // r2 = envp
+-                           "bic r3, sp, #7; "
+-                           "teq r3, sp; "
+-                           "pushne {{r1}}; "          // sp aligned 0mod8
+-                           "sfi_nops_to_force_slot2; "
+-                           "sfi_code_mask r4; "
+-                           "blx r4; "
+-                           // A bundle beginning is here, but we want to ensure
+-                           // we halt if the function we're calling, typically
+-                           // __nacl_startup, returns.
+-                           "sfi_illegal_if_at_bundle_begining",
+-                           [(int_nacl_elf_start R4)]>;
+-}
+-
+ let Uses = [R0], Defs = [R0] in {
+   // Saves all the callee-saves registers, sp, and lr to the JMP_BUF structure
+   // pointed to by r0.  The JMP_BUF structure is the maximum size over all
+diff -r d30aac4beac0 -r e5ae83070db9 lib/Target/X86/X86InstrNaCl.cpp
+--- a/lib/Target/X86/X86InstrNaCl.cpp	Mon Aug 08 15:30:45 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.cpp	Mon Aug 08 15:43:31 2011 -0700
+@@ -353,55 +353,6 @@
+   Out.EmitBundleUnlock();
+ }
+ 
+-// Does the platform specific portion of ELF start up.
+-// On entry 0(%esp) contains argc.  This function computes argv and envp
+-// from argc, and sets up a call to what will eventually be main.
+-// After popping argc, argv is simply the value of the stack pointer.
+-// Above argv[argc + 1] pointers is where envp should point.
+-// On 32 bit platforms we also mark the root frame for debuggers by clearing
+-// ebp.
+-// These need to be kept in sync with in lib/Target/ARM/ARMInstrInfo.td and
+-// lib/Target/X86/X86InstrNaCl.td.
+-static void EmitElfStart(bool Is64Bit, MCStreamer &Out) {
+-  unsigned StackPointer = Is64Bit ? X86::RSP : X86::ESP;
+-  unsigned ArgcReg = Is64Bit ? X86::RSI : X86::ESI;
+-  unsigned ArgvReg = Is64Bit ? X86::RCX : X86::ECX;
+-  unsigned EnvpReg = Is64Bit ? X86::RBX : X86::EBX;
+-
+-  // Save argc.
+-  EmitPopReg(Is64Bit, ArgcReg, Out);
+-  // Save argv.
+-  EmitMoveRegReg(Is64Bit, ArgvReg, StackPointer, Out);
+-  // envp = argv + (4 * argc) + 4.
+-  EmitLea(Is64Bit, EnvpReg, ArgvReg, 4, ArgcReg, 4, 0, Out);
+-  // Align the stack 0mod16.
+-  MCInst AlignStack;
+-  AlignStack.setOpcode((Is64Bit ? X86::AND64ri32 : X86::AND32ri));
+-  AlignStack.addOperand(MCOperand::CreateReg(StackPointer));
+-  AlignStack.addOperand(MCOperand::CreateReg(StackPointer));
+-  AlignStack.addOperand(MCOperand::CreateImm(0xfffffff0));
+-  Out.EmitInstruction(AlignStack);
+-
+-  if (Is64Bit) {
+-    // Set up the arguments to __nacl_startup.
+-    EmitMoveRegReg(true, ArgcReg, X86::RDI, Out);
+-    EmitMoveRegReg(true, ArgvReg, X86::RSI, Out);
+-    EmitMoveRegReg(true, EnvpReg, X86::RDX, Out);
+-  } else {
+-    // Set ebx to zero to indicate this is the root frame on the stack.
+-    EmitClearReg(false, X86::EBP, Out);
+-    // Align and set up the arguments to __nacl_startup.
+-    EmitPushReg(false, X86::EBP, Out);
+-    EmitPushReg(false, EnvpReg, Out);
+-    EmitPushReg(false, ArgvReg, Out);
+-    EmitPushReg(false, ArgcReg, Out);
+-  }
+-  EmitIndirectBranch(MCOperand::CreateReg(X86::EAX), Is64Bit, true, Out);
+-  MCInst Halt;
+-  Halt.setOpcode(X86::HLT);
+-  Out.EmitInstruction(Halt);
+-}
+-
+ // Does the x86 platform specific work for setjmp.
+ // It expects that a pointer to a JMP_BUF in %ecx/%rdi, and that the return
+ // address is in %edx/%rdx.
+@@ -604,12 +555,6 @@
+     return true;
+   // Intrinsics for eliminating platform specific .s code from the client
+   // side link.  These are recognized in X86InstrNaCl.td.
+-  case X86::NACL_ELF_START32:
+-    EmitElfStart(false, Out);
+-    return true;
+-  case X86::NACL_ELF_START64:
+-    EmitElfStart(true, Out);
+-    return true;
+   case X86::NACL_SETJ32:
+     EmitSetjmp(false, Out);
+     return true;
+diff -r d30aac4beac0 -r e5ae83070db9 lib/Target/X86/X86InstrNaCl.td
+--- a/lib/Target/X86/X86InstrNaCl.td	Mon Aug 08 15:30:45 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Mon Aug 08 15:43:31 2011 -0700
+@@ -339,49 +339,6 @@
+ // lib/Target/X86/X86InstrNaCl.cpp.
+ // TODO(sehr): Separate this code to allow NaCl and non-NaCl versions.
+ 
+-// At ELF startup time the parameters that are eventually passed to main
+-// need to be computed from one value on the stack.  That value, argc, is
+-// loaded into [er]si.  Four bytes above that is argv[argc + 1].  And above that
+-// is envp the start of the environment.
+-// This intrinsic loads [er]si = argc, [er]cx = argv, and [er]bp = envp, and
+-// then sets up a call frame, expecting that there will be a call to
+-// __nacl_startup(argc, argv, envp).
+-let isBranch = 1, isTerminator = 1, isBarrier = 1, isIndirectBranch = 1,
+-    Uses = [EAX] in {
+-def NACL_ELF_START32 : I<0, Pseudo, (outs), (ins),
+-                         "popl %esi; "
+-                         "movl %esp, %ecx; "
+-                         "leal 4(%esp, %esi, 4), %ebx; "
+-                         "andl $$0xfffffff0, %esp; "
+-                         "andl $$0xfffffff0, %esp; "
+-                         "xorl %ebp, %ebp; "
+-                         "pushl %ebp; "
+-                         "pushl %ebx; "
+-                         "pushl %ecx; "
+-                         "pushl %esi; "
+-                         "naclcall %eax; "
+-                         "hlt; ",
+-                         [(int_nacl_elf_start EAX)]>,
+-                         Requires<[IsNaCl32]>;
+-}
+-
+-let isBranch = 1, isTerminator = 1, isBarrier = 1, isIndirectBranch = 1,
+-    Uses = [EAX, R15] in {
+-def NACL_ELF_START64 : I<0, Pseudo, (outs), (ins),
+-                         "popl %rsi; "
+-                         "movl %rsp, %rcx; "
+-                         "leal 4(%rsp, %rsi, 4), %ebx; "
+-                         "andq $$0xfffffffffffffff0, %rsp; "
+-                         "movq %rsi, %rdi; "
+-                         "movq %rcx, %rsi; "
+-                         "movl %ebx, %edx; "
+-                         "movl %ebx, %edx; "
+-                         "naclcall %eax, %r15; "
+-                         "hlt; ",
+-                         [(int_nacl_elf_start EAX)]>,
+-                         Requires<[IsNaCl64]>;
+-}
+-
+ // Saves all the callee-saves registers, [er]sp, and [er]ip to the JMP_BUF
+ // structure pointed to by 4(%esp) or rdi.  The JMP_BUF structure is the
+ // maximum size over all supported architectures.  The MC expansions happen
