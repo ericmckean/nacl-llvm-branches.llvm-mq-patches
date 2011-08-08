@@ -1,0 +1,16 @@
+# HG changeset patch
+# Parent 775d42ec6fea0d437da97fa70403df72af6418d2
+diff -r 775d42ec6fea -r 1f3b26242885 lib/Target/X86/X86NaClRewritePass.cpp
+--- a/lib/Target/X86/X86NaClRewritePass.cpp	Mon Aug 08 15:52:38 2011 -0700
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Mon Aug 08 16:07:40 2011 -0700
+@@ -463,9 +463,7 @@
+     return true;
+   }
+ 
+-  if (Opc == X86::NACL_ELF_START32 ||
+-      Opc == X86::NACL_ELF_START64 ||
+-      Opc == X86::NACL_LONGJ32 ||
++  if (Opc == X86::NACL_LONGJ32 ||
+       Opc == X86::NACL_LONGJ64) {
+     // The expansions for these intrinsics already handle control SFI.
+     return false;

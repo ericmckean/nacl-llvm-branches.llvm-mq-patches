@@ -59,3 +59,4 @@ llvm-pnacl-0040-lsdasection.patch
 llvm-pnacl-0041-lto-full.patch
 unbreak_nonsrpc.patch
 remove-intrinsics.patch
+remove-intrinsics2.patch
