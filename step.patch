@@ -1,0 +1,33 @@
+# HG changeset patch
+# Parent a85dd32927068695a89c7ffba3281a1358c1a4af
+Added a patch to record the partial rebase for 137023 branch pnacl-tip
+
+diff -r a85dd3292706 -r 5b539cad5f3d include/llvm/ADT/Triple.h
+--- a/include/llvm/ADT/Triple.h	Thu Jul 21 00:00:00 2011 -0700
++++ b/include/llvm/ADT/Triple.h	Sun Aug 07 14:52:42 2011 -0700
+@@ -87,6 +87,7 @@
+     Lv2,        // PS3
+     MacOSX,
+     MinGW32,    // i*86-pc-mingw32, *-w64-mingw32
++    NativeClient, // @LOCALMOD
+     NetBSD,
+     OpenBSD,
+     Psp,
+diff -r a85dd3292706 -r 5b539cad5f3d include/llvm/MC/MCObjectStreamer.h
+--- a/include/llvm/MC/MCObjectStreamer.h	Thu Jul 21 00:00:00 2011 -0700
++++ b/include/llvm/MC/MCObjectStreamer.h	Sun Aug 07 14:52:42 2011 -0700
+@@ -66,6 +66,14 @@
+                              unsigned AddrSpace);
+   virtual void EmitULEB128Value(const MCExpr *Value);
+   virtual void EmitSLEB128Value(const MCExpr *Value);
++                             
++  // @LOCALMOD-BEGIN
++  void EmitBundleLock();
++  void EmitBundleUnlock();
++  void EmitBundleAlignStart();
++  void EmitBundleAlignEnd();
++  // @LOCALMOD-END
++
+   virtual void EmitWeakReference(MCSymbol *Alias, const MCSymbol *Symbol);
+   virtual void ChangeSection(const MCSection *Section);
+   virtual void EmitInstruction(const MCInst &Inst);

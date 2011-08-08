@@ -1,0 +1,26 @@
+# HG changeset patch
+# Parent 3effcc99d45f63f5cd8d915577238a73b79ecd35
+localmod: BundleUnlock
+
+diff -r 3effcc99d45f lib/CodeGen/AsmPrinter/AsmPrinter.cpp
+--- a/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Mon Aug 08 12:29:40 2011 -0700
++++ b/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Mon Aug 08 12:33:02 2011 -0700
+@@ -2005,8 +2005,17 @@
+   // Check the terminators in the previous blocks
+   for (MachineBasicBlock::iterator II = Pred->getFirstTerminator(),
+          IE = Pred->end(); II != IE; ++II) {
+-    if (!CheckIsMIFallThrough(II))
++    // @LOCALMOD-BEGIN 
++    // determine whether the block falls through to the next one.
++    // However, if the last instruction is BUNDLE_UNLOCK, then we have
++    // to look at the one before it instead.
++    MachineBasicBlock::const_iterator MBBI = II;
++    if (LastInst.getOpcode() == TargetOpcode::BUNDLE_UNLOCK) {
++      --MBBI;
++    }
++    if (!CheckIsMIFallThrough(MBBI))
+       return false;
++    // @LOCALMOD-END
+   }
+ 
+   return true;

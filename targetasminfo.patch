@@ -1,0 +1,17 @@
+# HG changeset patch
+# Parent 3aab4cee678d91118d0425c5c33790fb3d999fe1
+include/llvm/Target/TargetAsmInfo.h has been moved to include/MC/MCAsmInfo.h
+
+diff -r 3aab4cee678d -r a2768ebbc09d include/llvm/MC/MCAsmInfo.h
+--- a/include/llvm/MC/MCAsmInfo.h	Sun Aug 07 14:56:06 2011 -0700
++++ b/include/llvm/MC/MCAsmInfo.h	Sun Aug 07 14:59:09 2011 -0700
+@@ -48,6 +48,9 @@
+     ///                  Default is true.
+     bool IsLittleEndian;
+ 
++    // @LOCALMOD
++    unsigned StackSlotSize; // @LOCALMOD
++
+     /// StackGrowsUp - True if target stack grow up.
+     ///                Default is false.
+     bool StackGrowsUp;
