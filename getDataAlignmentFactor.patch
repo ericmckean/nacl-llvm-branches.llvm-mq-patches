@@ -1,0 +1,16 @@
+# HG changeset patch
+# Parent 0056dc5e923247127b012d8aaffd643a9d33cd8d
+localmod: getDataAlignmentFactor
+
+diff -r 0056dc5e9232 -r da3081acef8d lib/MC/MCDwarf.cpp
+--- a/lib/MC/MCDwarf.cpp	Mon Aug 08 12:33:02 2011 -0700
++++ b/lib/MC/MCDwarf.cpp	Mon Aug 08 14:19:14 2011 -0700
+@@ -433,7 +433,7 @@
+ static int getDataAlignmentFactor(MCStreamer &streamer) {
+   MCContext &context = streamer.getContext();
+   const MCAsmInfo &asmInfo = context.getAsmInfo();
+-  int size = asmInfo.getPointerSize();
++  int size = asmInfo.getStackSlotSize(); // @LOCALMOD
+   if (asmInfo.isStackGrowthDirectionUp())
+     return size;
+   else
