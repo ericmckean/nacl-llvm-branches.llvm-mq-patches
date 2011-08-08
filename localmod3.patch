@@ -1,0 +1,82 @@
+# HG changeset patch
+# Parent da3081acef8df69d2d439b520fbb7b153206b75d
+localmod: lib/Object/COFFObjectFile.cpp lib/Support/Triple.cpp lib/Support/Unix/PathV2.inc lib/Target/ARM/ARM.h
+
+diff -r da3081acef8d -r 4ef0d33459e2 lib/Object/COFFObjectFile.cpp
+--- a/lib/Object/COFFObjectFile.cpp	Mon Aug 08 14:19:14 2011 -0700
++++ b/lib/Object/COFFObjectFile.cpp	Mon Aug 08 15:04:54 2011 -0700
+@@ -247,7 +247,7 @@
+ 
+   // Check for string table entry. First byte is '/'.
+   if (name[0] == '/') {
+-    uint32_t Offset;
++    unsigned long long Offset; /* @LOCALMOD */
+     name.substr(1).getAsInteger(10, Offset);
+     if (error_code ec = getString(Offset, name))
+       return ec;
+diff -r da3081acef8d -r 4ef0d33459e2 lib/Support/Triple.cpp
+--- a/lib/Support/Triple.cpp	Mon Aug 08 14:19:14 2011 -0700
++++ b/lib/Support/Triple.cpp	Mon Aug 08 15:04:54 2011 -0700
+@@ -333,13 +333,17 @@
+   else if (OSName.startswith("kfreebsd"))
+     return KFreeBSD;
+   else if (OSName.startswith("linux"))
+-    return Linux;
++    // TODO(pdox): Fix this when we stop using target linux
++    //return Linux;
++    return NativeClient; // @LOCALMOD
+   else if (OSName.startswith("lv2"))
+     return Lv2;
+   else if (OSName.startswith("macosx"))
+     return MacOSX;
+   else if (OSName.startswith("mingw32"))
+     return MinGW32;
++  else if (OSName.startswith("nacl"))
++    return NativeClient;
+   else if (OSName.startswith("netbsd"))
+     return NetBSD;
+   else if (OSName.startswith("openbsd"))
+diff -r da3081acef8d -r 4ef0d33459e2 lib/Support/Unix/PathV2.inc
+--- a/lib/Support/Unix/PathV2.inc	Mon Aug 08 14:19:14 2011 -0700
++++ b/lib/Support/Unix/PathV2.inc	Mon Aug 08 15:04:54 2011 -0700
+@@ -348,6 +348,9 @@
+ error_code unique_file(const Twine &model, int &result_fd,
+                              SmallVectorImpl<char> &result_path,
+                              bool makeAbsolute) {
++#ifdef __native_client__                         
++  llvm_unreachable("unique_file() not implemented for Native Client");
++#else
+   SmallString<128> Model;
+   model.toVector(Model);
+   // Null terminate.
+diff -r da3081acef8d -r 4ef0d33459e2 lib/Target/ARM/ARM.h
+--- a/lib/Target/ARM/ARM.h	Mon Aug 08 14:19:14 2011 -0700
++++ b/lib/Target/ARM/ARM.h	Mon Aug 08 15:04:54 2011 -0700
+@@ -49,9 +49,27 @@
+ FunctionPass *createThumb2ITBlockPass();
+ FunctionPass *createThumb2SizeReductionPass();
+ 
++/* @LOCALMOD-START */
++FunctionPass *createARMNaClRewritePass();
++/* @LOCALMOD-END */
++
+ void LowerARMMachineInstrToMCInst(const MachineInstr *MI, MCInst &OutMI,
+                                   ARMAsmPrinter &AP);
+ 
++/* @LOCALMOD-START */
++// Used to lower the pc-relative MOVi16PIC / MOVTi16PIC pseudo instructions
++// into the real MOVi16 / MOVTi16 instructions.
++// See comment on MOVi16PIC for more details.
++void LowerARMMachineInstrToMCInstPCRel(const MachineInstr *MI,
++                                       MCInst &OutMI,
++                                       ARMAsmPrinter &AP,
++                                       unsigned ImmIndex,
++                                       unsigned PCIndex,
++                                       MCSymbol *PCLabel,
++                                       unsigned PCAdjustment);
++/* @LOCALMOD-END */
++
++
+ } // end namespace llvm;
+ 
+ #endif
