@@ -3,7 +3,7 @@
 # Date 1301356916 25200
 # Branch pnacl-sfi
 # Node ID 7ff9dbd5eedf7c112b5efad4d52027208d0f9e99
-# Parent 20ff3156782f1fe5cb698633e455b2b33fbcde2f
+# Parent aefb37ac89153c1e4441b552ecffe52c816b535b
 Direct ARM/MC/ELF/.o emission:
 
 Strategy:
@@ -30,10 +30,10 @@ TODO:
 
  From .hg/patches/llvm-pnacl-0017-238-7ff9dbd5eedf7c112b5efad4d52027208d0f9e99.patch.stripped
 
-diff -r 20ff3156782f lib/MC/ELFObjectWriter.cpp
+diff -r aefb37ac8915 lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/MC/ELFObjectWriter.cpp	Mon Jul 11 09:35:53 2011 -0700
-@@ -1252,7 +1252,7 @@
++++ b/lib/MC/ELFObjectWriter.cpp	Tue Aug 09 15:21:43 2011 -0700
+@@ -1307,7 +1307,7 @@
    unsigned e_flag = ELF::EF_ARM_EABIMASK & DefaultEABIVersion;
    switch (TargetObjectWriter->getOSType()) {
    case Triple::NativeClient:
@@ -42,41 +42,10 @@ diff -r 20ff3156782f lib/MC/ELFObjectWriter.cpp
      break;
    default: break;
    }
-diff -r 20ff3156782f lib/Target/ARM/ARMAsmBackend.cpp
---- a/lib/Target/ARM/ARMAsmBackend.cpp	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmBackend.cpp	Mon Jul 11 09:35:53 2011 -0700
-@@ -10,6 +10,7 @@
- #include "ARM.h"
- #include "ARMAddressingModes.h"
- #include "ARMFixupKinds.h"
-+#include "ARMInstrNaCl.h" // @LOCALMOD
- #include "llvm/ADT/Twine.h"
- #include "llvm/MC/MCAssembler.h"
- #include "llvm/MC/MCDirectives.h"
-@@ -391,9 +392,19 @@
-                   uint64_t Value) const;
- 
-   // @LOCALMOD-BEGIN
-+  // FIXME! NaCl should INHERIT from ELFARMAsmBackend, not
-+  // add to it.
-   unsigned getBundleSize() const {
-     return (OSType == Triple::NativeClient) ? 16 : 0;
-   }
-+
-+  bool CustomExpandInst(const MCInst &Inst, MCStreamer &Out) const {
-+    if (OSType == Triple::NativeClient) {
-+      return CustomExpandInstNaClARM(Inst, Out);
-+    }
-+    return false;
-+  }
-+
-  // @LOCALMOD-END
- 
-   MCObjectWriter *createObjectWriter(raw_ostream &OS) const {
-diff -r 20ff3156782f lib/Target/ARM/ARMAsmPrinter.cpp
+diff -r aefb37ac8915 lib/Target/ARM/ARMAsmPrinter.cpp
 --- a/lib/Target/ARM/ARMAsmPrinter.cpp	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmPrinter.cpp	Mon Jul 11 09:35:53 2011 -0700
-@@ -249,7 +249,9 @@
++++ b/lib/Target/ARM/ARMAsmPrinter.cpp	Tue Aug 09 15:21:43 2011 -0700
+@@ -309,7 +309,9 @@
    int alignment = MF->getAlignment();
    if (alignment < 4) alignment = 4;
    EmitAlignment(alignment);
@@ -87,7 +56,7 @@ diff -r 20ff3156782f lib/Target/ARM/ARMAsmPrinter.cpp
    // @LOCALMOD-END
   
    OutStreamer.EmitLabel(CurrentFnSym);
-@@ -459,7 +461,7 @@
+@@ -584,7 +586,7 @@
    }
  
    // @LOCALMOD-BEGIN
@@ -96,7 +65,7 @@ diff -r 20ff3156782f lib/Target/ARM/ARMAsmPrinter.cpp
      std::string str;
      raw_string_ostream OS(str);
      EmitSFIHeaders(OS);
-@@ -536,6 +538,16 @@
+@@ -661,6 +663,16 @@
    }
  }
  
@@ -113,7 +82,7 @@ diff -r 20ff3156782f lib/Target/ARM/ARMAsmPrinter.cpp
  //===----------------------------------------------------------------------===//
  // Helper routines for EmitStartOfAsmFile() and EmitEndOfAsmFile()
  // FIXME:
-@@ -1387,19 +1399,21 @@
+@@ -1479,19 +1491,21 @@
      // NOTE: we also should make sure that the first data item
      // is not in a code bundle
      // NOTE: there may be issues with alignment constraints
@@ -147,10 +116,10 @@ diff -r 20ff3156782f lib/Target/ARM/ARMAsmPrinter.cpp
      }
      // @LOCALMOD-END
      OutStreamer.EmitLabel(GetCPISymbol(LabelId));
-diff -r 20ff3156782f lib/Target/ARM/ARMAsmPrinter.h
+diff -r aefb37ac8915 lib/Target/ARM/ARMAsmPrinter.h
 --- a/lib/Target/ARM/ARMAsmPrinter.h	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmPrinter.h	Mon Jul 11 09:35:53 2011 -0700
-@@ -81,6 +81,8 @@
++++ b/lib/Target/ARM/ARMAsmPrinter.h	Tue Aug 09 15:21:43 2011 -0700
+@@ -83,6 +83,8 @@
    void EmitStartOfAsmFile(Module &M);
    void EmitEndOfAsmFile(Module &M);
  
@@ -159,10 +128,10 @@ diff -r 20ff3156782f lib/Target/ARM/ARMAsmPrinter.h
    // @LOCALMOD-START
    virtual bool UseReadOnlyJumpTables() const {
      return true; // should be IsNaCl
-diff -r 20ff3156782f lib/Target/ARM/ARMInstrInfo.td
+diff -r aefb37ac8915 lib/Target/ARM/ARMInstrInfo.td
 --- a/lib/Target/ARM/ARMInstrInfo.td	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/ARM/ARMInstrInfo.td	Mon Jul 11 09:35:53 2011 -0700
-@@ -188,6 +188,8 @@
++++ b/lib/Target/ARM/ARMInstrInfo.td	Tue Aug 09 15:21:43 2011 -0700
+@@ -206,6 +206,8 @@
  def UseFPVMLx        : Predicate<"Subtarget->useFPVMLx()">;
  
  // @LOCALMOD-BEGIN
@@ -171,7 +140,7 @@ diff -r 20ff3156782f lib/Target/ARM/ARMInstrInfo.td
  def UseConstPool : Predicate<"Subtarget->useConstPool()">;
  def DontUseConstPool : Predicate<"!Subtarget->useConstPool()">;
  // @LOCALMOD-END
-@@ -1031,6 +1033,11 @@
+@@ -1276,6 +1278,11 @@
  //===----------------------------------------------------------------------===//
  
  // @LOCALMOD-START
@@ -183,9 +152,9 @@ diff -r 20ff3156782f lib/Target/ARM/ARMInstrInfo.td
  def SFI_GUARD_STORE :
  PseudoInst<(outs GPR:$dst), (ins GPR:$a, pred:$p), NoItinerary, []>;
  
-diff -r 20ff3156782f lib/Target/ARM/ARMInstrNaCl.cpp
+diff -r aefb37ac8915 lib/Target/ARM/ARMInstrNaCl.cpp
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Target/ARM/ARMInstrNaCl.cpp	Mon Jul 11 09:35:53 2011 -0700
++++ b/lib/Target/ARM/ARMInstrNaCl.cpp	Tue Aug 09 15:21:43 2011 -0700
 @@ -0,0 +1,291 @@
 +//=== ARMInstrNaCl.cpp - Expansion of NaCl pseudo-instructions  --*- C++ -*-=//
 +//
@@ -478,9 +447,9 @@ diff -r 20ff3156782f lib/Target/ARM/ARMInstrNaCl.cpp
 +}
 +
 +} // namespace llvm
-diff -r 20ff3156782f lib/Target/ARM/ARMInstrNaCl.h
+diff -r aefb37ac8915 lib/Target/ARM/ARMInstrNaCl.h
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Target/ARM/ARMInstrNaCl.h	Mon Jul 11 09:35:53 2011 -0700
++++ b/lib/Target/ARM/ARMInstrNaCl.h	Tue Aug 09 15:21:43 2011 -0700
 @@ -0,0 +1,19 @@
 +//===-- ARMInstrNaCl.h - Prototype for CustomExpandInstNaClARM ---*- C++ -*-===//
 +//
@@ -501,9 +470,9 @@ diff -r 20ff3156782f lib/Target/ARM/ARMInstrNaCl.h
 +}
 +
 +#endif
-diff -r 20ff3156782f lib/Target/ARM/ARMInstrNaCl.td
+diff -r aefb37ac8915 lib/Target/ARM/ARMInstrNaCl.td
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Target/ARM/ARMInstrNaCl.td	Mon Jul 11 09:35:53 2011 -0700
++++ b/lib/Target/ARM/ARMInstrNaCl.td	Tue Aug 09 15:21:43 2011 -0700
 @@ -0,0 +1,145 @@
 +//====- ARMInstrNaCl.td - Describe NaCl Instructions ----*- tablegen -*-===//
 +//
@@ -650,10 +619,10 @@ diff -r 20ff3156782f lib/Target/ARM/ARMInstrNaCl.td
 +
 +
 +**************************************************************************/
-diff -r 20ff3156782f lib/Target/ARM/ARMSubtarget.h
+diff -r aefb37ac8915 lib/Target/ARM/ARMSubtarget.h
 --- a/lib/Target/ARM/ARMSubtarget.h	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/ARM/ARMSubtarget.h	Mon Jul 11 09:35:53 2011 -0700
-@@ -222,6 +222,9 @@
++++ b/lib/Target/ARM/ARMSubtarget.h	Tue Aug 09 15:21:43 2011 -0700
+@@ -240,6 +240,9 @@
    // @LOCALMOD
    bool useConstPool() const { return !FlagSfiDisableCP; }
  
@@ -663,40 +632,21 @@ diff -r 20ff3156782f lib/Target/ARM/ARMSubtarget.h
    bool allowsUnalignedMem() const { return AllowsUnalignedMem; }
  
    const std::string & getCPUString() const { return CPUString; }
-diff -r 20ff3156782f lib/Target/ARM/CMakeLists.txt
+diff -r aefb37ac8915 lib/Target/ARM/CMakeLists.txt
 --- a/lib/Target/ARM/CMakeLists.txt	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/ARM/CMakeLists.txt	Mon Jul 11 09:35:53 2011 -0700
-@@ -33,6 +33,7 @@
++++ b/lib/Target/ARM/CMakeLists.txt	Tue Aug 09 15:21:43 2011 -0700
+@@ -31,6 +31,7 @@
    ARMISelDAGToDAG.cpp
    ARMISelLowering.cpp
    ARMInstrInfo.cpp
 +  ARMInstrNaCl.cpp
    ARMJITInfo.cpp
-   ARMMCCodeEmitter.cpp
-   ARMMCExpr.cpp
-diff -r 20ff3156782f lib/Target/X86/X86AsmBackend.cpp
---- a/lib/Target/X86/X86AsmBackend.cpp	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/X86/X86AsmBackend.cpp	Mon Jul 11 09:35:53 2011 -0700
-@@ -302,13 +302,14 @@
-   }
- 
-   // @LOCALMOD-BEGIN
-+  // FIXME! NaCl should inherit from ELFX86AsmBackend!
-   unsigned getBundleSize() const {
-     return OSType == Triple::NativeClient ? 32 : 0;
-   }
- 
-   bool CustomExpandInst(const MCInst &Inst, MCStreamer &Out) const {
-     if (OSType == Triple::NativeClient) {
--      return CustomExpandInstNaCl(Inst, Out);
-+      return CustomExpandInstNaClX86(Inst, Out);
-     }
-     return false;
-   }
-diff -r 20ff3156782f lib/Target/X86/X86InstrInfo.td
+   ARMLoadStoreOptimizer.cpp
+   ARMMCInstLower.cpp
+diff -r aefb37ac8915 lib/Target/X86/X86InstrInfo.td
 --- a/lib/Target/X86/X86InstrInfo.td	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/X86/X86InstrInfo.td	Mon Jul 11 09:35:53 2011 -0700
-@@ -448,6 +448,7 @@
++++ b/lib/Target/X86/X86InstrInfo.td	Tue Aug 09 15:21:43 2011 -0700
+@@ -479,6 +479,7 @@
  def IsWin64      : Predicate<"Subtarget->isTargetWin64()">;
  def NotWin64     : Predicate<"!Subtarget->isTargetWin64()">;
  // @LOCALMOD-BEGIN
@@ -704,9 +654,9 @@ diff -r 20ff3156782f lib/Target/X86/X86InstrInfo.td
  def IsNaCl       : Predicate<"Subtarget->isTargetNaCl()">, AssemblerPredicate;
  def IsNaCl32     : Predicate<"Subtarget->isTargetNaCl32()">, AssemblerPredicate;
  def IsNaCl64     : Predicate<"Subtarget->isTargetNaCl64()">, AssemblerPredicate;
-diff -r 20ff3156782f lib/Target/X86/X86InstrNaCl.cpp
+diff -r aefb37ac8915 lib/Target/X86/X86InstrNaCl.cpp
 --- a/lib/Target/X86/X86InstrNaCl.cpp	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.cpp	Mon Jul 11 09:35:53 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.cpp	Tue Aug 09 15:21:43 2011 -0700
 @@ -104,7 +104,7 @@
    Out.EmitInstruction(JMPInst);
  }
@@ -741,9 +691,9 @@ diff -r 20ff3156782f lib/Target/X86/X86InstrNaCl.cpp
    switch (Opc) {
    case X86::LOCK_PREFIX:
    case X86::REP_PREFIX:
-diff -r 20ff3156782f lib/Target/X86/X86InstrNaCl.h
+diff -r aefb37ac8915 lib/Target/X86/X86InstrNaCl.h
 --- a/lib/Target/X86/X86InstrNaCl.h	Mon Mar 28 17:01:54 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.h	Mon Jul 11 09:35:53 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.h	Tue Aug 09 15:21:43 2011 -0700
 @@ -1,4 +1,4 @@
 -//===-- X86InstrNaCl.h - Prototype for CustomExpandInstNaCl    ---*- C++ -*-===//
 +//===-- X86InstrNaCl.h - Prototype for CustomExpandInstNaClX86 ---*- C++ -*-===//

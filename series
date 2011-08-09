@@ -19,6 +19,7 @@ llvm-pnacl-0014x-subtarget.patch
 llvm-pnacl-0015-235-eeaa12fb82b94aff06dd5edd2e39ba32abc12238.patch
 llvm-pnacl-0016-236-985777e2e62f6daca9aec8dab851eb61715f045f.patch
 llvm-pnacl-0017-238-7ff9dbd5eedf7c112b5efad4d52027208d0f9e99.patch
+llvm-pnacl-0017x-asmbackend.patch
 llvm-pnacl-0018-240-bb23f96ef85abf5287e4aad9ed511efd7300705f.patch
 llvm-pnacl-0019-243-865f8296339784a347213612e8d97b9453e9af15.patch
 llvm-pnacl-0020-244-c8ae915976a2fb44501aa08753770a66f2fa7f51.patch

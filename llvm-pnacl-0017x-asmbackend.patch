@@ -1,0 +1,38 @@
+# HG changeset patch
+# Parent d1b89770053550be8c9649be020dac9fb53c312f
+X86AsmBackend and ARMAsmBackend have been moved to MCTargetDesc
+
+diff -r d1b897700535 -r f3b40554682f lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp
+--- a/lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp	Mon Mar 28 17:01:56 2011 -0700
++++ b/lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp	Tue Aug 09 15:21:30 2011 -0700
+@@ -388,9 +388,18 @@
+                   uint64_t Value) const;
+ 
+   // @LOCALMOD-BEGIN
++  // FIXME! NaCl should INHERIT from ELFARMAsmBackend, not
++  // add to it.
+   unsigned getBundleSize() const {
+     return (OSType == Triple::NativeClient) ? 16 : 0;
+   }
++
++  bool CustomExpandInst(const MCInst &Inst, MCStreamer &Out) const {
++    if (OSType == Triple::NativeClient) {
++      return CustomExpandInstNaClARM(Inst, Out);
++    }
++    return false;
++  }
+   // @LOCALMOD-END
+ 
+   MCObjectWriter *createObjectWriter(raw_ostream &OS) const {
+diff -r d1b897700535 -r f3b40554682f lib/Target/X86/MCTargetDesc/X86AsmBackend.cpp
+--- a/lib/Target/X86/MCTargetDesc/X86AsmBackend.cpp	Mon Mar 28 17:01:56 2011 -0700
++++ b/lib/Target/X86/MCTargetDesc/X86AsmBackend.cpp	Tue Aug 09 15:21:30 2011 -0700
+@@ -337,7 +337,7 @@
+ 
+   bool CustomExpandInst(const MCInst &Inst, MCStreamer &Out) const {
+     if (OSType == Triple::NativeClient) {
+-      return CustomExpandInstNaCl(Inst, Out);
++      return CustomExpandInstNaClX86(Inst, Out);
+     }
+     return false;
+   }
