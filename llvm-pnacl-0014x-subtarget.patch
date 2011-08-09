@@ -1,0 +1,34 @@
+# HG changeset patch
+# Parent 595fe357ee58bf742771e144c13f5f5e0707eb96
+lib/Target/SubtargetFeature.cpp  has been moved to lib/MC
+
+diff -r 595fe357ee58 lib/MC/SubtargetFeature.cpp
+--- a/lib/MC/SubtargetFeature.cpp	Thu Mar 17 17:49:59 2011 -0700
++++ b/lib/MC/SubtargetFeature.cpp	Tue Aug 09 15:01:56 2011 -0700
+@@ -393,5 +393,11 @@
+       AddFeature("64bit");
+       AddFeature("altivec");
+     }
++// @LOCALMOD-BEGIN
++  } else if (Triple.getArch() == Triple::arm &&
++             Triple.getOS() == Triple::NativeClient) {
++    AddFeature("-neon");
++    AddFeature("+vfp2");
++// @LOCALMOD-END
+   }
+ }
+diff -r 595fe357ee58 tools/llc/llc.cpp
+--- a/tools/llc/llc.cpp	Thu Mar 17 17:49:59 2011 -0700
++++ b/tools/llc/llc.cpp	Tue Aug 09 15:01:56 2011 -0700
+@@ -331,6 +331,11 @@
+   std::string FeaturesStr;
+   if (MAttrs.size()) {
+     SubtargetFeatures Features;
++    // @LOCALMOD-BEGIN
++    // Use the same default attribute settings as libLTO.
++    // TODO(pdox): Figure out why this isn't done for upstream llc.
++    Features.getDefaultSubtargetFeatures(MCPU, TheTriple);
++    // @LOCALMOD-END
+     for (unsigned i = 0; i != MAttrs.size(); ++i)
+       Features.AddFeature(MAttrs[i]);
+     FeaturesStr = Features.getString();
