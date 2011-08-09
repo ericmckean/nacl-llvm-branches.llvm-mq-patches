@@ -3,7 +3,7 @@
 # Date 1303413871 25200
 # Branch pnacl-sfi
 # Node ID 953e674850af79fe3d42ac6130c114c411ffa05d
-# Parent 16d61c6cbb6778836f296a3da8473b9d4397a188
+# Parent d29eed33e1c2e3ed9876e4b4784e83e5debea811
 Fix the variant NOP issue
 
 Differences in the .o files for .s -> .o and direct .o to do with NOPs.  The
@@ -18,30 +18,12 @@ TEST=utman.sh test-arm-pic
  From llvm-pnacl-0025-249-953e674850af79fe3d42ac6130c114c411ffa05d.patch
 
  From .hg/patches/llvm-pnacl-0025-249-953e674850af79fe3d42ac6130c114c411ffa05d.patch.stripped
+* * *
+ARMAsmBackend has been moved to MCTargetDesc
 
-diff -r 16d61c6cbb67 lib/Target/ARM/ARMAsmBackend.cpp
---- a/lib/Target/ARM/ARMAsmBackend.cpp	Thu Apr 21 12:02:47 2011 -0700
-+++ b/lib/Target/ARM/ARMAsmBackend.cpp	Mon Jul 11 09:37:27 2011 -0700
-@@ -144,8 +144,15 @@
-   }
-   // ARM mode
-   uint64_t NumNops = Count / 4;
-+  // @LOCALMOD-BEGIN-UPSTREAM
-+  // FIXME: e1a00000 vs e320f000
-+  //  e1a00000 is mov r0, r0 which may result in a stall
-+  //  but the real nop instruction is not available on early hw....
-+  //  Perhaps this really needs to be switched on the Subtarget??
-+  //  GNU as likes to emit e320f000...
-   for (uint64_t i = 0; i != NumNops; ++i)
--    OW->Write32(0xe1a00000);
-+    OW->Write32(0xe320f000); // regular NOP
-+  // @LOCALMOD-END
-   switch (Count % 4) {
-   default: break; // No leftover bytes to write
-   case 1: OW->Write8(0); break;
-diff -r 16d61c6cbb67 lib/Target/ARM/ARMNaClHeaders.cpp
+diff -r d29eed33e1c2 lib/Target/ARM/ARMNaClHeaders.cpp
 --- a/lib/Target/ARM/ARMNaClHeaders.cpp	Thu Apr 21 12:02:47 2011 -0700
-+++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Mon Jul 11 09:37:27 2011 -0700
++++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Tue Aug 09 16:19:41 2011 -0700
 @@ -45,25 +45,25 @@
  
    O <<
@@ -72,3 +54,23 @@ diff -r 16d61c6cbb67 lib/Target/ARM/ARMNaClHeaders.cpp
      "\t.endm\n"
      "\n\n";
  
+diff -r d29eed33e1c2 lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp
+--- a/lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp	Thu Apr 21 12:02:47 2011 -0700
++++ b/lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp	Tue Aug 09 16:19:41 2011 -0700
+@@ -134,8 +134,15 @@
+   }
+   // ARM mode
+   uint64_t NumNops = Count / 4;
++  // @LOCALMOD-BEGIN-UPSTREAM
++  // FIXME: e1a00000 vs e320f000
++  //  e1a00000 is mov r0, r0 which may result in a stall
++  //  but the real nop instruction is not available on early hw....
++  //  Perhaps this really needs to be switched on the Subtarget??
++  //  GNU as likes to emit e320f000...
+   for (uint64_t i = 0; i != NumNops; ++i)
+-    OW->Write32(0xe1a00000);
++    OW->Write32(0xe320f000); // regular NOP
++  // @LOCALMOD-END
+   switch (Count % 4) {
+   default: break; // No leftover bytes to write
+   case 1: OW->Write8(0); break;
