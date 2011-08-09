@@ -6,6 +6,11 @@ AsmPrinter-isBlockOnlyReachableByFallthough.patch
 localmod.patch
 getDataAlignmentFactor.patch
 localmod3.patch
+ARMAsmBackend.patch
+ARMAsmPrinter.patch
+ARMlocals.patch
+ARMMCAsmInfo.patch
+armlocals2.patch
 llvm-pnacl-0001-221-04eba3102bd02843be19d597dd4cf2a52f1087eb.patch
 llvm-pnacl-0002-222-cc48353984dc7bf9aa2fa978d49aafb86e597d98.patch
 llvm-pnacl-0003-223-b7022424b7e7dafcbc60861196d0c8e01935dd2a.patch

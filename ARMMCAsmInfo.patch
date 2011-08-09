@@ -1,0 +1,16 @@
+# HG changeset patch
+# Parent d0ab6e8bd9d5e4a2c7016bb31ee49b25cd373bd2
+ARMMCAsmInfo.cpp moved to lib/Target/ARM/MCTargetDesc/
+
+diff -r d0ab6e8bd9d5 -r 2933bf769155 lib/Target/ARM/MCTargetDesc/ARMMCAsmInfo.cpp
+--- a/lib/Target/ARM/MCTargetDesc/ARMMCAsmInfo.cpp	Mon Aug 08 16:35:51 2011 -0700
++++ b/lib/Target/ARM/MCTargetDesc/ARMMCAsmInfo.cpp	Mon Aug 08 17:00:23 2011 -0700
+@@ -80,4 +80,8 @@
+   // Exceptions handling
+   if (EnableARMEHABI)
+     ExceptionsType = ExceptionHandling::ARM;
++  // @LOCALMOD-START
++  // Exceptions handling
++  ExceptionsType = ExceptionHandling::DwarfTable;
++  // @LOCALMOD-END
+ }
