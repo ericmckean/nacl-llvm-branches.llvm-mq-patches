@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent f967294c5425f35a32741d5d16a8cc4c17af638b
+# Parent 23fafa4a128bfb871a97a6e8dc9f470e7dc2ffb8
 # User Jason Kim <jasonwkim@google.com>
 
 Make EH stuff appear in .rodata. (Fixes arm failure)
 
-diff -r f967294c5425 lib/Target/ARM/ARMTargetObjectFile.cpp
---- a/lib/Target/ARM/ARMTargetObjectFile.cpp	Thu Jul 14 16:27:21 2011 -0700
-+++ b/lib/Target/ARM/ARMTargetObjectFile.cpp	Thu Jul 14 16:27:22 2011 -0700
+diff -r 23fafa4a128b lib/Target/ARM/ARMTargetObjectFile.cpp
+--- a/lib/Target/ARM/ARMTargetObjectFile.cpp	Tue Aug 09 16:42:05 2011 -0700
++++ b/lib/Target/ARM/ARMTargetObjectFile.cpp	Tue Aug 09 16:42:05 2011 -0700
 @@ -36,7 +36,7 @@
                                   ELF::SHF_WRITE |
                                   ELF::SHF_ALLOC,

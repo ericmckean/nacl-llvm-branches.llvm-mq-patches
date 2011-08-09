@@ -3,15 +3,15 @@
 # Date 1310632045 25200
 # Branch pnacl-sfi
 # Node ID 2c5d50edfa146edcba65ce3008822db6379354be
-# Parent 4b2458ba448ae4e83b59177ed5432bb86fe1f528
+# Parent 723230fa37b6373c6b4d7a3feb9e88c18c5868f5
 Fix the libLTO soname fix
 
  From pnacl-llvm-0055-281-2c5d50edfa146edcba65ce3008822db6379354be.patch
 
-diff -r 4b2458ba448a tools/lto/Makefile
+diff -r 723230fa37b6 tools/lto/Makefile
 --- a/tools/lto/Makefile	Thu Jul 14 00:08:29 2011 -0700
-+++ b/tools/lto/Makefile	Thu Jul 14 16:27:20 2011 -0700
-@@ -60,5 +60,7 @@
++++ b/tools/lto/Makefile	Tue Aug 09 16:42:04 2011 -0700
+@@ -61,5 +61,7 @@
  #@ LOCALMOD-BEGIN
  # This is to fix an upstream bug. It is in the process of being upstreamed.
  # This line can be removed after it has been fixed upstream and we've merged.

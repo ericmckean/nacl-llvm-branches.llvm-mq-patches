@@ -1,14 +1,14 @@
 # HG changeset patch
-# Parent c73db4e30bec15f0c81a6c4111026ed5a0a16d66
+# Parent 5cf8961ccb737ab301c5816f7d1fee52f6b2c3cc
 # User Ivan Krasin <krasin@chromium.org>
-llvm/lib/Support/MemoryBuffer.cpp: revert SRPC file access.    
+llvm/lib/Support/MemoryBuffer.cpp: revert SRPC file access.
 Review URL: http://codereview.chromium.org/7483010/
 BUG=http://code.google.com/p/nativeclient/issues/detail?id=1810
 
-diff -r c73db4e30bec -r e56fa07c58c0 tools/llc/llc.cpp
---- a/tools/llc/llc.cpp	Fri Jul 15 14:35:50 2011 -0700
-+++ b/tools/llc/llc.cpp	Fri Jul 15 15:12:12 2011 -0700
-@@ -245,7 +245,7 @@
+diff -r 5cf8961ccb73 tools/llc/llc.cpp
+--- a/tools/llc/llc.cpp	Tue Aug 09 16:42:06 2011 -0700
++++ b/tools/llc/llc.cpp	Tue Aug 09 16:42:07 2011 -0700
+@@ -274,7 +274,7 @@
    FOS.flush();
    ROS.flush();
  

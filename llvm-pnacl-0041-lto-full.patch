@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent b6bd5261a7e2585b81d8feb4c767598bb5056f58
+# Parent 4d39a980152bab88c02a472bf76156da3ce93151
 # User Jason Kim <jasonwkim@google.com>
 With getLazyBitcodeModule, uses and defs don't line up. Load the whole bitcode at once.
 
-diff -r b6bd5261a7e2 tools/lto/LTOModule.cpp
---- a/tools/lto/LTOModule.cpp	Thu Jul 14 16:27:22 2011 -0700
-+++ b/tools/lto/LTOModule.cpp	Thu Jul 14 16:27:23 2011 -0700
-@@ -141,8 +141,8 @@
+diff -r 4d39a980152b tools/lto/LTOModule.cpp
+--- a/tools/lto/LTOModule.cpp	Tue Aug 09 16:42:05 2011 -0700
++++ b/tools/lto/LTOModule.cpp	Tue Aug 09 16:42:06 2011 -0700
+@@ -144,8 +144,8 @@
    }
  
    // parse bitcode buffer
