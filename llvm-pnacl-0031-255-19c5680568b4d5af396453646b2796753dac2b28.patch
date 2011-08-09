@@ -3,7 +3,7 @@
 # Date 1305243594 25200
 # Branch pnacl-sfi
 # Node ID 19c5680568b4d5af396453646b2796753dac2b28
-# Parent c3eb4e1fcb7d73d25b459626a22cafbc630ca2d3
+# Parent 0ba4419b097d3d5be1a159c6cb9a6bb72b29a4a2
 This fixes the last bit of divergence between LLVM and binutils for ARM in the
 text section.
 
@@ -71,3 +71,4 @@ This change agrees with what GNU as does, and makes the PIC code run.
  From .hg/patches/llvm-pnacl-0031-255-19c5680568b4d5af396453646b2796753dac2b28.patch.stripped
 
 This patch is made empty by upstream
+

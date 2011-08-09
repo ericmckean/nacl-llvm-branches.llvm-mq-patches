@@ -3,16 +3,16 @@
 # Date 1306451117 25200
 # Branch pnacl-sfi
 # Node ID e25c7690d014b1ea5c29383f946a7e219e30f79d
-# Parent 3f1bd077b56965aba945eb409b6d9fd216b1048b
+# Parent 9b9f15c124635349aec534efb7aa3d87349ce6c6
 Revert removing __nacl_read_tp
 
  From llvm-pnacl-0037-261-e25c7690d014b1ea5c29383f946a7e219e30f79d.patch
 
  From .hg/patches/llvm-pnacl-0037-261-e25c7690d014b1ea5c29383f946a7e219e30f79d.patch.stripped
 
-diff -r 3f1bd077b569 lib/CodeGen/IntrinsicLowering.cpp
+diff -r 9b9f15c12463 lib/CodeGen/IntrinsicLowering.cpp
 --- a/lib/CodeGen/IntrinsicLowering.cpp	Thu May 26 13:02:07 2011 -0700
-+++ b/lib/CodeGen/IntrinsicLowering.cpp	Mon Jul 11 09:37:41 2011 -0700
++++ b/lib/CodeGen/IntrinsicLowering.cpp	Tue Aug 09 16:34:22 2011 -0700
 @@ -129,11 +129,8 @@
    // assert that __nacl_read_tp exists.
    // Insert a correctly-typed definition now.
