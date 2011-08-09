@@ -5,6 +5,7 @@
 # Node ID 2063d587d444442e03d2b12a8106de7975824e97
 # Parent d2a40785b09aeaf5b4cf1fb5bf1730d553174231
 # Parent  502c5f27f8043ecb31fd815e0d6e236620f5258e
+Date: 2011-07-21
 Merged up to r124151
 
  From llvm-pnacl-0000-220-2063d587d444442e03d2b12a8106de7975824e97.patch
@@ -13,13 +14,40 @@ Merged up to r124151
 
 Ivan Krasin
 lib/Support/MemoryBuffer.cc: revert SRPC file access.
-Date: 2011-07-21
 Review URL: http://codereview.chromium.org/7483010/
 BUG=http://code.google.com/p/nativeclient/issues/detail?id=1810
+* * *
+Added a patch to record the partial rebase for 137023 branch pnacl-tip
+* * *
+include/llvm/Target/TargetAsmBackend.h has been moved to include/MC/MCAsmBackend.h
+* * *
+include/llvm/Target/TargetAsmInfo.h has been moved to include/MC/MCAsmInfo.h
+* * *
+localmod: getDataAlignmentFactor
+* * *
+localmod: lib/Object/COFFObjectFile.cpp lib/Support/Triple.cpp lib/Support/Unix/PathV2.inc lib/Target/ARM/ARM.h
+* * *
+ARMAsmBackend.cpp  was moved to lib/Target/ARM/MCTargetDesc/
+* * *
+localmod: lib/Target/ARM/ARMAsmPrinter.cpp
+* * *
+localmod: lib/Target/ARM/ARMAsmPrinter.h lib/Target/ARM/ARMBaseRegisterInfo.cpp lib/Target/ARM/ARMExpandPseudoInsts.cpp lib/Target/ARM/ARMISelDAGToDAG.cpp
+* * *
+ARMMCAsmInfo.cpp moved to lib/Target/ARM/MCTargetDesc/
+* * *
+localmod: lib/Target/ARM/ARMMCInstLower.cpp lib/Target/ARM/ARMTargetMachine.cpp
+* * *
+localmod: lib/Target/X86/CMakeLists.txt lib/Target/X86/MCTargetDesc/X86AsmBackend.cpp lib/Target/X86/X86ISelLowering.cpp lib/Target/X86/X86InstrInfo.cpp
+* * *
+localmod: failed chunks from X86InstrInfo.h is moved into X86BaseInfo.h
+* * *
+localmod:lib/Target/X86/MCTargetDesc/X86MCCodeEmitter.cpp lib/Target/X86/X86RegisterInfo.cpp lib/Target/X86/X86RegisterInfo.td lib/Target/X86/X86TargetMachine.cpp
+* * *
+localmod: lib/Target/X86/X86ISelLowering.cpp lib/Target/X86/X86TargetObjectFile.cpp lib/Target/X86/X86TargetObjectFile.h
 
 diff -r d2a40785b09a Makefile
 --- a/Makefile	Sat Aug 06 18:20:24 2011 +0000
-+++ b/Makefile	Tue Aug 09 14:33:54 2011 -0700
++++ b/Makefile	Tue Aug 09 14:43:04 2011 -0700
 @@ -43,6 +43,11 @@
  
  include $(LEVEL)/Makefile.config
@@ -42,7 +70,7 @@ diff -r d2a40785b09a Makefile
  	  ENABLE_PROFILING=$(ENABLE_PROFILING) \
 diff -r d2a40785b09a Makefile.rules
 --- a/Makefile.rules	Sat Aug 06 18:20:24 2011 +0000
-+++ b/Makefile.rules	Tue Aug 09 14:33:54 2011 -0700
++++ b/Makefile.rules	Tue Aug 09 14:43:04 2011 -0700
 @@ -571,6 +571,11 @@
  endif
  endif
@@ -57,7 +85,7 @@ diff -r d2a40785b09a Makefile.rules
  # Options To Invoke Tools
 diff -r d2a40785b09a autoconf/config.sub
 --- a/autoconf/config.sub	Sat Aug 06 18:20:24 2011 +0000
-+++ b/autoconf/config.sub	Tue Aug 09 14:33:54 2011 -0700
++++ b/autoconf/config.sub	Tue Aug 09 14:43:04 2011 -0700
 @@ -237,6 +237,10 @@
  		basic_machine=m68k-atari
  		os=-mint
@@ -96,7 +124,7 @@ diff -r d2a40785b09a autoconf/config.sub
  	-nto*)
 diff -r d2a40785b09a autoconf/configure.ac
 --- a/autoconf/configure.ac	Sat Aug 06 18:20:24 2011 +0000
-+++ b/autoconf/configure.ac	Tue Aug 09 14:33:54 2011 -0700
++++ b/autoconf/configure.ac	Tue Aug 09 14:43:04 2011 -0700
 @@ -253,6 +253,11 @@
      llvm_cv_no_link_all_option="-Wl,--no-whole-archive"
      llvm_cv_os_type="Freestanding"
@@ -111,7 +139,7 @@ diff -r d2a40785b09a autoconf/configure.ac
      llvm_cv_no_link_all_option=""
 diff -r d2a40785b09a configure
 --- a/configure	Sat Aug 06 18:20:24 2011 +0000
-+++ b/configure	Tue Aug 09 14:33:54 2011 -0700
++++ b/configure	Tue Aug 09 14:43:04 2011 -0700
 @@ -2289,6 +2289,11 @@
      llvm_cv_no_link_all_option="-Wl,--no-whole-archive"
      llvm_cv_os_type="Freestanding"
@@ -124,9 +152,20 @@ diff -r d2a40785b09a configure
    *)
      llvm_cv_link_all_option=""
      llvm_cv_no_link_all_option=""
+diff -r d2a40785b09a include/llvm/ADT/Triple.h
+--- a/include/llvm/ADT/Triple.h	Sat Aug 06 18:20:24 2011 +0000
++++ b/include/llvm/ADT/Triple.h	Tue Aug 09 14:43:04 2011 -0700
+@@ -87,6 +87,7 @@
+     Lv2,        // PS3
+     MacOSX,
+     MinGW32,    // i*86-pc-mingw32, *-w64-mingw32
++    NativeClient, // @LOCALMOD
+     NetBSD,
+     OpenBSD,
+     Psp,
 diff -r d2a40785b09a include/llvm/CodeGen/AsmPrinter.h
 --- a/include/llvm/CodeGen/AsmPrinter.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/include/llvm/CodeGen/AsmPrinter.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/include/llvm/CodeGen/AsmPrinter.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -269,6 +269,11 @@
      virtual bool
      isBlockOnlyReachableByFallthrough(const MachineBasicBlock *MBB) const;
@@ -157,7 +196,7 @@ diff -r d2a40785b09a include/llvm/CodeGen/AsmPrinter.h
      void EmitReference(const MCSymbol *Sym, unsigned Encoding) const;
 diff -r d2a40785b09a include/llvm/CodeGen/MachineConstantPool.h
 --- a/include/llvm/CodeGen/MachineConstantPool.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/include/llvm/CodeGen/MachineConstantPool.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/include/llvm/CodeGen/MachineConstantPool.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -56,6 +56,17 @@
  
    virtual void AddSelectionDAGCSEId(FoldingSetNodeID &ID) = 0;
@@ -178,7 +217,7 @@ diff -r d2a40785b09a include/llvm/CodeGen/MachineConstantPool.h
  };
 diff -r d2a40785b09a include/llvm/CodeGen/MachineInstrBuilder.h
 --- a/include/llvm/CodeGen/MachineInstrBuilder.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/include/llvm/CodeGen/MachineInstrBuilder.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/include/llvm/CodeGen/MachineInstrBuilder.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -222,6 +222,21 @@
    return MachineInstrBuilder(MI);
  }
@@ -201,9 +240,50 @@ diff -r d2a40785b09a include/llvm/CodeGen/MachineInstrBuilder.h
  /// BuildMI - This version of the builder inserts the newly-built
  /// instruction at the end of the given MachineBasicBlock, and does NOT take a
  /// destination register.
+diff -r d2a40785b09a include/llvm/MC/MCAsmBackend.h
+--- a/include/llvm/MC/MCAsmBackend.h	Sat Aug 06 18:20:24 2011 +0000
++++ b/include/llvm/MC/MCAsmBackend.h	Tue Aug 09 14:43:04 2011 -0700
+@@ -124,6 +124,24 @@
+   /// HandleAssemblerFlag - Handle any target-specific assembler flags.
+   /// By default, do nothing.
+   virtual void HandleAssemblerFlag(MCAssemblerFlag Flag) {}
++
++  // @LOCALMOD-BEGIN
++  /// getBundleSize - Return the size (in bytes) of code bundling units
++  /// for this target. If 0, bundling is disabled. This is used exclusively
++  /// for Native Client.
++  virtual unsigned getBundleSize() const {
++    return 0;
++  }
++
++  /// CustomExpandInst -
++  ///   If the MCInst instruction has a custom expansion, write it to the
++  /// MCStreamer 'Out'. This can be used to perform "last minute" rewrites of
++  /// MCInst instructions for emission.
++  virtual bool CustomExpandInst(const MCInst &Inst, MCStreamer &Out) const {
++    return false;
++  }
++  // @LOCALMOD-END
++
+ };
+ 
+ } // End llvm namespace
+diff -r d2a40785b09a include/llvm/MC/MCAsmInfo.h
+--- a/include/llvm/MC/MCAsmInfo.h	Sat Aug 06 18:20:24 2011 +0000
++++ b/include/llvm/MC/MCAsmInfo.h	Tue Aug 09 14:43:04 2011 -0700
+@@ -48,6 +48,9 @@
+     ///                  Default is true.
+     bool IsLittleEndian;
+ 
++    // @LOCALMOD
++    unsigned StackSlotSize; // @LOCALMOD
++
+     /// StackGrowsUp - True if target stack grow up.
+     ///                Default is false.
+     bool StackGrowsUp;
 diff -r d2a40785b09a include/llvm/MC/MCAsmLayout.h
 --- a/include/llvm/MC/MCAsmLayout.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/include/llvm/MC/MCAsmLayout.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/include/llvm/MC/MCAsmLayout.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -79,6 +79,11 @@
    /// \brief Get the offset of the given fragment inside its containing section.
    uint64_t getFragmentOffset(const MCFragment *F) const;
@@ -218,7 +298,7 @@ diff -r d2a40785b09a include/llvm/MC/MCAsmLayout.h
    /// @{
 diff -r d2a40785b09a include/llvm/MC/MCAssembler.h
 --- a/include/llvm/MC/MCAssembler.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/include/llvm/MC/MCAssembler.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/include/llvm/MC/MCAssembler.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -53,9 +53,18 @@
      FT_Org,
      FT_Dwarf,
@@ -384,9 +464,27 @@ diff -r d2a40785b09a include/llvm/MC/MCAssembler.h
    MCCodeEmitter &getEmitter() const { return Emitter; }
  
    MCObjectWriter &getWriter() const { return Writer; }
+diff -r d2a40785b09a include/llvm/MC/MCObjectStreamer.h
+--- a/include/llvm/MC/MCObjectStreamer.h	Sat Aug 06 18:20:24 2011 +0000
++++ b/include/llvm/MC/MCObjectStreamer.h	Tue Aug 09 14:43:04 2011 -0700
+@@ -66,6 +66,14 @@
+                              unsigned AddrSpace);
+   virtual void EmitULEB128Value(const MCExpr *Value);
+   virtual void EmitSLEB128Value(const MCExpr *Value);
++                             
++  // @LOCALMOD-BEGIN
++  void EmitBundleLock();
++  void EmitBundleUnlock();
++  void EmitBundleAlignStart();
++  void EmitBundleAlignEnd();
++  // @LOCALMOD-END
++
+   virtual void EmitWeakReference(MCSymbol *Alias, const MCSymbol *Symbol);
+   virtual void ChangeSection(const MCSection *Section);
+   virtual void EmitInstruction(const MCInst &Inst);
 diff -r d2a40785b09a include/llvm/MC/MCStreamer.h
 --- a/include/llvm/MC/MCStreamer.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/include/llvm/MC/MCStreamer.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/include/llvm/MC/MCStreamer.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -446,6 +446,27 @@
  
      /// @}
@@ -417,7 +515,7 @@ diff -r d2a40785b09a include/llvm/MC/MCStreamer.h
      virtual void EmitFileDirective(StringRef Filename) = 0;
 diff -r d2a40785b09a include/llvm/Support/ELF.h
 --- a/include/llvm/Support/ELF.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/include/llvm/Support/ELF.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/include/llvm/Support/ELF.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -179,9 +179,25 @@
    ELFOSABI_C6000_ELFABI = 64, // Bare-metal TMS320C6000
    ELFOSABI_C6000_LINUX = 65,  // Linux TMS320C6000
@@ -446,7 +544,7 @@ diff -r d2a40785b09a include/llvm/Support/ELF.h
    R_X86_64_NONE       = 0,
 diff -r d2a40785b09a include/llvm/Support/system_error.h
 --- a/include/llvm/Support/system_error.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/include/llvm/Support/system_error.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/include/llvm/Support/system_error.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -606,7 +606,7 @@
  #else
    stream_timeout                      = ETIMEDOUT,
@@ -458,7 +556,7 @@ diff -r d2a40785b09a include/llvm/Support/system_error.h
    too_many_files_open                 = EMFILE,
 diff -r d2a40785b09a include/llvm/Target/Target.td
 --- a/include/llvm/Target/Target.td	Sat Aug 06 18:20:24 2011 +0000
-+++ b/include/llvm/Target/Target.td	Tue Aug 09 14:33:54 2011 -0700
++++ b/include/llvm/Target/Target.td	Tue Aug 09 14:43:04 2011 -0700
 @@ -678,6 +678,40 @@
    let neverHasSideEffects = 1;
    let isAsCheapAsAMove = 1;
@@ -502,7 +600,7 @@ diff -r d2a40785b09a include/llvm/Target/Target.td
  //===----------------------------------------------------------------------===//
 diff -r d2a40785b09a include/llvm/Target/TargetFrameLowering.h
 --- a/include/llvm/Target/TargetFrameLowering.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/include/llvm/Target/TargetFrameLowering.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/include/llvm/Target/TargetFrameLowering.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -52,11 +52,19 @@
    unsigned StackAlignment;
    unsigned TransientStackAlignment;
@@ -540,7 +638,7 @@ diff -r d2a40785b09a include/llvm/Target/TargetFrameLowering.h
    /// is the largest alignment for any data object in the target.
 diff -r d2a40785b09a include/llvm/Target/TargetOpcodes.h
 --- a/include/llvm/Target/TargetOpcodes.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/include/llvm/Target/TargetOpcodes.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/include/llvm/Target/TargetOpcodes.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -82,7 +82,14 @@
  
      /// COPY - Target-independent register copy. This instruction can also be
@@ -559,7 +657,7 @@ diff -r d2a40785b09a include/llvm/Target/TargetOpcodes.h
  } // end namespace llvm
 diff -r d2a40785b09a lib/Bitcode/Reader/BitcodeReader.cpp
 --- a/lib/Bitcode/Reader/BitcodeReader.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Bitcode/Reader/BitcodeReader.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Bitcode/Reader/BitcodeReader.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -1661,7 +1661,12 @@
        std::string S;
        if (ConvertToString(Record, 0, S))
@@ -576,7 +674,7 @@ diff -r d2a40785b09a lib/Bitcode/Reader/BitcodeReader.cpp
      case bitc::MODULE_CODE_ASM: {  // ASM: [strchr x N]
 diff -r d2a40785b09a lib/CodeGen/AsmPrinter/AsmPrinter.cpp
 --- a/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -676,9 +676,14 @@
          break;
  
@@ -674,7 +772,7 @@ diff -r d2a40785b09a lib/CodeGen/AsmPrinter/AsmPrinter.cpp
                                        OutContext);
 diff -r d2a40785b09a lib/CodeGen/BranchFolding.cpp
 --- a/lib/CodeGen/BranchFolding.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/CodeGen/BranchFolding.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/CodeGen/BranchFolding.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -20,6 +20,7 @@
  #include "BranchFolding.h"
  #include "llvm/Function.h"
@@ -707,7 +805,7 @@ diff -r d2a40785b09a lib/CodeGen/BranchFolding.cpp
    for (unsigned i = 0, e = JTIsLive.size(); i != e; ++i)
 diff -r d2a40785b09a lib/CodeGen/SelectionDAG/DAGCombiner.cpp
 --- a/lib/CodeGen/SelectionDAG/DAGCombiner.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/CodeGen/SelectionDAG/DAGCombiner.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/CodeGen/SelectionDAG/DAGCombiner.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -7438,6 +7438,11 @@
    if (ConstantFPSDNode *TV = dyn_cast<ConstantFPSDNode>(N2))
      if (ConstantFPSDNode *FV = dyn_cast<ConstantFPSDNode>(N3)) {
@@ -722,7 +820,7 @@ diff -r d2a40785b09a lib/CodeGen/SelectionDAG/DAGCombiner.cpp
            // If both constants have multiple uses, then we won't need to do an
 diff -r d2a40785b09a lib/CodeGen/SelectionDAG/SelectionDAGBuilder.cpp
 --- a/lib/CodeGen/SelectionDAG/SelectionDAGBuilder.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/CodeGen/SelectionDAG/SelectionDAGBuilder.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/CodeGen/SelectionDAG/SelectionDAGBuilder.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -6216,7 +6216,10 @@
    SDValue V = DAG.getVAArg(TLI.getValueType(I.getType()), getCurDebugLoc(),
                             getRoot(), getValue(I.getOperand(0)),
@@ -737,7 +835,7 @@ diff -r d2a40785b09a lib/CodeGen/SelectionDAG/SelectionDAGBuilder.cpp
  }
 diff -r d2a40785b09a lib/MC/ELFObjectWriter.cpp
 --- a/lib/MC/ELFObjectWriter.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/MC/ELFObjectWriter.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/MC/ELFObjectWriter.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -95,9 +95,24 @@
    switch (TargetObjectWriter->getOSType()) {
      case Triple::FreeBSD:  Write8(ELF::ELFOSABI_FREEBSD); break;
@@ -780,7 +878,7 @@ diff -r d2a40785b09a lib/MC/ELFObjectWriter.cpp
      return &Symbol;
 diff -r d2a40785b09a lib/MC/ELFObjectWriter.h
 --- a/lib/MC/ELFObjectWriter.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/MC/ELFObjectWriter.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/MC/ELFObjectWriter.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -243,7 +243,18 @@
      virtual void WriteHeader(uint64_t SectionDataSize, unsigned NumberOfSections);
  
@@ -803,7 +901,7 @@ diff -r d2a40785b09a lib/MC/ELFObjectWriter.h
                            uint64_t name, uint8_t info,
 diff -r d2a40785b09a lib/MC/MCAsmStreamer.cpp
 --- a/lib/MC/MCAsmStreamer.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/MC/MCAsmStreamer.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/MC/MCAsmStreamer.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -193,6 +193,13 @@
    virtual void EmitValueToOffset(const MCExpr *Offset,
                                   unsigned char Value = 0);
@@ -848,7 +946,7 @@ diff -r d2a40785b09a lib/MC/MCAsmStreamer.cpp
    assert(MAI.hasSingleParameterDotFile());
 diff -r d2a40785b09a lib/MC/MCAssembler.cpp
 --- a/lib/MC/MCAssembler.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/MC/MCAssembler.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/MC/MCAssembler.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -70,6 +70,26 @@
  }
  
@@ -1165,9 +1263,21 @@ diff -r d2a40785b09a lib/MC/MCAssembler.cpp
    case MCFragment::FT_Org:  {
      const MCOrgFragment *OF = cast<MCOrgFragment>(this);
      OS << "\n       ";
+diff -r d2a40785b09a lib/MC/MCDwarf.cpp
+--- a/lib/MC/MCDwarf.cpp	Sat Aug 06 18:20:24 2011 +0000
++++ b/lib/MC/MCDwarf.cpp	Tue Aug 09 14:43:04 2011 -0700
+@@ -433,7 +433,7 @@
+ static int getDataAlignmentFactor(MCStreamer &streamer) {
+   MCContext &context = streamer.getContext();
+   const MCAsmInfo &asmInfo = context.getAsmInfo();
+-  int size = asmInfo.getPointerSize();
++  int size = asmInfo.getStackSlotSize(); // @LOCALMOD
+   if (asmInfo.isStackGrowthDirectionUp())
+     return size;
+   else
 diff -r d2a40785b09a lib/MC/MCELFStreamer.cpp
 --- a/lib/MC/MCELFStreamer.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/MC/MCELFStreamer.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/MC/MCELFStreamer.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -330,7 +330,6 @@
  }
  
@@ -1205,7 +1315,7 @@ diff -r d2a40785b09a lib/MC/MCELFStreamer.cpp
  void MCELFStreamer::Finish() {
 diff -r d2a40785b09a lib/MC/MCLoggingStreamer.cpp
 --- a/lib/MC/MCLoggingStreamer.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/MC/MCLoggingStreamer.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/MC/MCLoggingStreamer.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -202,6 +202,28 @@
      return Child->EmitValueToOffset(Offset, Value);
    }
@@ -1237,7 +1347,7 @@ diff -r d2a40785b09a lib/MC/MCLoggingStreamer.cpp
      return Child->EmitFileDirective(Filename);
 diff -r d2a40785b09a lib/MC/MCNullStreamer.cpp
 --- a/lib/MC/MCNullStreamer.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/MC/MCNullStreamer.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/MC/MCNullStreamer.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -82,6 +82,13 @@
      virtual void EmitValueToOffset(const MCExpr *Offset,
                                     unsigned char Value = 0) {}
@@ -1254,7 +1364,7 @@ diff -r d2a40785b09a lib/MC/MCNullStreamer.cpp
        return false;
 diff -r d2a40785b09a lib/MC/MCObjectStreamer.cpp
 --- a/lib/MC/MCObjectStreamer.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/MC/MCObjectStreamer.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/MC/MCObjectStreamer.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -16,6 +16,7 @@
  #include "llvm/MC/MCContext.h"
  #include "llvm/MC/MCDwarf.h"
@@ -1348,7 +1458,7 @@ diff -r d2a40785b09a lib/MC/MCObjectStreamer.cpp
      if (Inst.getOperand(i).isExpr())
 diff -r d2a40785b09a lib/MC/MCParser/AsmParser.cpp
 --- a/lib/MC/MCParser/AsmParser.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/MC/MCParser/AsmParser.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/MC/MCParser/AsmParser.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -207,6 +207,13 @@
    // ".align{,32}", ".p2align{,w,l}"
    bool ParseDirectiveAlign(bool IsPow2, unsigned ValueSize);
@@ -1456,7 +1566,7 @@ diff -r d2a40785b09a lib/MC/MCParser/AsmParser.cpp
  bool AsmParser::ParseDirectiveSymbolAttribute(MCSymbolAttr Attr) {
 diff -r d2a40785b09a lib/Makefile
 --- a/lib/Makefile	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Makefile	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Makefile	Tue Aug 09 14:43:04 2011 -0700
 @@ -13,5 +13,10 @@
  PARALLEL_DIRS := VMCore AsmParser Bitcode Archive Analysis Transforms CodeGen \
                  Target ExecutionEngine Linker MC CompilerDriver Object
@@ -1468,9 +1578,21 @@ diff -r d2a40785b09a lib/Makefile
 +
  include $(LEVEL)/Makefile.common
  
+diff -r d2a40785b09a lib/Object/COFFObjectFile.cpp
+--- a/lib/Object/COFFObjectFile.cpp	Sat Aug 06 18:20:24 2011 +0000
++++ b/lib/Object/COFFObjectFile.cpp	Tue Aug 09 14:43:04 2011 -0700
+@@ -247,7 +247,7 @@
+ 
+   // Check for string table entry. First byte is '/'.
+   if (name[0] == '/') {
+-    uint32_t Offset;
++    unsigned long long Offset; /* @LOCALMOD */
+     name.substr(1).getAsInteger(10, Offset);
+     if (error_code ec = getString(Offset, name))
+       return ec;
 diff -r d2a40785b09a lib/Support/CrashRecoveryContext.cpp
 --- a/lib/Support/CrashRecoveryContext.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Support/CrashRecoveryContext.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Support/CrashRecoveryContext.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -202,6 +202,7 @@
  
    gCrashRecoveryEnabled = true;
@@ -1503,7 +1625,7 @@ diff -r d2a40785b09a lib/Support/CrashRecoveryContext.cpp
  #endif
 diff -r d2a40785b09a lib/Support/DynamicLibrary.cpp
 --- a/lib/Support/DynamicLibrary.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Support/DynamicLibrary.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Support/DynamicLibrary.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -22,6 +22,8 @@
  #include <map>
  #include <vector>
@@ -1522,7 +1644,7 @@ diff -r d2a40785b09a lib/Support/DynamicLibrary.cpp
 +
 diff -r d2a40785b09a lib/Support/Mutex.cpp
 --- a/lib/Support/Mutex.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Support/Mutex.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Support/Mutex.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -75,7 +75,7 @@
      errorcode = pthread_mutexattr_settype(&attr, kind);
      assert(errorcode == 0);
@@ -1534,7 +1656,7 @@ diff -r d2a40785b09a lib/Support/Mutex.cpp
      assert(errorcode == 0);
 diff -r d2a40785b09a lib/Support/Triple.cpp
 --- a/lib/Support/Triple.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Support/Triple.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Support/Triple.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -102,6 +102,7 @@
    case Lv2: return "lv2";
    case MacOSX: return "macosx";
@@ -1543,9 +1665,28 @@ diff -r d2a40785b09a lib/Support/Triple.cpp
    case NetBSD: return "netbsd";
    case OpenBSD: return "openbsd";
    case Psp: return "psp";
+@@ -332,13 +333,17 @@
+   else if (OSName.startswith("kfreebsd"))
+     return KFreeBSD;
+   else if (OSName.startswith("linux"))
+-    return Linux;
++    // TODO(pdox): Fix this when we stop using target linux
++    //return Linux;
++    return NativeClient; // @LOCALMOD
+   else if (OSName.startswith("lv2"))
+     return Lv2;
+   else if (OSName.startswith("macosx"))
+     return MacOSX;
+   else if (OSName.startswith("mingw32"))
+     return MinGW32;
++  else if (OSName.startswith("nacl"))
++    return NativeClient;
+   else if (OSName.startswith("netbsd"))
+     return NetBSD;
+   else if (OSName.startswith("openbsd"))
 diff -r d2a40785b09a lib/Support/Unix/Host.inc
 --- a/lib/Support/Unix/Host.inc	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Support/Unix/Host.inc	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Support/Unix/Host.inc	Tue Aug 09 14:43:04 2011 -0700
 @@ -19,19 +19,25 @@
  #include "llvm/Config/config.h"
  #include "llvm/ADT/StringRef.h"
@@ -1574,7 +1715,7 @@ diff -r d2a40785b09a lib/Support/Unix/Host.inc
  std::string sys::getHostTriple() {
 diff -r d2a40785b09a lib/Support/Unix/Memory.inc
 --- a/lib/Support/Unix/Memory.inc	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Support/Unix/Memory.inc	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Support/Unix/Memory.inc	Tue Aug 09 14:43:04 2011 -0700
 @@ -46,6 +46,10 @@
    fd = zero_fd;
  #endif
@@ -1588,7 +1729,7 @@ diff -r d2a40785b09a lib/Support/Unix/Memory.inc
    MAP_ANONYMOUS
 diff -r d2a40785b09a lib/Support/Unix/Path.inc
 --- a/lib/Support/Unix/Path.inc	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Support/Unix/Path.inc	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Support/Unix/Path.inc	Tue Aug 09 14:43:04 2011 -0700
 @@ -128,7 +128,9 @@
  
  Path
@@ -1794,7 +1935,7 @@ diff -r d2a40785b09a lib/Support/Unix/Path.inc
  
 diff -r d2a40785b09a lib/Support/Unix/PathV2.inc
 --- a/lib/Support/Unix/PathV2.inc	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Support/Unix/PathV2.inc	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Support/Unix/PathV2.inc	Tue Aug 09 14:43:04 2011 -0700
 @@ -246,6 +246,9 @@
  }
  
@@ -1813,7 +1954,17 @@ diff -r d2a40785b09a lib/Support/Unix/PathV2.inc
  }
  
  error_code exists(const Twine &path, bool &result) {
-@@ -434,6 +438,7 @@
+@@ -344,6 +348,9 @@
+ error_code unique_file(const Twine &model, int &result_fd,
+                              SmallVectorImpl<char> &result_path,
+                              bool makeAbsolute) {
++#ifdef __native_client__                         
++  llvm_unreachable("unique_file() not implemented for Native Client");
++#else
+   SmallString<128> Model;
+   model.toVector(Model);
+   // Null terminate.
+@@ -434,6 +441,7 @@
  
    result_fd = RandomFD;
    return success;
@@ -1823,7 +1974,7 @@ diff -r d2a40785b09a lib/Support/Unix/PathV2.inc
  error_code directory_iterator_construct(directory_iterator &it, StringRef path){
 diff -r d2a40785b09a lib/Support/Unix/Process.inc
 --- a/lib/Support/Unix/Process.inc	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Support/Unix/Process.inc	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Support/Unix/Process.inc	Tue Aug 09 14:43:04 2011 -0700
 @@ -33,6 +33,8 @@
  #  include <termios.h>
  #endif
@@ -1880,7 +2031,7 @@ diff -r d2a40785b09a lib/Support/Unix/Process.inc
  #ifdef HAVE_MACH_MACH_H
 diff -r d2a40785b09a lib/Support/Unix/Program.inc
 --- a/lib/Support/Unix/Program.inc	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Support/Unix/Program.inc	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Support/Unix/Program.inc	Tue Aug 09 14:43:04 2011 -0700
 @@ -103,6 +103,10 @@
  }
  
@@ -1959,7 +2110,7 @@ diff -r d2a40785b09a lib/Support/Unix/Program.inc
  bool Program::ChangeStdinToBinary(){
 diff -r d2a40785b09a lib/Support/Unix/Signals.inc
 --- a/lib/Support/Unix/Signals.inc	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Support/Unix/Signals.inc	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Support/Unix/Signals.inc	Tue Aug 09 14:43:04 2011 -0700
 @@ -77,6 +77,7 @@
  
  
@@ -2005,7 +2156,7 @@ diff -r d2a40785b09a lib/Support/Unix/Signals.inc
    RemoveFilesToRemove();
 diff -r d2a40785b09a lib/Support/Unix/TimeValue.inc
 --- a/lib/Support/Unix/TimeValue.inc	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Support/Unix/TimeValue.inc	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Support/Unix/TimeValue.inc	Tue Aug 09 14:43:04 2011 -0700
 @@ -37,8 +37,13 @@
  }
  
@@ -2030,7 +2181,7 @@ diff -r d2a40785b09a lib/Support/Unix/TimeValue.inc
  }
 diff -r d2a40785b09a lib/Target/ARM/ARM.h
 --- a/lib/Target/ARM/ARM.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARM.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARM.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -22,6 +22,9 @@
  #include "llvm/Target/TargetMachine.h"
  #include <cassert>
@@ -2041,9 +2192,37 @@ diff -r d2a40785b09a lib/Target/ARM/ARM.h
  namespace llvm {
  
  class ARMAsmPrinter;
+@@ -46,9 +49,27 @@
+ FunctionPass *createThumb2ITBlockPass();
+ FunctionPass *createThumb2SizeReductionPass();
+ 
++/* @LOCALMOD-START */
++FunctionPass *createARMNaClRewritePass();
++/* @LOCALMOD-END */
++
+ void LowerARMMachineInstrToMCInst(const MachineInstr *MI, MCInst &OutMI,
+                                   ARMAsmPrinter &AP);
+ 
++/* @LOCALMOD-START */
++// Used to lower the pc-relative MOVi16PIC / MOVTi16PIC pseudo instructions
++// into the real MOVi16 / MOVTi16 instructions.
++// See comment on MOVi16PIC for more details.
++void LowerARMMachineInstrToMCInstPCRel(const MachineInstr *MI,
++                                       MCInst &OutMI,
++                                       ARMAsmPrinter &AP,
++                                       unsigned ImmIndex,
++                                       unsigned PCIndex,
++                                       MCSymbol *PCLabel,
++                                       unsigned PCAdjustment);
++/* @LOCALMOD-END */
++
++
+ } // end namespace llvm;
+ 
+ #endif
 diff -r d2a40785b09a lib/Target/ARM/ARMAsmPrinter.cpp
 --- a/lib/Target/ARM/ARMAsmPrinter.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMAsmPrinter.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMAsmPrinter.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -56,6 +56,13 @@
  #include <cctype>
  using namespace llvm;
@@ -2058,7 +2237,87 @@ diff -r d2a40785b09a lib/Target/ARM/ARMAsmPrinter.cpp
  namespace {
  
    // Per section and per symbol attributes are not supported.
-@@ -248,6 +255,11 @@
+@@ -232,12 +239,79 @@
+   }
+ }
+ 
++// @LOCALMOD-START
++// Make sure all jump targets are aligned and also all constant pools
++void NaclAlignAllJumpTargetsAndConstantPools(MachineFunction &MF) {
++  // JUMP TABLE TARGETS
++  MachineJumpTableInfo *jt_info = MF.getJumpTableInfo();
++  if (jt_info) {
++    const std::vector<MachineJumpTableEntry> &JT = jt_info->getJumpTables();
++    for (unsigned i=0; i < JT.size(); ++i) {
++      std::vector<MachineBasicBlock*> MBBs = JT[i].MBBs;
++
++      for (unsigned j=0; j < MBBs.size(); ++j) {
++        if (MBBs[j]->begin()->getOpcode() == ARM::CONSTPOOL_ENTRY) {
++          continue;
++        }
++        MBBs[j]->setAlignment(16);
++      }
++    }
++  }
++
++  // FIRST ENTRY IN A ConstanPool
++  bool last_bb_was_constant_pool = false;
++  for (MachineFunction::iterator I = MF.begin(), E = MF.end();
++       I != E; ++I) {
++    if (I->isLandingPad()) {
++        I->setAlignment(16);
++    }
++
++    if (I->empty()) continue;
++
++    bool is_constant_pool = I->begin()->getOpcode() == ARM::CONSTPOOL_ENTRY;
++
++    if (last_bb_was_constant_pool != is_constant_pool) {
++      I->setAlignment(16);
++    }
++
++    last_bb_was_constant_pool = is_constant_pool;
++  }
++}
++
++unsigned ARMAsmPrinter::GetTargetLabelAlign(const MachineInstr *MI) const {
++  if (true /* Subtarget->isTargetNaCl() */) {
++    switch (MI->getOpcode()) {
++      default: return 0;
++      // These labels may indicate an indirect entry point that is
++      // externally reachable and hence must be bundle aligned.
++      // Note: these labels appear to be always at basic block beginnings
++      // so it may be possible to simply set the MBB alignment.
++      // However, it is unclear whether this always holds.
++      case TargetOpcode::EH_LABEL:
++      case TargetOpcode::GC_LABEL:
++        return 4;
++    }
++  }
++  return 0;
++}
++// @LOCALMOD-END
++
++
+ void ARMAsmPrinter::EmitFunctionEntryLabel() {
+   if (AFI->isThumbFunction()) {
+     OutStreamer.EmitAssemblerFlag(MCAF_Code16);
+     OutStreamer.EmitThumbFunc(CurrentFnSym);
+   }
+ 
++  // @LOCALMOD-START
++  // make sure function entry is aligned. We use  XmagicX as our basis
++  // for alignment decisions (c.f. assembler sfi macros)
++  int alignment = MF->getAlignment();
++  if (alignment < 4) alignment = 4;
++  EmitAlignment(alignment);
++  OutStreamer.EmitRawText(StringRef("\t.set XmagicX, .\n"));
++  // @LOCALMOD-END
++ 
+   OutStreamer.EmitLabel(CurrentFnSym);
+ }
+ 
+@@ -248,6 +322,11 @@
    AFI = MF.getInfo<ARMFunctionInfo>();
    MCP = MF.getConstantPool();
  
@@ -2070,7 +2329,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMAsmPrinter.cpp
    return AsmPrinter::runOnMachineFunction(MF);
  }
  
-@@ -284,10 +296,10 @@
+@@ -284,10 +363,10 @@
    case MachineOperand::MO_GlobalAddress: {
      const GlobalValue *GV = MO.getGlobal();
      if ((Modifier && strcmp(Modifier, "lo16") == 0) ||
@@ -2083,7 +2342,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMAsmPrinter.cpp
        O << ":upper16:";
      O << *Mang->getSymbol(GV);
  
-@@ -455,6 +467,8 @@
+@@ -455,6 +534,8 @@
    return false;
  }
  
@@ -2092,7 +2351,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMAsmPrinter.cpp
  void ARMAsmPrinter::EmitStartOfAsmFile(Module &M) {
    if (Subtarget->isTargetDarwin()) {
      Reloc::Model RelocM = TM.getRelocationModel();
-@@ -501,9 +515,17 @@
+@@ -501,9 +582,17 @@
  
      emitAttributes();
    }
@@ -2111,7 +2370,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMAsmPrinter.cpp
  void ARMAsmPrinter::EmitEndOfAsmFile(Module &M) {
    if (Subtarget->isTargetDarwin()) {
      // All darwin targets use mach-o.
-@@ -806,7 +828,20 @@
+@@ -806,7 +895,20 @@
        PCRelExpr = MCBinaryExpr::CreateSub(PCRelExpr, DotExpr, OutContext);
      }
      Expr = MCBinaryExpr::CreateSub(Expr, PCRelExpr, OutContext);
@@ -2132,7 +2391,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMAsmPrinter.cpp
    OutStreamer.EmitValue(Expr, Size);
  }
  
-@@ -1373,6 +1408,25 @@
+@@ -1373,6 +1475,25 @@
      unsigned CPIdx   = (unsigned)MI->getOperand(1).getIndex();
  
      EmitAlignment(2);
@@ -2158,11 +2417,10 @@ diff -r d2a40785b09a lib/Target/ARM/ARMAsmPrinter.cpp
      OutStreamer.EmitLabel(GetCPISymbol(LabelId));
  
      const MachineConstantPoolEntry &MCPE = MCP->getConstants()[CPIdx];
-@@ -1799,6 +1853,50 @@
-       OutStreamer.EmitInstruction(TmpInst);
+@@ -1800,6 +1921,49 @@
      }
      return;
-+
+   }
 +  // @LOCALMOD-BEGIN
 +  // These are pseudo ops for MOVW / MOVT with operands relative to a PC label.
 +  // See the comments on MOVi16PIC in the .td file for more details.
@@ -2207,11 +2465,43 @@ diff -r d2a40785b09a lib/Target/ARM/ARMAsmPrinter.cpp
 +  }
 +  //@LOCALMOD-END
    }
-   }
+ 
+   MCInst TmpInst;
+diff -r d2a40785b09a lib/Target/ARM/ARMAsmPrinter.h
+--- a/lib/Target/ARM/ARMAsmPrinter.h	Sat Aug 06 18:20:24 2011 +0000
++++ b/lib/Target/ARM/ARMAsmPrinter.h	Tue Aug 09 14:43:04 2011 -0700
+@@ -69,11 +69,27 @@
+   virtual void EmitInstruction(const MachineInstr *MI);
+   bool runOnMachineFunction(MachineFunction &F);
+ 
+-  virtual void EmitConstantPool() {} // we emit constant pools customly!
++  // @LOCALMOD-START
++  // usually this does nothing on ARM as constants pools
++  // are handled with custom code.
++  // For the sfi case we do not use the custom logic and fall back
++  // to the default implementation.
++  virtual void EmitConstantPool() {
++    if (FlagSfiDisableCP) AsmPrinter::EmitConstantPool();
++  }
++  // @LOCALMOD-END
++
+   virtual void EmitFunctionEntryLabel();
+   void EmitStartOfAsmFile(Module &M);
+   void EmitEndOfAsmFile(Module &M);
+ 
++  // @LOCALMOD-START
++  virtual bool UseReadOnlyJumpTables() const {
++    return true; // should be IsNaCl
++  }
++  virtual unsigned GetTargetLabelAlign(const MachineInstr *MI) const;
++  // @LOCALMOD-END
++
+   // lowerOperand - Convert a MachineOperand into the equivalent MCOperand.
+   bool lowerOperand(const MachineOperand &MO, MCOperand &MCOp);
  
 diff -r d2a40785b09a lib/Target/ARM/ARMBaseInstrInfo.cpp
 --- a/lib/Target/ARM/ARMBaseInstrInfo.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMBaseInstrInfo.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMBaseInstrInfo.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -522,6 +522,9 @@
    return JT[JTI].MBBs.size();
  }
@@ -2245,8 +2535,16 @@ diff -r d2a40785b09a lib/Target/ARM/ARMBaseInstrInfo.cpp
        .addImm((unsigned)Pred).addReg(PredReg).addReg(0)
 diff -r d2a40785b09a lib/Target/ARM/ARMBaseRegisterInfo.cpp
 --- a/lib/Target/ARM/ARMBaseRegisterInfo.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMBaseRegisterInfo.cpp	Tue Aug 09 14:33:54 2011 -0700
-@@ -61,6 +61,8 @@
++++ b/lib/Target/ARM/ARMBaseRegisterInfo.cpp	Tue Aug 09 14:43:04 2011 -0700
+@@ -19,6 +19,7 @@
+ #include "ARMMachineFunctionInfo.h"
+ #include "ARMSubtarget.h"
+ #include "MCTargetDesc/ARMAddressingModes.h"
++#include "ARMTargetMachine.h"  // @LOCALMOD
+ #include "llvm/Constants.h"
+ #include "llvm/DerivedTypes.h"
+ #include "llvm/Function.h"
+@@ -61,6 +62,8 @@
      BasePtr(ARM::R6) {
  }
  
@@ -2255,7 +2553,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMBaseRegisterInfo.cpp
  const unsigned*
  ARMBaseRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
    static const unsigned CalleeSavedRegs[] = {
-@@ -72,6 +74,15 @@
+@@ -72,6 +75,15 @@
      0
    };
  
@@ -2271,7 +2569,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMBaseRegisterInfo.cpp
    static const unsigned DarwinCalleeSavedRegs[] = {
      // Darwin ABI deviates from ARM standard ABI. R9 is not a callee-saved
      // register.
-@@ -82,7 +93,11 @@
+@@ -82,7 +94,11 @@
      ARM::D11, ARM::D10, ARM::D9,  ARM::D8,
      0
    };
@@ -2284,7 +2582,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMBaseRegisterInfo.cpp
  }
  
  BitVector ARMBaseRegisterInfo::
-@@ -856,6 +871,13 @@
+@@ -856,6 +872,13 @@
                    unsigned DestReg, unsigned SubIdx, int Val,
                    ARMCC::CondCodes Pred,
                    unsigned PredReg, unsigned MIFlags) const {
@@ -2300,7 +2598,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMBaseRegisterInfo.cpp
    const Constant *C =
 diff -r d2a40785b09a lib/Target/ARM/ARMConstantIslandPass.cpp
 --- a/lib/Target/ARM/ARMConstantIslandPass.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMConstantIslandPass.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMConstantIslandPass.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -17,6 +17,8 @@
  #include "ARM.h"
  #include "ARMMachineFunctionInfo.h"
@@ -2694,7 +2992,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMConstantIslandPass.cpp
  
 diff -r d2a40785b09a lib/Target/ARM/ARMConstantPoolValue.cpp
 --- a/lib/Target/ARM/ARMConstantPoolValue.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMConstantPoolValue.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMConstantPoolValue.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -44,6 +44,8 @@
    : MachineConstantPoolValue((Type*)Type::getInt32Ty(gv->getContext())),
      CVal(gv), S(NULL), LabelId(0), Kind(ARMCP::CPValue), PCAdjust(0),
@@ -2706,7 +3004,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMConstantPoolValue.cpp
    return dyn_cast_or_null<GlobalValue>(CVal);
 diff -r d2a40785b09a lib/Target/ARM/ARMConstantPoolValue.h
 --- a/lib/Target/ARM/ARMConstantPoolValue.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMConstantPoolValue.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMConstantPoolValue.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -95,6 +95,9 @@
    bool isExtSymbol() const { return Kind == ARMCP::CPExtSymbol; }
    bool isBlockAddress() { return Kind == ARMCP::CPBlockAddress; }
@@ -2719,7 +3017,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMConstantPoolValue.h
  
 diff -r d2a40785b09a lib/Target/ARM/ARMExpandPseudoInsts.cpp
 --- a/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMExpandPseudoInsts.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -44,6 +44,7 @@
      const TargetRegisterInfo *TRI;
      const ARMSubtarget *STI;
@@ -2828,7 +3126,58 @@ diff -r d2a40785b09a lib/Target/ARM/ARMExpandPseudoInsts.cpp
  
    if (MO.isImm()) {
      unsigned Imm = MO.getImm();
-@@ -1304,6 +1370,62 @@
+@@ -696,15 +762,34 @@
+     unsigned Hi16 = (Imm >> 16) & 0xffff;
+     LO16 = LO16.addImm(Lo16);
+     HI16 = HI16.addImm(Hi16);
+-  } else {
++  } else if (MO.isGlobal()) { // @LOCALMOD
+     const GlobalValue *GV = MO.getGlobal();
+     unsigned TF = MO.getTargetFlags();
+     LO16 = LO16.addGlobalAddress(GV, MO.getOffset(), TF | ARMII::MO_LO16);
+     HI16 = HI16.addGlobalAddress(GV, MO.getOffset(), TF | ARMII::MO_HI16);
++  // @LOCALMOD-START - support for jumptable addresses and CPI
++  } else if (MO.isCPI()) {
++    int i = MO.getIndex();
++    unsigned TF = MO.getTargetFlags();
++    LO16 = LO16.addConstantPoolIndex(i, MO.getOffset(), TF|ARMII::MO_LO16);
++    HI16 = HI16.addConstantPoolIndex(i, MO.getOffset(), TF|ARMII::MO_HI16);
++  } else if (MO.isJTI()){
++    unsigned TF = MO.getTargetFlags();
++    LO16 = LO16.addJumpTableIndex(MO.getIndex(), TF | ARMII::MO_LO16);
++    HI16 = HI16.addJumpTableIndex(MO.getIndex(), TF | ARMII::MO_HI16);
++  } else {
++    assert (0 && "unexpected operand");
++  // @LOCALMOD-END
+   }
+-
++  // @LOCALMOD-BEGIN
++  if (ShouldUseMOV16PIC) {
++    AddPICADD_MOVi16_PICID(MI, MBB, MBBI, !isThumb2,
++                           PredReg, Pred, DstReg, DstIsDead, LO16, HI16);
++  }
++  // @LOCALMOD-END
+   LO16->setMemRefs(MI.memoperands_begin(), MI.memoperands_end());
+   HI16->setMemRefs(MI.memoperands_begin(), MI.memoperands_end());
++
+   LO16.addImm(Pred).addReg(PredReg);
+   HI16.addImm(Pred).addReg(PredReg);
+ 
+@@ -880,8 +965,12 @@
+     }
+     case ARM::tTPsoft:
+     case ARM::TPsoft: {
++      // @LOCALMOD-BEGIN
++      // Don't add implicit uses/defs for this call, otherwise
++      // liveness analysis passes get confused.
++      // @LOCALMOD-END
+       MachineInstrBuilder MIB =
+-        BuildMI(MBB, MBBI, MI.getDebugLoc(),
++        BuildMI_NoImp(MBB, MBBI, MI.getDebugLoc(), // @LOCALMOD
+                 TII->get(Opcode == ARM::tTPsoft ? ARM::tBL : ARM::BL))
+         .addExternalSymbol("__aeabi_read_tp", 0);
+ 
+@@ -1304,6 +1393,62 @@
      case ARM::VTBX2Pseudo: ExpandVTBL(MBBI, ARM::VTBX2, true, 2); return true;
      case ARM::VTBX3Pseudo: ExpandVTBL(MBBI, ARM::VTBX3, true, 3); return true;
      case ARM::VTBX4Pseudo: ExpandVTBL(MBBI, ARM::VTBX4, true, 4); return true;
@@ -2891,7 +3240,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMExpandPseudoInsts.cpp
    }
  
    return false;
-@@ -1328,6 +1450,7 @@
+@@ -1328,6 +1473,7 @@
    TRI = TM.getRegisterInfo();
    STI = &TM.getSubtarget<ARMSubtarget>();
    AFI = MF.getInfo<ARMFunctionInfo>();
@@ -2901,7 +3250,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMExpandPseudoInsts.cpp
    for (MachineFunction::iterator MFI = MF.begin(), E = MF.end(); MFI != E;
 diff -r d2a40785b09a lib/Target/ARM/ARMFastISel.cpp
 --- a/lib/Target/ARM/ARMFastISel.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMFastISel.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMFastISel.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -632,6 +632,11 @@
  }
  
@@ -2916,7 +3265,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMFastISel.cpp
    // Only handle simple types.
 diff -r d2a40785b09a lib/Target/ARM/ARMFrameLowering.cpp
 --- a/lib/Target/ARM/ARMFrameLowering.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMFrameLowering.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMFrameLowering.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -22,6 +22,10 @@
  #include "llvm/CodeGen/MachineRegisterInfo.h"
  #include "llvm/CodeGen/RegisterScavenging.h"
@@ -3065,7 +3414,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMFrameLowering.cpp
          // Fold the return instruction into the LDM.
 diff -r d2a40785b09a lib/Target/ARM/ARMFrameLowering.h
 --- a/lib/Target/ARM/ARMFrameLowering.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMFrameLowering.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMFrameLowering.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -27,7 +27,8 @@
  
  public:
@@ -3086,7 +3435,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMFrameLowering.h
                                              RegScavenger *RS) const;
 diff -r d2a40785b09a lib/Target/ARM/ARMISelDAGToDAG.cpp
 --- a/lib/Target/ARM/ARMISelDAGToDAG.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMISelDAGToDAG.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMISelDAGToDAG.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -35,8 +35,16 @@
  #include "llvm/Support/ErrorHandling.h"
  #include "llvm/Support/raw_ostream.h"
@@ -3136,6 +3485,15 @@ diff -r d2a40785b09a lib/Target/ARM/ARMISelDAGToDAG.cpp
  //    return SelectAddrMode2ShOp(N, Base, Offset, Opc);
      // This always matches one way or another.
      return true;
+@@ -134,7 +145,7 @@
+   bool SelectAddrMode2OffsetImm(SDNode *Op, SDValue N,
+                              SDValue &Offset, SDValue &Opc);
+   bool SelectAddrOffsetNone(SDValue N, SDValue &Base);
+-  bool SelectAddrMode3(SDValue N, SDValue &Base,
++  bool SelectAddrMode3(SDNode *Op, SDValue N, SDValue &Base,  // @LOCALMOD
+                        SDValue &Offset, SDValue &Opc);
+   bool SelectAddrMode3Offset(SDNode *Op, SDValue N,
+                              SDValue &Offset, SDValue &Opc);
 @@ -426,6 +437,23 @@
  }
  
@@ -3248,7 +3606,28 @@ diff -r d2a40785b09a lib/Target/ARM/ARMISelDAGToDAG.cpp
  
    // Otherwise this is R +/- [possibly shifted] R.
    ARM_AM::AddrOpc AddSub = N.getOpcode() != ISD::SUB ? ARM_AM::add:ARM_AM::sub;
-@@ -778,16 +839,22 @@
+@@ -729,13 +790,19 @@
+   if (isScaledConstantInRange(N, /*Scale=*/1, 0, 0x1000, Val))
+     return false;
+ 
++  const bool is_store = (Opcode == ISD::STORE); // @LOCALMOD
++
++
+   Offset = N;
+   ARM_AM::ShiftOpc ShOpcVal = ARM_AM::getShiftOpcForNode(N.getOpcode());
+   unsigned ShAmt = 0;
+   if (ShOpcVal != ARM_AM::no_shift) {
+     // Check to see if the RHS of the shift is a constant, if not, we can't fold
+     // it.
+-    if (ConstantSDNode *Sh = dyn_cast<ConstantSDNode>(N.getOperand(1))) {
++
++    //if (ConstantSDNode *Sh = dyn_cast<ConstantSDNode>(N.getOperand(1))) {
++    ConstantSDNode *Sh = dyn_cast<ConstantSDNode>(N.getOperand(1));
++    if ((!FlagSfiStore || !is_store) && Sh ) { // @LOCALMOD
+       ShAmt = Sh->getZExtValue();
+       if (isShifterOpProfitable(N, ShOpcVal, ShAmt))
+         Offset = N.getOperand(0);
+@@ -778,16 +845,22 @@
    return true;
  }
  
@@ -3272,7 +3651,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMISelDAGToDAG.cpp
  
    if (!CurDAG->isBaseWithConstantOffset(N)) {
      Base = N;
-@@ -820,6 +887,15 @@
+@@ -820,6 +893,15 @@
      return true;
    }
  
@@ -3288,7 +3667,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMISelDAGToDAG.cpp
    Base = N.getOperand(0);
    Offset = N.getOperand(1);
    Opc = CurDAG->getTargetConstant(ARM_AM::getAM3Opc(ARM_AM::add, 0), MVT::i32);
-@@ -854,8 +930,8 @@
+@@ -854,8 +936,8 @@
        int FI = cast<FrameIndexSDNode>(N)->getIndex();
        Base = CurDAG->getTargetFrameIndex(FI, TLI.getPointerTy());
      } else if (N.getOpcode() == ARMISD::Wrapper &&
@@ -3299,7 +3678,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMISelDAGToDAG.cpp
        Base = N.getOperand(0);
      }
      Offset = CurDAG->getTargetConstant(ARM_AM::getAM5Opc(ARM_AM::add, 0),
-@@ -2302,6 +2378,8 @@
+@@ -2302,6 +2384,8 @@
                   !ARM_AM::isSOImmTwoPartVal(Val));     // two instrs.
      }
  
@@ -3310,7 +3689,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMISelDAGToDAG.cpp
          CurDAG->getTargetConstantPool(ConstantInt::get(
 diff -r d2a40785b09a lib/Target/ARM/ARMISelLowering.cpp
 --- a/lib/Target/ARM/ARMISelLowering.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMISelLowering.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMISelLowering.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -51,6 +51,15 @@
  #include "llvm/Support/MathExtras.h"
  #include "llvm/Support/raw_ostream.h"
@@ -3779,7 +4158,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMISelLowering.cpp
    bool isSEXTLoad = false;
 diff -r d2a40785b09a lib/Target/ARM/ARMISelLowering.h
 --- a/lib/Target/ARM/ARMISelLowering.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMISelLowering.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMISelLowering.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -39,7 +39,11 @@
        WrapperPIC,   // WrapperPIC - A wrapper node for TargetGlobalAddress in
                      // PIC mode.
@@ -3811,7 +4190,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMISelLowering.h
      SDValue LowerSELECT(SDValue Op, SelectionDAG &DAG) const;
 diff -r d2a40785b09a lib/Target/ARM/ARMInstrInfo.td
 --- a/lib/Target/ARM/ARMInstrInfo.td	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMInstrInfo.td	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMInstrInfo.td	Tue Aug 09 14:43:04 2011 -0700
 @@ -75,6 +75,14 @@
  def ARMWrapperDYN    : SDNode<"ARMISD::WrapperDYN",  SDTIntUnaryOp>;
  def ARMWrapperPIC    : SDNode<"ARMISD::WrapperPIC",  SDTIntUnaryOp>;
@@ -4034,7 +4413,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMInstrInfo.td
  
 diff -r d2a40785b09a lib/Target/ARM/ARMLoadStoreOptimizer.cpp
 --- a/lib/Target/ARM/ARMLoadStoreOptimizer.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMLoadStoreOptimizer.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMLoadStoreOptimizer.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -40,6 +40,9 @@
  #include "llvm/ADT/Statistic.h"
  using namespace llvm;
@@ -4066,9 +4445,70 @@ diff -r d2a40785b09a lib/Target/ARM/ARMLoadStoreOptimizer.cpp
    if (MBB.empty()) return false;
  
    MachineBasicBlock::iterator MBBI = MBB.getLastNonDebugInstr();
+diff -r d2a40785b09a lib/Target/ARM/ARMMCInstLower.cpp
+--- a/lib/Target/ARM/ARMMCInstLower.cpp	Sat Aug 06 18:20:24 2011 +0000
++++ b/lib/Target/ARM/ARMMCInstLower.cpp	Tue Aug 09 14:43:04 2011 -0700
+@@ -123,3 +123,57 @@
+       OutMI.addOperand(MCOp);
+   }
+ }
++
++// @LOCALMOD-BEGIN
++// Unlike LowerARMMachineInstrToMCInst, the opcode has already been set.
++// Otherwise, this is like LowerARMMachineInstrToMCInst, but with special
++// handling where the "immediate" is PC Relative
++// (used for MOVi16PIC / MOVTi16PIC, etc. -- see .td file)
++void llvm::LowerARMMachineInstrToMCInstPCRel(const MachineInstr *MI,
++                                             MCInst &OutMI,
++                                             ARMAsmPrinter &AP,
++                                             unsigned ImmIndex,
++                                             unsigned PCIndex,
++                                             MCSymbol *PCLabel,
++                                             unsigned PCAdjustment) {
++
++  for (unsigned i = 0, e = MI->getNumOperands(); i != e; ++i) {
++    if (i == ImmIndex) {
++      MCContext &Ctx = AP.OutContext;
++      const MCExpr *PCRelExpr = MCSymbolRefExpr::Create(PCLabel, Ctx);
++      if (PCAdjustment) {
++        const MCExpr *AdjExpr = MCConstantExpr::Create(PCAdjustment, Ctx);
++        PCRelExpr = MCBinaryExpr::CreateAdd(PCRelExpr, AdjExpr, Ctx);
++      }
++
++      // Get the usual symbol operand, then subtract the PCRelExpr.
++      const MachineOperand &MOImm = MI->getOperand(ImmIndex);
++      MCOperand SymOp;
++      bool DidLower = LowerARMMachineOperandToMCOperand(MOImm, MI, AP, SymOp);
++      assert (DidLower && "Immediate-like operand should have been lowered");
++
++      const MCExpr *Expr = SymOp.getExpr();
++      ARMMCExpr::VariantKind TargetKind = ARMMCExpr::VK_ARM_None;
++      /* Unwrap and rewrap the ARMMCExpr */
++      if (Expr->getKind() == MCExpr::Target) {
++        const ARMMCExpr *TargetExpr = cast<ARMMCExpr>(Expr);
++        TargetKind = TargetExpr->getKind();
++        Expr = TargetExpr->getSubExpr();
++      }
++      Expr = MCBinaryExpr::CreateSub(Expr, PCRelExpr, Ctx);
++      if (TargetKind != ARMMCExpr::VK_ARM_None) {
++        Expr = ARMMCExpr::Create(TargetKind, Expr, Ctx);
++      }
++      MCOperand MCOp = MCOperand::CreateExpr(Expr);
++      OutMI.addOperand(MCOp);
++    } else if (i == PCIndex) {  // dummy index already handled as PCLabel
++      continue;
++    } else {
++      MCOperand MCOp;
++      if (AP.lowerOperand(MI->getOperand(i), MCOp)) {
++        OutMI.addOperand(MCOp);
++      }
++    }
++  }
++}
++// @LOCALMOD-END
 diff -r d2a40785b09a lib/Target/ARM/ARMNaClHeaders.cpp
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMNaClHeaders.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -0,0 +1,183 @@
 +//===-- ARMNaClHeaders.cpp - Print SFI headers to an ARM .s file -----------===//
 +//
@@ -4255,7 +4695,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMNaClHeaders.cpp
 +}
 diff -r d2a40785b09a lib/Target/ARM/ARMNaClRewritePass.cpp
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Target/ARM/ARMNaClRewritePass.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMNaClRewritePass.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -0,0 +1,645 @@
 +//===-- ARMNaClRewritePass.cpp - Native Client Rewrite Pass  ------*- C++ -*-=//
 +//
@@ -4904,7 +5344,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMNaClRewritePass.cpp
 +
 diff -r d2a40785b09a lib/Target/ARM/ARMNaClRewritePass.h
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Target/ARM/ARMNaClRewritePass.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMNaClRewritePass.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -0,0 +1,35 @@
 +//===-- ARMNaClRewritePass.h - NaCl Sandboxing Pass    ------- --*- C++ -*-===//
 +//
@@ -4943,7 +5383,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMNaClRewritePass.h
 +#endif
 diff -r d2a40785b09a lib/Target/ARM/ARMSubtarget.cpp
 --- a/lib/Target/ARM/ARMSubtarget.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMSubtarget.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMSubtarget.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -24,13 +24,22 @@
  
  using namespace llvm;
@@ -4990,7 +5430,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMSubtarget.cpp
  
 diff -r d2a40785b09a lib/Target/ARM/ARMSubtarget.h
 --- a/lib/Target/ARM/ARMSubtarget.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMSubtarget.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMSubtarget.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -23,6 +23,14 @@
  #define GET_SUBTARGETINFO_HEADER
  #include "ARMGenSubtargetInfo.inc"
@@ -5040,8 +5480,22 @@ diff -r d2a40785b09a lib/Target/ARM/ARMSubtarget.h
  
 diff -r d2a40785b09a lib/Target/ARM/ARMTargetMachine.cpp
 --- a/lib/Target/ARM/ARMTargetMachine.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMTargetMachine.cpp	Tue Aug 09 14:33:54 2011 -0700
-@@ -136,7 +136,22 @@
++++ b/lib/Target/ARM/ARMTargetMachine.cpp	Tue Aug 09 14:43:04 2011 -0700
+@@ -21,6 +21,13 @@
+ #include "llvm/Target/TargetRegistry.h"
+ using namespace llvm;
+ 
++// @LOCALMOD-START
++namespace llvm {
++cl::opt<bool> FlagSfiDisableCP("sfi-disable-cp",
++                               cl::desc("disable arm constant island pools"));
++}
++// @LOCALMOD-END
++
+ extern "C" void LLVMInitializeARMTarget() {
+   // Register the target.
+   RegisterTargetMachine<ARMTargetMachine> X(TheARMTarget);
+@@ -136,7 +143,22 @@
    if (Subtarget.isThumb2() && !Subtarget.prefers32BitThumb())
      PM.add(createThumb2SizeReductionPass());
  
@@ -5066,7 +5520,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMTargetMachine.cpp
  
 diff -r d2a40785b09a lib/Target/ARM/ARMTargetMachine.h
 --- a/lib/Target/ARM/ARMTargetMachine.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/ARMTargetMachine.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/ARMTargetMachine.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -29,6 +29,13 @@
  #include "llvm/MC/MCStreamer.h"
  #include "llvm/ADT/OwningPtr.h"
@@ -5083,7 +5537,7 @@ diff -r d2a40785b09a lib/Target/ARM/ARMTargetMachine.h
  class ARMBaseTargetMachine : public LLVMTargetMachine {
 diff -r d2a40785b09a lib/Target/ARM/CMakeLists.txt
 --- a/lib/Target/ARM/CMakeLists.txt	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/CMakeLists.txt	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/CMakeLists.txt	Tue Aug 09 14:43:04 2011 -0700
 @@ -34,6 +34,8 @@
    ARMJITInfo.cpp
    ARMLoadStoreOptimizer.cpp
@@ -5095,7 +5549,7 @@ diff -r d2a40785b09a lib/Target/ARM/CMakeLists.txt
    ARMSubtarget.cpp
 diff -r d2a40785b09a lib/Target/ARM/InstPrinter/ARMInstPrinter.cpp
 --- a/lib/Target/ARM/InstPrinter/ARMInstPrinter.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/ARM/InstPrinter/ARMInstPrinter.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/ARM/InstPrinter/ARMInstPrinter.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -144,6 +144,69 @@
      return;
    }
@@ -5166,9 +5620,117 @@ diff -r d2a40785b09a lib/Target/ARM/InstPrinter/ARMInstPrinter.cpp
    printInstruction(MI, O);
  }
  
+diff -r d2a40785b09a lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp
+--- a/lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp	Sat Aug 06 18:20:24 2011 +0000
++++ b/lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp	Tue Aug 09 14:43:04 2011 -0700
+@@ -387,6 +387,12 @@
+   void ApplyFixup(const MCFixup &Fixup, char *Data, unsigned DataSize,
+                   uint64_t Value) const;
+ 
++  // @LOCALMOD-BEGIN
++  unsigned getBundleSize() const {
++    return (OSType == Triple::NativeClient) ? 16 : 0;
++  }
++  // @LOCALMOD-END
++
+   MCObjectWriter *createObjectWriter(raw_ostream &OS) const {
+     return createELFObjectWriter(new ARMELFObjectWriter(OSType), OS,
+                               /*IsLittleEndian*/ true);
+diff -r d2a40785b09a lib/Target/ARM/MCTargetDesc/ARMMCAsmInfo.cpp
+--- a/lib/Target/ARM/MCTargetDesc/ARMMCAsmInfo.cpp	Sat Aug 06 18:20:24 2011 +0000
++++ b/lib/Target/ARM/MCTargetDesc/ARMMCAsmInfo.cpp	Tue Aug 09 14:43:04 2011 -0700
+@@ -80,4 +80,8 @@
+   // Exceptions handling
+   if (EnableARMEHABI)
+     ExceptionsType = ExceptionHandling::ARM;
++  // @LOCALMOD-START
++  // Exceptions handling
++  ExceptionsType = ExceptionHandling::DwarfTable;
++  // @LOCALMOD-END
+ }
+diff -r d2a40785b09a lib/Target/X86/CMakeLists.txt
+--- a/lib/Target/X86/CMakeLists.txt	Sat Aug 06 18:20:24 2011 +0000
++++ b/lib/Target/X86/CMakeLists.txt	Tue Aug 09 14:43:04 2011 -0700
+@@ -25,8 +25,10 @@
+   X86ISelDAGToDAG.cpp
+   X86ISelLowering.cpp
+   X86InstrInfo.cpp
++  X86InstrNaCl.cpp
+   X86JITInfo.cpp
+   X86MCInstLower.cpp
++  X86NaClRewritePass.cpp
+   X86RegisterInfo.cpp
+   X86SelectionDAGInfo.cpp
+   X86Subtarget.cpp
+diff -r d2a40785b09a lib/Target/X86/MCTargetDesc/X86AsmBackend.cpp
+--- a/lib/Target/X86/MCTargetDesc/X86AsmBackend.cpp	Sat Aug 06 18:20:24 2011 +0000
++++ b/lib/Target/X86/MCTargetDesc/X86AsmBackend.cpp	Tue Aug 09 14:43:04 2011 -0700
+@@ -10,6 +10,7 @@
+ #include "llvm/MC/MCAsmBackend.h"
+ #include "MCTargetDesc/X86BaseInfo.h"
+ #include "MCTargetDesc/X86FixupKinds.h"
++#include "X86InstrNaCl.h" // @LOCALMOD
+ #include "llvm/ADT/Twine.h"
+ #include "llvm/MC/MCAssembler.h"
+ #include "llvm/MC/MCELFObjectWriter.h"
+@@ -327,6 +328,21 @@
+     const MCSectionELF &ES = static_cast<const MCSectionELF&>(Section);
+     return ES.getFlags() & ELF::SHF_MERGE;
+   }
++
++  // @LOCALMOD-BEGIN
++  // FIXME: these really belong in a new class X86NaClAsmBackend
++  unsigned getBundleSize() const {
++    return OSType == Triple::NativeClient ? 32 : 0;
++  }
++
++  bool CustomExpandInst(const MCInst &Inst, MCStreamer &Out) const {
++    if (OSType == Triple::NativeClient) {
++      return CustomExpandInstNaCl(Inst, Out);
++    }
++    return false;
++  }
++  // @LOCALMOD-END
++
+ };
+ 
+ class ELFX86_32AsmBackend : public ELFX86AsmBackend {
+diff -r d2a40785b09a lib/Target/X86/MCTargetDesc/X86BaseInfo.h
+--- a/lib/Target/X86/MCTargetDesc/X86BaseInfo.h	Sat Aug 06 18:20:24 2011 +0000
++++ b/lib/Target/X86/MCTargetDesc/X86BaseInfo.h	Tue Aug 09 14:43:04 2011 -0700
+@@ -248,6 +248,7 @@
+     /// manual, this operand is described as pntr16:32 and pntr16:16
+     RawFrmImm16 = 44,
+ 
++    CustomFrm      = 62, // @LOCALMOD
+     FormMask       = 63,
+ 
+     //===------------------------------------------------------------------===//
+@@ -469,6 +470,7 @@
+     case X86II::MRMSrcReg:
+     case X86II::RawFrmImm8:
+     case X86II::RawFrmImm16:
++    case X86II::CustomFrm: // @LOCALMOD
+        return -1;
+     case X86II::MRMDestMem:
+       return 0;
+diff -r d2a40785b09a lib/Target/X86/MCTargetDesc/X86MCCodeEmitter.cpp
+--- a/lib/Target/X86/MCTargetDesc/X86MCCodeEmitter.cpp	Sat Aug 06 18:20:24 2011 +0000
++++ b/lib/Target/X86/MCTargetDesc/X86MCCodeEmitter.cpp	Tue Aug 09 14:43:04 2011 -0700
+@@ -864,6 +864,10 @@
+     assert(0 && "Unknown FormMask value in X86MCCodeEmitter!");
+   case X86II::Pseudo:
+     assert(0 && "Pseudo instruction shouldn't be emitted");
++  // @LOCALMOD-BEGIN
++  case X86II::CustomFrm:
++    assert(0 && "CustomFrm instruction shouldn't be emitted");
++  // @LOCALMOD-END
+   case X86II::RawFrm:
+     EmitByte(BaseOpcode, CurByte, OS);
+     break;
 diff -r d2a40785b09a lib/Target/X86/X86.h
 --- a/lib/Target/X86/X86.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -48,6 +48,9 @@
  /// crossings.
  FunctionPass *createSSEDomainFixPass();
@@ -5181,7 +5743,7 @@ diff -r d2a40785b09a lib/Target/X86/X86.h
  FunctionPass *createX86JITCodeEmitterPass(X86TargetMachine &TM,
 diff -r d2a40785b09a lib/Target/X86/X86AsmPrinter.cpp
 --- a/lib/Target/X86/X86AsmPrinter.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86AsmPrinter.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86AsmPrinter.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -73,6 +73,34 @@
    return false;
  }
@@ -5219,7 +5781,7 @@ diff -r d2a40785b09a lib/Target/X86/X86AsmPrinter.cpp
  /// which print to a label with various suffixes for relocation types etc.
 diff -r d2a40785b09a lib/Target/X86/X86AsmPrinter.h
 --- a/lib/Target/X86/X86AsmPrinter.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86AsmPrinter.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86AsmPrinter.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -50,7 +50,11 @@
    virtual void EmitEndOfAsmFile(Module &M);
    
@@ -5235,7 +5797,7 @@ diff -r d2a40785b09a lib/Target/X86/X86AsmPrinter.h
    // These methods are used by the tablegen'erated instruction printer.
 diff -r d2a40785b09a lib/Target/X86/X86FrameLowering.cpp
 --- a/lib/Target/X86/X86FrameLowering.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86FrameLowering.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86FrameLowering.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -116,6 +116,8 @@
    case X86::TCRETURNmi:
    case X86::TCRETURNdi64:
@@ -5321,7 +5883,7 @@ diff -r d2a40785b09a lib/Target/X86/X86FrameLowering.cpp
          addReg(JumpTarget.getReg(), RegState::Kill);
 diff -r d2a40785b09a lib/Target/X86/X86FrameLowering.h
 --- a/lib/Target/X86/X86FrameLowering.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86FrameLowering.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86FrameLowering.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -29,7 +29,8 @@
    explicit X86FrameLowering(const X86TargetMachine &tm, const X86Subtarget &sti)
      : TargetFrameLowering(StackGrowsDown,
@@ -5334,7 +5896,7 @@ diff -r d2a40785b09a lib/Target/X86/X86FrameLowering.h
  
 diff -r d2a40785b09a lib/Target/X86/X86ISelDAGToDAG.cpp
 --- a/lib/Target/X86/X86ISelDAGToDAG.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86ISelDAGToDAG.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86ISelDAGToDAG.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -213,6 +213,10 @@
                               SDValue &Index, SDValue &Disp,
                               SDValue &Segment,
@@ -5614,8 +6176,30 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelDAGToDAG.cpp
  /// initialize the global base register, if necessary.
 diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
 --- a/lib/Target/X86/X86ISelLowering.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86ISelLowering.cpp	Tue Aug 09 14:33:54 2011 -0700
-@@ -487,7 +487,7 @@
++++ b/lib/Target/X86/X86ISelLowering.cpp	Tue Aug 09 14:43:04 2011 -0700
+@@ -157,6 +157,10 @@
+       return new X8664_MachoTargetObjectFile();
+     return new TargetLoweringObjectFileMachO();
+   }
++  // @LOCALMOD-START
++  if (Subtarget->isTargetNaCl()) {
++    return new X86NaClElfTargetObjectFile();
++  }
+ 
+   if (Subtarget->isTargetELF())
+     return new TargetLoweringObjectFileELF();
+@@ -170,7 +174,9 @@
+   Subtarget = &TM.getSubtarget<X86Subtarget>();
+   X86ScalarSSEf64 = Subtarget->hasXMMInt() || Subtarget->hasAVX();
+   X86ScalarSSEf32 = Subtarget->hasXMM() || Subtarget->hasAVX();
+-  X86StackPtr = Subtarget->is64Bit() ? X86::RSP : X86::ESP;
++  // @LOCALMOD-START
++  X86StackPtr = Subtarget->has64BitPointers() ? X86::RSP : X86::ESP;
++  // @LOCALMOD-END
+ 
+   RegInfo = TM.getRegisterInfo();
+   TD = getTargetData();
+@@ -487,7 +493,7 @@
    setOperationAction(ISD::EHSELECTION,   MVT::i64, Expand);
    setOperationAction(ISD::EXCEPTIONADDR, MVT::i32, Expand);
    setOperationAction(ISD::EHSELECTION,   MVT::i32, Expand);
@@ -5624,7 +6208,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
      setExceptionPointerRegister(X86::RAX);
      setExceptionSelectorRegister(X86::RDX);
    } else {
-@@ -504,7 +504,7 @@
+@@ -504,7 +510,7 @@
    // VASTART needs to be custom lowered to use the VarArgsFrameIndex
    setOperationAction(ISD::VASTART           , MVT::Other, Custom);
    setOperationAction(ISD::VAEND             , MVT::Other, Expand);
@@ -5633,7 +6217,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
      setOperationAction(ISD::VAARG           , MVT::Other, Custom);
      setOperationAction(ISD::VACOPY          , MVT::Other, Custom);
    } else {
-@@ -1401,7 +1401,16 @@
+@@ -1401,7 +1407,16 @@
             "SRetReturnReg should have been set in LowerFormalArguments().");
      SDValue Val = DAG.getCopyFromReg(Chain, dl, Reg, getPointerTy());
  
@@ -5651,7 +6235,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
      Flag = Chain.getValue(1);
  
      // RAX now acts like a return value.
-@@ -1643,6 +1652,13 @@
+@@ -1643,6 +1658,13 @@
        Fn->getName() == "main")
      FuncInfo->setForceFramePointer(true);
  
@@ -5665,7 +6249,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
    MachineFrameInfo *MFI = MF.getFrameInfo();
    bool Is64Bit = Subtarget->is64Bit();
    bool IsWin64 = Subtarget->isTargetWin64();
-@@ -1735,7 +1751,9 @@
+@@ -1735,7 +1757,9 @@
      X86MachineFunctionInfo *FuncInfo = MF.getInfo<X86MachineFunctionInfo>();
      unsigned Reg = FuncInfo->getSRetReturnReg();
      if (!Reg) {
@@ -5676,7 +6260,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
        FuncInfo->setSRetReturnReg(Reg);
      }
      SDValue Copy = DAG.getCopyToReg(DAG.getEntryNode(), dl, Reg, InVals[0]);
-@@ -2423,7 +2441,8 @@
+@@ -2423,7 +2447,8 @@
    unsigned StackAlignment = TFI.getStackAlignment();
    uint64_t AlignMask = StackAlignment - 1;
    int64_t Offset = StackSize;
@@ -5686,7 +6270,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
    if ( (Offset & AlignMask) <= (StackAlignment - SlotSize) ) {
      // Number smaller than 12 so just add the difference.
      Offset += ((StackAlignment - SlotSize) - (Offset & AlignMask));
-@@ -2819,13 +2838,16 @@
+@@ -2819,13 +2844,16 @@
  
    if (ReturnAddrIndex == 0) {
      // Set up a frame object for the return address.
@@ -5705,7 +6289,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
  }
  
  
-@@ -6884,6 +6906,15 @@
+@@ -6884,6 +6912,15 @@
                      X86::RAX, X86II::MO_TLSGD);
  }
  
@@ -5721,7 +6305,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
  // Lower ISD::GlobalTLSAddress using the "initial exec" (for no-pic) or
  // "local exec" model.
  static SDValue LowerToTLSExecModel(GlobalAddressSDNode *GA, SelectionDAG &DAG,
-@@ -6948,6 +6979,11 @@
+@@ -6948,6 +6985,11 @@
      TLSModel::Model model
        = getTLSModel(GV, getTargetMachine().getRelocationModel());
  
@@ -5733,7 +6317,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
      switch (model) {
        case TLSModel::GeneralDynamic:
        case TLSModel::LocalDynamic: // not implemented
-@@ -7776,6 +7812,10 @@
+@@ -7776,6 +7818,10 @@
  /// if it's possible.
  SDValue X86TargetLowering::LowerToBT(SDValue And, ISD::CondCode CC,
                                       DebugLoc dl, SelectionDAG &DAG) const {
@@ -5744,7 +6328,19 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
    SDValue Op0 = And.getOperand(0);
    SDValue Op1 = And.getOperand(1);
    if (Op0.getOpcode() == ISD::TRUNCATE)
-@@ -8409,7 +8449,7 @@
+@@ -8349,8 +8395,9 @@
+ 
+   SDValue Flag;
+ 
+-  EVT SPTy = Subtarget->is64Bit() ? MVT::i64 : MVT::i32;
+-  unsigned Reg = (Subtarget->is64Bit() ? X86::RAX : X86::EAX);
++  // LOCALMOD
++  EVT SPTy = getPointerTy();
++  unsigned Reg = (SPTy == MVT::i64 ? X86::RAX : X86::EAX);
+ 
+   Chain = DAG.getCopyToReg(Chain, dl, Reg, Size, Flag);
+   Flag = Chain.getValue(1);
+@@ -8409,7 +8456,7 @@
    FIN = DAG.getNode(ISD::ADD, DL, getPointerTy(),
                      FIN, DAG.getIntPtrConstant(4));
    SDValue OVFIN = DAG.getFrameIndex(FuncInfo->getVarArgsFrameIndex(),
@@ -5753,7 +6349,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
    Store = DAG.getStore(Op.getOperand(0), DL, OVFIN, FIN,
                         MachinePointerInfo(SV, 8),
                         false, false, 0);
-@@ -8419,7 +8459,7 @@
+@@ -8419,7 +8466,7 @@
    FIN = DAG.getNode(ISD::ADD, DL, getPointerTy(),
                      FIN, DAG.getIntPtrConstant(8));
    SDValue RSFIN = DAG.getFrameIndex(FuncInfo->getRegSaveFrameIndex(),
@@ -5762,7 +6358,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
    Store = DAG.getStore(Op.getOperand(0), DL, RSFIN, FIN,
                         MachinePointerInfo(SV, 16), false, false, 0);
    MemOps.push_back(Store);
-@@ -8431,7 +8471,8 @@
+@@ -8431,7 +8478,8 @@
    assert(Subtarget->is64Bit() &&
           "LowerVAARG only handles 64-bit va_arg!");
    assert((Subtarget->isTargetLinux() ||
@@ -5772,7 +6368,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
            "Unhandled target in LowerVAARG");
    assert(Op.getNode()->getNumOperands() == 4);
    SDValue Chain = Op.getOperand(0);
-@@ -8819,7 +8860,7 @@
+@@ -8819,7 +8867,7 @@
    EVT VT = Op.getValueType();
    DebugLoc dl = Op.getDebugLoc();  // FIXME probably not meaningful
    unsigned Depth = cast<ConstantSDNode>(Op.getOperand(0))->getZExtValue();
@@ -5781,7 +6377,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
    SDValue FrameAddr = DAG.getCopyFromReg(DAG.getEntryNode(), dl, FrameReg, VT);
    while (Depth--)
      FrameAddr = DAG.getLoad(VT, dl, DAG.getEntryNode(), FrameAddr,
-@@ -8830,7 +8871,10 @@
+@@ -8830,7 +8878,10 @@
  
  SDValue X86TargetLowering::LowerFRAME_TO_ARGS_OFFSET(SDValue Op,
                                                       SelectionDAG &DAG) const {
@@ -5793,7 +6389,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
  }
  
  SDValue X86TargetLowering::LowerEH_RETURN(SDValue Op, SelectionDAG &DAG) const {
-@@ -8839,14 +8883,17 @@
+@@ -8839,14 +8890,17 @@
    SDValue Offset    = Op.getOperand(1);
    SDValue Handler   = Op.getOperand(2);
    DebugLoc dl       = Op.getDebugLoc();
@@ -5815,7 +6411,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
    StoreAddr = DAG.getNode(ISD::ADD, dl, getPointerTy(), StoreAddr, Offset);
    Chain = DAG.getStore(Chain, dl, Handler, StoreAddr, MachinePointerInfo(),
                         false, false, 0);
-@@ -10636,6 +10683,15 @@
+@@ -10636,6 +10690,15 @@
    MachineBasicBlock *overflowMBB;
    MachineBasicBlock *offsetMBB;
    MachineBasicBlock *endMBB;
@@ -5831,7 +6427,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
  
    unsigned OffsetDestReg = 0;    // Argument address computed by offsetMBB
    unsigned OverflowDestReg = 0;  // Argument address computed by overflowMBB
-@@ -10821,6 +10877,19 @@
+@@ -10821,6 +10884,19 @@
        .addReg(OffsetDestReg).addMBB(offsetMBB)
        .addReg(OverflowDestReg).addMBB(overflowMBB);
    }
@@ -5851,7 +6447,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
  
    // Erase the pseudo instruction
    MI->eraseFromParent();
-@@ -11395,6 +11464,7 @@
+@@ -11395,6 +11471,7 @@
      return EmitVAStartSaveXMMRegsWithCustomInserter(MI, BB);
  
    case X86::VAARG_64:
@@ -5861,7 +6457,7 @@ diff -r d2a40785b09a lib/Target/X86/X86ISelLowering.cpp
  }
 diff -r d2a40785b09a lib/Target/X86/X86InstrArithmetic.td
 --- a/lib/Target/X86/X86InstrArithmetic.td	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86InstrArithmetic.td	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86InstrArithmetic.td	Tue Aug 09 14:43:04 2011 -0700
 @@ -30,8 +30,9 @@
                    "lea{l}\t{$src|$dst}, {$dst|$src}",
                    [(set GR32:$dst, lea32addr:$src)]>, Requires<[In64BitMode]>;
@@ -5875,7 +6471,7 @@ diff -r d2a40785b09a lib/Target/X86/X86InstrArithmetic.td
  
 diff -r d2a40785b09a lib/Target/X86/X86InstrCompiler.td
 --- a/lib/Target/X86/X86InstrCompiler.td	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86InstrCompiler.td	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86InstrCompiler.td	Tue Aug 09 14:43:04 2011 -0700
 @@ -92,8 +92,8 @@
                   "#VAARG_64 $dst, $ap, $size, $mode, $align",
                   [(set GR64:$dst,
@@ -5977,7 +6573,7 @@ diff -r d2a40785b09a lib/Target/X86/X86InstrCompiler.td
  // (shl x, 1) ==> (add x, x)
 diff -r d2a40785b09a lib/Target/X86/X86InstrControl.td
 --- a/lib/Target/X86/X86InstrControl.td	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86InstrControl.td	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86InstrControl.td	Tue Aug 09 14:43:04 2011 -0700
 @@ -101,7 +101,7 @@
    def JMP32r     : I<0xFF, MRM4r, (outs), (ins GR32:$dst), "jmp{l}\t{*}$dst",
                       [(brind GR32:$dst)]>, Requires<[In32BitMode]>;
@@ -6064,7 +6660,7 @@ diff -r d2a40785b09a lib/Target/X86/X86InstrControl.td
  }
 diff -r d2a40785b09a lib/Target/X86/X86InstrFormats.td
 --- a/lib/Target/X86/X86InstrFormats.td	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86InstrFormats.td	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86InstrFormats.td	Tue Aug 09 14:43:04 2011 -0700
 @@ -43,6 +43,7 @@
  def RawFrmImm16 : Format<44>;
  def MRM_D0 : Format<45>;
@@ -6075,8 +6671,191 @@ diff -r d2a40785b09a lib/Target/X86/X86InstrFormats.td
  // part of the ad-hoc solution used to emit machine instruction encodings by our
 diff -r d2a40785b09a lib/Target/X86/X86InstrInfo.cpp
 --- a/lib/Target/X86/X86InstrInfo.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86InstrInfo.cpp	Tue Aug 09 14:33:54 2011 -0700
-@@ -344,8 +344,12 @@
++++ b/lib/Target/X86/X86InstrInfo.cpp	Tue Aug 09 14:43:04 2011 -0700
+@@ -252,91 +252,98 @@
+     MemOp2RegOpTable[MemOp] = std::make_pair(RegOp, AuxInfo);
+   }
+ 
++  // NaCl needs indirect calls to go through a reg to align the target,
++  // so, skip Reg2Mem in some cases.
++  bool isNaCl = TM.getSubtarget<X86Subtarget>().isTargetNaCl();
++
+   // If the third value is 1, then it's folding either a load or a store.
+-  static const unsigned OpTbl0[][4] = {
+-    { X86::BT16ri8,     X86::BT16mi8, 1, 0 },
+-    { X86::BT32ri8,     X86::BT32mi8, 1, 0 },
+-    { X86::BT64ri8,     X86::BT64mi8, 1, 0 },
+-    { X86::CALL32r,     X86::CALL32m, 1, 0 },
+-    { X86::CALL64r,     X86::CALL64m, 1, 0 },
+-    { X86::WINCALL64r,  X86::WINCALL64m, 1, 0 },
+-    { X86::CMP16ri,     X86::CMP16mi, 1, 0 },
+-    { X86::CMP16ri8,    X86::CMP16mi8, 1, 0 },
+-    { X86::CMP16rr,     X86::CMP16mr, 1, 0 },
+-    { X86::CMP32ri,     X86::CMP32mi, 1, 0 },
+-    { X86::CMP32ri8,    X86::CMP32mi8, 1, 0 },
+-    { X86::CMP32rr,     X86::CMP32mr, 1, 0 },
+-    { X86::CMP64ri32,   X86::CMP64mi32, 1, 0 },
+-    { X86::CMP64ri8,    X86::CMP64mi8, 1, 0 },
+-    { X86::CMP64rr,     X86::CMP64mr, 1, 0 },
+-    { X86::CMP8ri,      X86::CMP8mi, 1, 0 },
+-    { X86::CMP8rr,      X86::CMP8mr, 1, 0 },
+-    { X86::DIV16r,      X86::DIV16m, 1, 0 },
+-    { X86::DIV32r,      X86::DIV32m, 1, 0 },
+-    { X86::DIV64r,      X86::DIV64m, 1, 0 },
+-    { X86::DIV8r,       X86::DIV8m, 1, 0 },
+-    { X86::EXTRACTPSrr, X86::EXTRACTPSmr, 0, 16 },
+-    { X86::FsMOVAPDrr,  X86::MOVSDmr | TB_NOT_REVERSABLE , 0, 0 },
+-    { X86::FsMOVAPSrr,  X86::MOVSSmr | TB_NOT_REVERSABLE , 0, 0 },
+-    { X86::IDIV16r,     X86::IDIV16m, 1, 0 },
+-    { X86::IDIV32r,     X86::IDIV32m, 1, 0 },
+-    { X86::IDIV64r,     X86::IDIV64m, 1, 0 },
+-    { X86::IDIV8r,      X86::IDIV8m, 1, 0 },
+-    { X86::IMUL16r,     X86::IMUL16m, 1, 0 },
+-    { X86::IMUL32r,     X86::IMUL32m, 1, 0 },
+-    { X86::IMUL64r,     X86::IMUL64m, 1, 0 },
+-    { X86::IMUL8r,      X86::IMUL8m, 1, 0 },
+-    { X86::JMP32r,      X86::JMP32m, 1, 0 },
+-    { X86::JMP64r,      X86::JMP64m, 1, 0 },
+-    { X86::MOV16ri,     X86::MOV16mi, 0, 0 },
+-    { X86::MOV16rr,     X86::MOV16mr, 0, 0 },
+-    { X86::MOV32ri,     X86::MOV32mi, 0, 0 },
+-    { X86::MOV32rr,     X86::MOV32mr, 0, 0 },
+-    { X86::MOV64ri32,   X86::MOV64mi32, 0, 0 },
+-    { X86::MOV64rr,     X86::MOV64mr, 0, 0 },
+-    { X86::MOV8ri,      X86::MOV8mi, 0, 0 },
+-    { X86::MOV8rr,      X86::MOV8mr, 0, 0 },
+-    { X86::MOV8rr_NOREX, X86::MOV8mr_NOREX, 0, 0 },
+-    { X86::MOVAPDrr,    X86::MOVAPDmr, 0, 16 },
+-    { X86::MOVAPSrr,    X86::MOVAPSmr, 0, 16 },
+-    { X86::MOVDQArr,    X86::MOVDQAmr, 0, 16 },
+-    { X86::VMOVAPDYrr,  X86::VMOVAPDYmr, 0, 32 },
+-    { X86::VMOVAPSYrr,  X86::VMOVAPSYmr, 0, 32 },
+-    { X86::VMOVDQAYrr,  X86::VMOVDQAYmr, 0, 32 },
+-    { X86::MOVPDI2DIrr, X86::MOVPDI2DImr, 0, 0 },
+-    { X86::MOVPQIto64rr,X86::MOVPQI2QImr, 0, 0 },
+-    { X86::MOVSDto64rr, X86::MOVSDto64mr, 0, 0 },
+-    { X86::MOVSS2DIrr,  X86::MOVSS2DImr, 0, 0 },
+-    { X86::MOVUPDrr,    X86::MOVUPDmr, 0, 0 },
+-    { X86::MOVUPSrr,    X86::MOVUPSmr, 0, 0 },
+-    { X86::VMOVUPDYrr,  X86::VMOVUPDYmr, 0, 0 },
+-    { X86::VMOVUPSYrr,  X86::VMOVUPSYmr, 0, 0 },
+-    { X86::MUL16r,      X86::MUL16m, 1, 0 },
+-    { X86::MUL32r,      X86::MUL32m, 1, 0 },
+-    { X86::MUL64r,      X86::MUL64m, 1, 0 },
+-    { X86::MUL8r,       X86::MUL8m, 1, 0 },
+-    { X86::SETAEr,      X86::SETAEm, 0, 0 },
+-    { X86::SETAr,       X86::SETAm, 0, 0 },
+-    { X86::SETBEr,      X86::SETBEm, 0, 0 },
+-    { X86::SETBr,       X86::SETBm, 0, 0 },
+-    { X86::SETEr,       X86::SETEm, 0, 0 },
+-    { X86::SETGEr,      X86::SETGEm, 0, 0 },
+-    { X86::SETGr,       X86::SETGm, 0, 0 },
+-    { X86::SETLEr,      X86::SETLEm, 0, 0 },
+-    { X86::SETLr,       X86::SETLm, 0, 0 },
+-    { X86::SETNEr,      X86::SETNEm, 0, 0 },
+-    { X86::SETNOr,      X86::SETNOm, 0, 0 },
+-    { X86::SETNPr,      X86::SETNPm, 0, 0 },
+-    { X86::SETNSr,      X86::SETNSm, 0, 0 },
+-    { X86::SETOr,       X86::SETOm, 0, 0 },
+-    { X86::SETPr,       X86::SETPm, 0, 0 },
+-    { X86::SETSr,       X86::SETSm, 0, 0 },
+-    { X86::TAILJMPr,    X86::TAILJMPm, 1, 0 },
+-    { X86::TAILJMPr64,  X86::TAILJMPm64, 1, 0 },
+-    { X86::TEST16ri,    X86::TEST16mi, 1, 0 },
+-    { X86::TEST32ri,    X86::TEST32mi, 1, 0 },
+-    { X86::TEST64ri32,  X86::TEST64mi32, 1, 0 },
+-    { X86::TEST8ri,     X86::TEST8mi, 1, 0 }
++  // The fourth value is alignment.
++  // If the fifth value is true reg2mem is allowed.
++  // If the sixth value is true mem2reg is allowed.
++  static const unsigned OpTbl0[][6] = {
++    { X86::BT16ri8,       X86::BT16mi8,       1, 0,  true,    true },
++    { X86::BT32ri8,       X86::BT32mi8,       1, 0,  true,    true },
++    { X86::BT64ri8,       X86::BT64mi8,       1, 0,  true,    true },
++    { X86::CALL32r,       X86::CALL32m,       1, 0,  !isNaCl, true },
++    { X86::CALL64r,       X86::CALL64m,       1, 0,  !isNaCl, true },
++    { X86::WINCALL64r,    X86::WINCALL64m,    1, 0,  true,    true },
++    { X86::CMP16ri,       X86::CMP16mi,       1, 0,  true,    true },
++    { X86::CMP16ri8,      X86::CMP16mi8,      1, 0,  true,    true },
++    { X86::CMP16rr,       X86::CMP16mr,       1, 0,  true,    true },
++    { X86::CMP32ri,       X86::CMP32mi,       1, 0,  true,    true },
++    { X86::CMP32ri8,      X86::CMP32mi8,      1, 0,  true,    true },
++    { X86::CMP32rr,       X86::CMP32mr,       1, 0,  true,    true },
++    { X86::CMP64ri32,     X86::CMP64mi32,     1, 0,  true,    true },
++    { X86::CMP64ri8,      X86::CMP64mi8,      1, 0,  true,    true },
++    { X86::CMP64rr,       X86::CMP64mr,       1, 0,  true,    true },
++    { X86::CMP8ri,        X86::CMP8mi,        1, 0,  true,    true },
++    { X86::CMP8rr,        X86::CMP8mr,        1, 0,  true,    true },
++    { X86::DIV16r,        X86::DIV16m,        1, 0,  true,    true },
++    { X86::DIV32r,        X86::DIV32m,        1, 0,  true,    true },
++    { X86::DIV64r,        X86::DIV64m,        1, 0,  true,    true },
++    { X86::DIV8r,         X86::DIV8m,         1, 0,  true,    true },
++    { X86::EXTRACTPSrr,   X86::EXTRACTPSmr,   0, 16, true,    true },
++    { X86::FsMOVAPDrr,    X86::MOVSDmr | TB_NOT_REVERSABLE,       0, 0,  true,    false },
++    { X86::FsMOVAPSrr,    X86::MOVSSmr | TB_NOT_REVERSABLE,       0, 0,  true,    false },
++    { X86::IDIV16r,       X86::IDIV16m,       1, 0,  true,    true },
++    { X86::IDIV32r,       X86::IDIV32m,       1, 0,  true,    true },
++    { X86::IDIV64r,       X86::IDIV64m,       1, 0,  true,    true },
++    { X86::IDIV8r,        X86::IDIV8m,        1, 0,  true,    true },
++    { X86::IMUL16r,       X86::IMUL16m,       1, 0,  true,    true },
++    { X86::IMUL32r,       X86::IMUL32m,       1, 0,  true,    true },
++    { X86::IMUL64r,       X86::IMUL64m,       1, 0,  true,    true },
++    { X86::IMUL8r,        X86::IMUL8m,        1, 0,  true,    true },
++    { X86::JMP32r,        X86::JMP32m,        1, 0,  !isNaCl, true },
++    { X86::JMP64r,        X86::JMP64m,        1, 0,  !isNaCl, true },
++    { X86::MOV16ri,       X86::MOV16mi,       0, 0,  true,    true },
++    { X86::MOV16rr,       X86::MOV16mr,       0, 0,  true,    true },
++    { X86::MOV32ri,       X86::MOV32mi,       0, 0,  true,    true },
++    { X86::MOV32rr,       X86::MOV32mr,       0, 0,  true,    true },
++    { X86::MOV64ri32,     X86::MOV64mi32,     0, 0,  true,    true },
++    { X86::MOV64rr,       X86::MOV64mr,       0, 0,  true,    true },
++    { X86::MOV8ri,        X86::MOV8mi,        0, 0,  true,    true },
++    { X86::MOV8rr,        X86::MOV8mr,        0, 0,  true,    true },
++    { X86::MOV8rr_NOREX,  X86::MOV8mr_NOREX,  0, 0,  true,    true },
++     { X86::MOVAPDrr,    X86::MOVAPDmr,        0, 16, true,    true },
++     { X86::MOVAPSrr,    X86::MOVAPSmr,        0, 16, true,    true },
++     { X86::MOVDQArr,    X86::MOVDQAmr,        0, 16, true,    true },
++    { X86::VMOVAPDYrr,    X86::VMOVAPDYmr,    0, 32, true,    true },
++    { X86::VMOVAPSYrr,    X86::VMOVAPSYmr,    0, 32, true,    true },
++    { X86::VMOVDQAYrr,    X86::VMOVDQAYmr,    0, 32  true,    true },
++    { X86::MOVPDI2DIrr,   X86::MOVPDI2DImr,   0, 0,  true,    true },
++    { X86::MOVPQIto64rr,  X86::MOVPQI2QImr,   0, 0,  true,    true },
++    { X86::MOVSDto64rr,   X86::MOVSDto64mr,   0, 0,  true,    true },
++    { X86::MOVSS2DIrr,    X86::MOVSS2DImr,    0, 0,  true,    true },
++    { X86::MOVUPDrr,      X86::MOVUPDmr,      0, 0,  true,    true },
++    { X86::MOVUPSrr,      X86::MOVUPSmr,      0, 0,  true,    true },
++     { X86::VMOVUPDYrr,  X86::VMOVUPDYmr,      0, 0,  true,    true },
++     { X86::VMOVUPSYrr,  X86::VMOVUPSYmr,      0, 0,  true,    true },
++    { X86::MUL16r,        X86::MUL16m,        1, 0,  true,    true },
++    { X86::MUL32r,        X86::MUL32m,        1, 0,  true,    true },
++    { X86::MUL64r,        X86::MUL64m,        1, 0,  true,    true },
++    { X86::MUL8r,         X86::MUL8m,         1, 0,  true,    true },
++    { X86::SETAEr,        X86::SETAEm,        0, 0,  true,    true },
++    { X86::SETAr,         X86::SETAm,         0, 0,  true,    true },
++    { X86::SETBEr,        X86::SETBEm,        0, 0,  true,    true },
++    { X86::SETBr,         X86::SETBm,         0, 0,  true,    true },
++    { X86::SETEr,         X86::SETEm,         0, 0,  true,    true },
++    { X86::SETGEr,        X86::SETGEm,        0, 0,  true,    true },
++    { X86::SETGr,         X86::SETGm,         0, 0,  true,    true },
++    { X86::SETLEr,        X86::SETLEm,        0, 0,  true,    true },
++    { X86::SETLr,         X86::SETLm,         0, 0,  true,    true },
++    { X86::SETNEr,        X86::SETNEm,        0, 0,  true,    true },
++    { X86::SETNOr,        X86::SETNOm,        0, 0,  true,    true },
++    { X86::SETNPr,        X86::SETNPm,        0, 0,  true,    true },
++    { X86::SETNSr,        X86::SETNSm,        0, 0,  true,    true },
++    { X86::SETOr,         X86::SETOm,         0, 0,  true,    true },
++    { X86::SETPr,         X86::SETPm,         0, 0,  true,    true },
++    { X86::SETSr,         X86::SETSm,         0, 0,  true,    true },
++    { X86::TAILJMPr,      X86::TAILJMPm,      1, 0,  !isNaCl, true },
++    { X86::TAILJMPr64,    X86::TAILJMPm64,    1, 0,  !isNaCl, true },
++    { X86::TEST16ri,      X86::TEST16mi,      1, 0,  true,    true },
++    { X86::TEST32ri,      X86::TEST32mi,      1, 0,  true,    true },
++    { X86::TEST64ri32,    X86::TEST64mi32,    1, 0,  true,    true },
++    { X86::TEST8ri,       X86::TEST8mi,       1, 0,  true,    true }
+   };
+ 
+   for (unsigned i = 0, e = array_lengthof(OpTbl0); i != e; ++i) {
+@@ -344,8 +351,12 @@
      unsigned MemOp      = OpTbl0[i][1] & ~TB_FLAGS;
      unsigned FoldedLoad = OpTbl0[i][2];
      unsigned Align      = OpTbl0[i][3];
@@ -6090,7 +6869,7 @@ diff -r d2a40785b09a lib/Target/X86/X86InstrInfo.cpp
  
      // If this is not a reversible operation (because there is a many->one)
      // mapping, don't insert the reverse of the operation into MemOp2RegOpTable.
-@@ -2039,6 +2043,7 @@
+@@ -2039,6 +2050,7 @@
  
    DEBUG(dbgs() << "Cannot copy " << RI.getName(SrcReg)
                 << " to " << RI.getName(DestReg) << '\n');
@@ -6098,9 +6877,20 @@ diff -r d2a40785b09a lib/Target/X86/X86InstrInfo.cpp
    llvm_unreachable("Cannot emit physreg copy instruction");
  }
  
+@@ -2068,6 +2080,10 @@
+       return load ? X86::MOVSSrm : X86::MOVSSmr;
+     if (X86::RFP32RegClass.hasSubClassEq(RC))
+       return load ? X86::LD_Fp32m : X86::ST_Fp32m;
++    // @LOCALMOD-START
++    if (X86::GR32_TC_64RegClass.hasSubClassEq(RC))
++      return load ? X86::MOV32rm : X86::MOV32mr;
++    // @LOCALMOD-END
+     llvm_unreachable("Unknown 4-byte regclass");
+   case 8:
+     if (X86::GR64RegClass.hasSubClassEq(RC))
 diff -r d2a40785b09a lib/Target/X86/X86InstrInfo.td
 --- a/lib/Target/X86/X86InstrInfo.td	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86InstrInfo.td	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86InstrInfo.td	Tue Aug 09 14:43:04 2011 -0700
 @@ -412,6 +412,13 @@
    let ParserMatchClass = ImmSExti64i8AsmOperand;
  }
@@ -6166,7 +6956,7 @@ diff -r d2a40785b09a lib/Target/X86/X86InstrInfo.td
  def : MnemonicAlias<"cwd",  "cwtd">;
 diff -r d2a40785b09a lib/Target/X86/X86InstrNaCl.cpp
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Target/X86/X86InstrNaCl.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -0,0 +1,367 @@
 +//=== X86InstrNaCl.cpp - Expansion of NaCl pseudo-instructions  --*- C++ -*-=//
 +//
@@ -6537,7 +7327,7 @@ diff -r d2a40785b09a lib/Target/X86/X86InstrNaCl.cpp
 +} // namespace llvm
 diff -r d2a40785b09a lib/Target/X86/X86InstrNaCl.h
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Target/X86/X86InstrNaCl.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -0,0 +1,19 @@
 +//===-- X86InstrNaCl.h - Prototype for CustomExpandInstNaCl    ---*- C++ -*-===//
 +//
@@ -6560,7 +7350,7 @@ diff -r d2a40785b09a lib/Target/X86/X86InstrNaCl.h
 +#endif
 diff -r d2a40785b09a lib/Target/X86/X86InstrNaCl.td
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Target/X86/X86InstrNaCl.td	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Tue Aug 09 14:43:04 2011 -0700
 @@ -0,0 +1,316 @@
 +//====- X86InstrNaCl.td - Describe NaCl Instructions ----*- tablegen -*-===//
 +//
@@ -6880,7 +7670,7 @@ diff -r d2a40785b09a lib/Target/X86/X86InstrNaCl.td
 +                     Requires<[IsNaCl64]>;
 diff -r d2a40785b09a lib/Target/X86/X86JITInfo.cpp
 --- a/lib/Target/X86/X86JITInfo.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86JITInfo.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86JITInfo.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -25,11 +25,15 @@
  using namespace llvm;
  
@@ -6899,7 +7689,7 @@ diff -r d2a40785b09a lib/Target/X86/X86JITInfo.cpp
    unsigned char *OldByte = (unsigned char *)Old;
 diff -r d2a40785b09a lib/Target/X86/X86MCInstLower.cpp
 --- a/lib/Target/X86/X86MCInstLower.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86MCInstLower.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86MCInstLower.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -633,7 +633,13 @@
      
      // Emit the call.
@@ -6917,7 +7707,7 @@ diff -r d2a40785b09a lib/Target/X86/X86MCInstLower.cpp
      TmpInst.addOperand(MCOperand::CreateExpr(MCSymbolRefExpr::Create(PICBase,
 diff -r d2a40785b09a lib/Target/X86/X86NaClRewritePass.cpp
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/lib/Target/X86/X86NaClRewritePass.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86NaClRewritePass.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -0,0 +1,661 @@
 +//=== X86NaClRewritePAss.cpp - Rewrite instructions for NaCl SFI --*- C++ -*-=//
 +//
@@ -7582,7 +8372,7 @@ diff -r d2a40785b09a lib/Target/X86/X86NaClRewritePass.cpp
 +}
 diff -r d2a40785b09a lib/Target/X86/X86RegisterInfo.cpp
 --- a/lib/Target/X86/X86RegisterInfo.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86RegisterInfo.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86RegisterInfo.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -261,14 +261,18 @@
  
  const TargetRegisterClass *
@@ -7604,9 +8394,30 @@ diff -r d2a40785b09a lib/Target/X86/X86RegisterInfo.cpp
        return &X86::GR64_NOSPRegClass;
      return &X86::GR32_NOSPRegClass;
    case 2: // Available for tailcall (not callee-saved GPRs).
+@@ -420,6 +424,20 @@
+     }
+   }
+ 
++  // @LOCALMOD-START
++  const X86Subtarget& Subtarget = MF.getTarget().getSubtarget<X86Subtarget>();
++  if (Subtarget.isTargetNaCl64()) {
++    Reserved.set(X86::R15);
++    Reserved.set(X86::R15D);
++    Reserved.set(X86::R15W);
++    Reserved.set(X86::R15B);
++    Reserved.set(X86::RBP);
++    Reserved.set(X86::EBP);
++    Reserved.set(X86::BP);
++    Reserved.set(X86::BPL);
++  }
++  // @LOCALMOD-END
++
+   return Reserved;
+ }
+ 
 diff -r d2a40785b09a lib/Target/X86/X86RegisterInfo.td
 --- a/lib/Target/X86/X86RegisterInfo.td	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86RegisterInfo.td	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86RegisterInfo.td	Tue Aug 09 14:43:04 2011 -0700
 @@ -265,6 +265,9 @@
    // Pseudo index registers
    def EIZ : Register<"eiz">;
@@ -7617,9 +8428,23 @@ diff -r d2a40785b09a lib/Target/X86/X86RegisterInfo.td
  }
  
  
+@@ -353,6 +356,13 @@
+ def GR32_TC   : RegisterClass<"X86", [i32], 32, (add EAX, ECX, EDX)> {
+   let SubRegClasses = [(GR8 sub_8bit, sub_8bit_hi), (GR16 sub_16bit)];
+ }
++// @LOCALMOD-START
++def GR32_TC_64: RegisterClass<"X86", [i32], 32, [EAX, ECX, EDX, ESI, EDI,
++                                                 R8D, R9D, R11D]> {
++  let SubRegClasses = [(GR8 sub_8bit, sub_8bit_hi), (GR16 sub_16bit)];
++}
++// @LOCALMOD-END
++
+ def GR64_TC   : RegisterClass<"X86", [i64], 64, (add RAX, RCX, RDX, RSI, RDI,
+                                                      R8, R9, R11, RIP)> {
+   let SubRegClasses = [(GR8 sub_8bit, sub_8bit_hi),
 diff -r d2a40785b09a lib/Target/X86/X86SelectionDAGInfo.cpp
 --- a/lib/Target/X86/X86SelectionDAGInfo.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86SelectionDAGInfo.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86SelectionDAGInfo.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -35,6 +35,14 @@
                                           MachinePointerInfo DstPtrInfo) const {
    ConstantSDNode *ConstantSize = dyn_cast<ConstantSDNode>(Size);
@@ -7651,7 +8476,7 @@ diff -r d2a40785b09a lib/Target/X86/X86SelectionDAGInfo.cpp
    /// the code generated here is better than the long load-store sequence we
 diff -r d2a40785b09a lib/Target/X86/X86Subtarget.h
 --- a/lib/Target/X86/X86Subtarget.h	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86Subtarget.h	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86Subtarget.h	Tue Aug 09 14:43:04 2011 -0700
 @@ -143,6 +143,9 @@
  
    bool is64Bit() const { return In64BitMode; }
@@ -7675,7 +8500,7 @@ diff -r d2a40785b09a lib/Target/X86/X86Subtarget.h
    bool isTargetCygwin() const { return TargetTriple.getOS() == Triple::Cygwin; }
 diff -r d2a40785b09a lib/Target/X86/X86TargetMachine.cpp
 --- a/lib/Target/X86/X86TargetMachine.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86TargetMachine.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86TargetMachine.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -37,7 +37,9 @@
                 (getSubtargetImpl()->isTargetCygMing() ||
                  getSubtargetImpl()->isTargetWindows()) ?
@@ -7687,7 +8512,18 @@ diff -r d2a40785b09a lib/Target/X86/X86TargetMachine.cpp
      InstrInfo(*this),
      TSInfo(*this),
      TLInfo(*this),
-@@ -121,11 +123,20 @@
+@@ -49,7 +51,9 @@
+                                          StringRef CPU, StringRef FS,
+                                          Reloc::Model RM, CodeModel::Model CM)
+   : X86TargetMachine(T, TT, CPU, FS, RM, CM, true),
+-    DataLayout("e-p:64:64-s:64-f64:64:64-i64:64:64-f80:128:128-f128:128:128-n8:16:32:64"),
++    DataLayout(getSubtargetImpl()->isTargetNaCl() ?
++               "e-p:32:32-s:64-f64:64:64-f32:32:32-f80:128:128-i64:64:64-n8:16:32:64" : 
++               "e-p:64:64-s:64-f64:64:64-i64:64:64-f80:128:128-f128:128:128-n8:16:32:64"),
+     InstrInfo(*this),
+     TSInfo(*this),
+     TLInfo(*this),
+@@ -121,11 +125,20 @@
  
  bool X86TargetMachine::addPreEmitPass(PassManagerBase &PM,
                                        CodeGenOpt::Level OptLevel) {
@@ -7712,7 +8548,7 @@ diff -r d2a40785b09a lib/Target/X86/X86TargetMachine.cpp
  bool X86TargetMachine::addCodeEmitter(PassManagerBase &PM,
 diff -r d2a40785b09a lib/Target/X86/X86TargetObjectFile.cpp
 --- a/lib/Target/X86/X86TargetObjectFile.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Target/X86/X86TargetObjectFile.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Target/X86/X86TargetObjectFile.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -9,9 +9,11 @@
  
  #include "X86TargetObjectFile.h"
@@ -7725,7 +8561,7 @@ diff -r d2a40785b09a lib/Target/X86/X86TargetObjectFile.cpp
  #include "llvm/MC/MCSectionMachO.h"
  #include "llvm/Target/Mangler.h"
  #include "llvm/ADT/SmallString.h"
-@@ -43,3 +45,48 @@
+@@ -43,3 +45,49 @@
                          MachineModuleInfo *MMI) const {
    return Mang->getSymbol(GV);
  }
@@ -7740,8 +8576,8 @@ diff -r d2a40785b09a lib/Target/X86/X86TargetObjectFile.cpp
 +// Without this the linker defined symbols __fini_array_start and
 +// __fini_array_end do not have useful values. c.f.:
 +// http://code.google.com/p/nativeclient/issues/detail?id=805
-+void X8664_ELFTargetObjectFile::Initialize(MCContext &Ctx,
-+                                           const TargetMachine &TM) {
++void X86_NaClELFTargetObjectFile::Initialize(MCContext &Ctx,
++                                             const TargetMachine &TM) {
 +  TargetLoweringObjectFileELF::Initialize(Ctx, TM);
 +  if (TM.getSubtarget<X86Subtarget>().isTargetNaCl()) {
 +    StaticCtorSection =
@@ -7756,7 +8592,7 @@ diff -r d2a40785b09a lib/Target/X86/X86TargetObjectFile.cpp
 +                                 SectionKind::getDataRel());
 +  }
 +}
-+
++#if 0
 +void X8632_ELFTargetObjectFile::Initialize(MCContext &Ctx,
 +                                           const TargetMachine &TM) {
 +  TargetLoweringObjectFileELF::Initialize(Ctx, TM);
@@ -7773,10 +8609,28 @@ diff -r d2a40785b09a lib/Target/X86/X86TargetObjectFile.cpp
 +                                 SectionKind::getDataRel());
 +  }
 +}
++#endif
 +// @LOCALMOD-END
+diff -r d2a40785b09a lib/Target/X86/X86TargetObjectFile.h
+--- a/lib/Target/X86/X86TargetObjectFile.h	Sat Aug 06 18:20:24 2011 +0000
++++ b/lib/Target/X86/X86TargetObjectFile.h	Tue Aug 09 14:43:04 2011 -0700
+@@ -33,6 +33,13 @@
+                             MachineModuleInfo *MMI) const;
+   };
+ 
++// @LOCALMOD-START
++class X86_NaClElfTargetObjectFile : public TargetLoweringObjectFileELF {
++public:
++  virtual void Initialize(MCContext &Ctx, const TargetMachine &TM);
++}
++// @LOCALMOD-END
++
+ } // end namespace llvm
+ 
+ #endif
 diff -r d2a40785b09a lib/Transforms/Makefile
 --- a/lib/Transforms/Makefile	Sat Aug 06 18:20:24 2011 +0000
-+++ b/lib/Transforms/Makefile	Tue Aug 09 14:33:54 2011 -0700
++++ b/lib/Transforms/Makefile	Tue Aug 09 14:43:04 2011 -0700
 @@ -10,6 +10,10 @@
  LEVEL = ../..
  PARALLEL_DIRS = Utils Instrumentation Scalar InstCombine IPO Hello
@@ -7790,7 +8644,7 @@ diff -r d2a40785b09a lib/Transforms/Makefile
  # No support for plugins on windows targets
 diff -r d2a40785b09a tools/Makefile
 --- a/tools/Makefile	Sat Aug 06 18:20:24 2011 +0000
-+++ b/tools/Makefile	Tue Aug 09 14:33:54 2011 -0700
++++ b/tools/Makefile	Tue Aug 09 14:43:04 2011 -0700
 @@ -19,10 +19,13 @@
  # NOTE: The tools are organized into five groups of four consisting of one
  # large and three small executables. This is done to minimize memory load
@@ -7809,7 +8663,7 @@ diff -r d2a40785b09a tools/Makefile
                   llvmc llvm-diff macho-dump llvm-objdump \
 diff -r d2a40785b09a tools/llc/CMakeLists.txt
 --- a/tools/llc/CMakeLists.txt	Sat Aug 06 18:20:24 2011 +0000
-+++ b/tools/llc/CMakeLists.txt	Tue Aug 09 14:33:54 2011 -0700
++++ b/tools/llc/CMakeLists.txt	Tue Aug 09 14:43:04 2011 -0700
 @@ -1,5 +1,9 @@
  set(LLVM_LINK_COMPONENTS ${LLVM_TARGETS_TO_BUILD} bitreader asmparser)
  
@@ -7822,7 +8676,7 @@ diff -r d2a40785b09a tools/llc/CMakeLists.txt
    )
 diff -r d2a40785b09a tools/llc/Makefile
 --- a/tools/llc/Makefile	Sat Aug 06 18:20:24 2011 +0000
-+++ b/tools/llc/Makefile	Tue Aug 09 14:33:54 2011 -0700
++++ b/tools/llc/Makefile	Tue Aug 09 14:43:04 2011 -0700
 @@ -17,5 +17,9 @@
  
  LINK_COMPONENTS := $(TARGETS_TO_BUILD) bitreader asmparser
@@ -7835,7 +8689,7 @@ diff -r d2a40785b09a tools/llc/Makefile
  
 diff -r d2a40785b09a tools/llc/llc.cpp
 --- a/tools/llc/llc.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/tools/llc/llc.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/tools/llc/llc.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -27,7 +27,9 @@
  #include "llvm/Support/Debug.h"
  #include "llvm/Support/FormattedStream.h"
@@ -7913,7 +8767,7 @@ diff -r d2a40785b09a tools/llc/llc.cpp
 +
 diff -r d2a40785b09a tools/llc/nacl_file.cpp
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/tools/llc/nacl_file.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/tools/llc/nacl_file.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -0,0 +1,568 @@
 +/* Copyright 2010 The Native Client Authors. All rights reserved.
 + * Use of this source code is governed by a BSD-style license that can
@@ -8485,7 +9339,7 @@ diff -r d2a40785b09a tools/llc/nacl_file.cpp
 +#endif
 diff -r d2a40785b09a tools/lto/lto.exports
 --- a/tools/lto/lto.exports	Sat Aug 06 18:20:24 2011 +0000
-+++ b/tools/lto/lto.exports	Tue Aug 09 14:33:54 2011 -0700
++++ b/tools/lto/lto.exports	Tue Aug 09 14:43:04 2011 -0700
 @@ -19,6 +19,9 @@
  lto_codegen_compile
  lto_codegen_create
@@ -8498,7 +9352,7 @@ diff -r d2a40785b09a tools/lto/lto.exports
  lto_codegen_write_merged_modules
 diff -r d2a40785b09a utils/Makefile
 --- a/utils/Makefile	Sat Aug 06 18:20:24 2011 +0000
-+++ b/utils/Makefile	Tue Aug 09 14:33:54 2011 -0700
++++ b/utils/Makefile	Tue Aug 09 14:43:04 2011 -0700
 @@ -11,6 +11,11 @@
  PARALLEL_DIRS := FileCheck FileUpdate TableGen PerfectShuffle \
  	      count fpcmp llvm-lit not unittest
@@ -8513,7 +9367,7 @@ diff -r d2a40785b09a utils/Makefile
  	      getsrcs.sh importNLT.pl llvmdo llvmgrep llvm-native-gcc \
 diff -r d2a40785b09a utils/TableGen/CodeGenTarget.cpp
 --- a/utils/TableGen/CodeGenTarget.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/utils/TableGen/CodeGenTarget.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/utils/TableGen/CodeGenTarget.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -267,6 +267,12 @@
      "DBG_VALUE",
      "REG_SEQUENCE",
@@ -8529,7 +9383,7 @@ diff -r d2a40785b09a utils/TableGen/CodeGenTarget.cpp
    const DenseMap<const Record*, CodeGenInstruction*> &Insts = getInstructions();
 diff -r d2a40785b09a utils/TableGen/EDEmitter.cpp
 --- a/utils/TableGen/EDEmitter.cpp	Sat Aug 06 18:20:24 2011 +0000
-+++ b/utils/TableGen/EDEmitter.cpp	Tue Aug 09 14:33:54 2011 -0700
++++ b/utils/TableGen/EDEmitter.cpp	Tue Aug 09 14:43:04 2011 -0700
 @@ -262,6 +262,7 @@
    REG("FR32");
    REG("RFP32");
