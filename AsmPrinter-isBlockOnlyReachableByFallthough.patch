@@ -1,10 +1,11 @@
 # HG changeset patch
-# Parent a2768ebbc09da40e477adc7aab8f88c3308bf944
+# User Jason Kim <jasonwkim@google.com>
+# Parent 765b7493d8b0dcc8a134aed3f6ad930cb8d18762
 upstream: reorg isBlockOnlyReachableByFallthough() to have a helper routine
 
-diff -r a2768ebbc09d lib/CodeGen/AsmPrinter/AsmPrinter.cpp
---- a/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Sun Aug 07 14:59:09 2011 -0700
-+++ b/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Mon Aug 08 12:29:40 2011 -0700
+diff -r 765b7493d8b0 lib/CodeGen/AsmPrinter/AsmPrinter.cpp
+--- a/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Wed Feb 02 19:05:20 2011 -0800
++++ b/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Tue Aug 09 17:19:52 2011 -0700
 @@ -1955,6 +1955,27 @@
      OutStreamer.EmitSymbolAttribute(Sym, Attr);
  }

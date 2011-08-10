@@ -1,10 +1,11 @@
 # HG changeset patch
-# Parent 595fe357ee58bf742771e144c13f5f5e0707eb96
+# User Jason Kim <jasonwkim@google.com>
+# Parent 7006c79febe35f722ea15718d77b46d71a28a01c
 lib/Target/SubtargetFeature.cpp  has been moved to lib/MC
 
-diff -r 595fe357ee58 lib/MC/SubtargetFeature.cpp
+diff -r 7006c79febe3 lib/MC/SubtargetFeature.cpp
 --- a/lib/MC/SubtargetFeature.cpp	Thu Mar 17 17:49:59 2011 -0700
-+++ b/lib/MC/SubtargetFeature.cpp	Tue Aug 09 15:01:56 2011 -0700
++++ b/lib/MC/SubtargetFeature.cpp	Tue Aug 09 17:19:58 2011 -0700
 @@ -393,5 +393,11 @@
        AddFeature("64bit");
        AddFeature("altivec");
@@ -17,9 +18,9 @@ diff -r 595fe357ee58 lib/MC/SubtargetFeature.cpp
 +// @LOCALMOD-END
    }
  }
-diff -r 595fe357ee58 tools/llc/llc.cpp
+diff -r 7006c79febe3 tools/llc/llc.cpp
 --- a/tools/llc/llc.cpp	Thu Mar 17 17:49:59 2011 -0700
-+++ b/tools/llc/llc.cpp	Tue Aug 09 15:01:56 2011 -0700
++++ b/tools/llc/llc.cpp	Tue Aug 09 17:19:58 2011 -0700
 @@ -331,6 +331,11 @@
    std::string FeaturesStr;
    if (MAttrs.size()) {

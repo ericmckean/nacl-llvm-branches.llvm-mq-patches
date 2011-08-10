@@ -1,10 +1,11 @@
 # HG changeset patch
-# Parent 3effcc99d45f63f5cd8d915577238a73b79ecd35
+# User Jason Kim <jasonwkim@google.com>
+# Parent 4616e74eeaf51f375385c17d2860b827ed29865a
 localmod: BundleUnlock
 
-diff -r 3effcc99d45f lib/CodeGen/AsmPrinter/AsmPrinter.cpp
---- a/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Mon Aug 08 12:29:40 2011 -0700
-+++ b/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Mon Aug 08 12:33:02 2011 -0700
+diff -r 4616e74eeaf5 lib/CodeGen/AsmPrinter/AsmPrinter.cpp
+--- a/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Tue Aug 09 17:19:52 2011 -0700
++++ b/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Tue Aug 09 17:19:52 2011 -0700
 @@ -2005,8 +2005,17 @@
    // Check the terminators in the previous blocks
    for (MachineBasicBlock::iterator II = Pred->getFirstTerminator(),

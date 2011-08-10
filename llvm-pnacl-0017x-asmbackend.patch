@@ -1,10 +1,11 @@
 # HG changeset patch
-# Parent d1b89770053550be8c9649be020dac9fb53c312f
+# User Jason Kim <jasonwkim@google.com>
+# Parent b1cf34ec35a711202e669707ac141c71fdec7924
 X86AsmBackend and ARMAsmBackend have been moved to MCTargetDesc
 
-diff -r d1b897700535 -r f3b40554682f lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp
+diff -r b1cf34ec35a7 lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp
 --- a/lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp	Tue Aug 09 15:21:30 2011 -0700
++++ b/lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp	Tue Aug 09 17:20:00 2011 -0700
 @@ -388,9 +388,18 @@
                    uint64_t Value) const;
  
@@ -24,9 +25,9 @@ diff -r d1b897700535 -r f3b40554682f lib/Target/ARM/MCTargetDesc/ARMAsmBackend.c
    // @LOCALMOD-END
  
    MCObjectWriter *createObjectWriter(raw_ostream &OS) const {
-diff -r d1b897700535 -r f3b40554682f lib/Target/X86/MCTargetDesc/X86AsmBackend.cpp
+diff -r b1cf34ec35a7 lib/Target/X86/MCTargetDesc/X86AsmBackend.cpp
 --- a/lib/Target/X86/MCTargetDesc/X86AsmBackend.cpp	Mon Mar 28 17:01:56 2011 -0700
-+++ b/lib/Target/X86/MCTargetDesc/X86AsmBackend.cpp	Tue Aug 09 15:21:30 2011 -0700
++++ b/lib/Target/X86/MCTargetDesc/X86AsmBackend.cpp	Tue Aug 09 17:20:00 2011 -0700
 @@ -337,7 +337,7 @@
  
    bool CustomExpandInst(const MCInst &Inst, MCStreamer &Out) const {
