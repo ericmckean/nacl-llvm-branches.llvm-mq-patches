@@ -3,31 +3,16 @@
 # Date 1300409399 25200
 # Branch pnacl-sfi
 # Node ID d64f068b8c80062e712fb851da70dfbe4c5070dd
-# Parent 7ad81b42ac570f308e6c26371af2974d2e0c6f5a
+# Parent aec96340375f5e9fd9df534d8f6b4f298abbba5c
 Tweaks to LLVM for self-build
 
  From llvm-pnacl-0014-234-d64f068b8c80062e712fb851da70dfbe4c5070dd.patch
 
  From .hg/patches/llvm-pnacl-0014-234-d64f068b8c80062e712fb851da70dfbe4c5070dd.patch.stripped
 
-diff -r 7ad81b42ac57 lib/Target/SubtargetFeature.cpp
---- a/lib/Target/SubtargetFeature.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/lib/Target/SubtargetFeature.cpp	Mon Jul 11 09:35:50 2011 -0700
-@@ -380,5 +380,11 @@
-       AddFeature("64bit");
-       AddFeature("altivec");
-     }
-+// @LOCALMOD-BEGIN
-+  } else if (Triple.getArch() == Triple::arm &&
-+             Triple.getOS() == Triple::NativeClient) {
-+    AddFeature("-neon");
-+    AddFeature("+vfp2");
-+// @LOCALMOD-END
-   }
- }
-diff -r 7ad81b42ac57 lib/Target/X86/X86InstrControl.td
+diff -r aec96340375f lib/Target/X86/X86InstrControl.td
 --- a/lib/Target/X86/X86InstrControl.td	Mon Mar 07 11:48:02 2011 -0800
-+++ b/lib/Target/X86/X86InstrControl.td	Mon Jul 11 09:35:50 2011 -0700
++++ b/lib/Target/X86/X86InstrControl.td	Tue Aug 09 17:14:03 2011 -0700
 @@ -148,11 +148,11 @@
                             "call{l}\t$dst", []>,
                        Requires<[In32BitMode, NotNaCl]>;
@@ -61,9 +46,9 @@ diff -r 7ad81b42ac57 lib/Target/X86/X86InstrControl.td
  
  // Tail call stuff.
  
-diff -r 7ad81b42ac57 lib/Target/X86/X86InstrNaCl.td
+diff -r aec96340375f lib/Target/X86/X86InstrNaCl.td
 --- a/lib/Target/X86/X86InstrNaCl.td	Mon Mar 07 11:48:02 2011 -0800
-+++ b/lib/Target/X86/X86InstrNaCl.td	Mon Jul 11 09:35:50 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Tue Aug 09 17:14:03 2011 -0700
 @@ -61,7 +61,7 @@
  
  let isCall = 1, isAsmParserOnly = 1 in {
@@ -100,10 +85,10 @@ diff -r 7ad81b42ac57 lib/Target/X86/X86InstrNaCl.td
                                  Requires<[IsNaCl64]>;
  
      def NACL_CG_CALL64r       : I<0, Pseudo, (outs), (ins GR32:$dst, variable_ops),
-diff -r 7ad81b42ac57 tools/gold/gold-plugin.cpp
+diff -r aec96340375f tools/gold/gold-plugin.cpp
 --- a/tools/gold/gold-plugin.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/tools/gold/gold-plugin.cpp	Mon Jul 11 09:35:50 2011 -0700
-@@ -61,6 +61,7 @@
++++ b/tools/gold/gold-plugin.cpp	Tue Aug 09 17:14:03 2011 -0700
+@@ -62,6 +62,7 @@
    };
  
    lto_codegen_model output_type = LTO_CODEGEN_PIC_MODEL_STATIC;
@@ -111,7 +96,7 @@ diff -r 7ad81b42ac57 tools/gold/gold-plugin.cpp
    std::string output_name = "";
    std::list<claimed_file> Modules;
    std::vector<sys::Path> Cleanup;
-@@ -89,7 +90,14 @@
+@@ -90,7 +91,14 @@
        return;
      llvm::StringRef opt = opt_;
  
@@ -127,7 +112,7 @@ diff -r 7ad81b42ac57 tools/gold/gold-plugin.cpp
        generate_api_file = true;
      } else if (opt.startswith("mcpu=")) {
        mcpu = opt.substr(strlen("mcpu="));
-@@ -146,6 +154,10 @@
+@@ -147,6 +155,10 @@
          output_name = tv->tv_u.tv_string;
          break;
        case LDPT_LINKER_OUTPUT:
@@ -138,24 +123,9 @@ diff -r 7ad81b42ac57 tools/gold/gold-plugin.cpp
          switch (tv->tv_u.tv_val) {
            case LDPO_REL:  // .o
            case LDPO_DYN:  // .so
-diff -r 7ad81b42ac57 tools/llc/llc.cpp
---- a/tools/llc/llc.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/tools/llc/llc.cpp	Mon Jul 11 09:35:50 2011 -0700
-@@ -299,6 +299,11 @@
-   if (MCPU.size() || MAttrs.size()) {
-     SubtargetFeatures Features;
-     Features.setCPU(MCPU);
-+    // @LOCALMOD-BEGIN
-+    // Use the same default attribute settings as libLTO.
-+    // TODO(pdox): Figure out why this isn't done for upstream llc.
-+    Features.getDefaultSubtargetFeatures(MCPU, TheTriple);
-+    // @LOCALMOD-END
-     for (unsigned i = 0; i != MAttrs.size(); ++i)
-       Features.AddFeature(MAttrs[i]);
-     FeaturesStr = Features.getString();
-diff -r 7ad81b42ac57 tools/llc/nacl_file.cpp
+diff -r aec96340375f tools/llc/nacl_file.cpp
 --- a/tools/llc/nacl_file.cpp	Mon Mar 07 11:48:02 2011 -0800
-+++ b/tools/llc/nacl_file.cpp	Mon Jul 11 09:35:50 2011 -0700
++++ b/tools/llc/nacl_file.cpp	Tue Aug 09 17:14:03 2011 -0700
 @@ -37,8 +37,8 @@
  #define printerr(...)                           \
    fprintf(stderr, __VA_ARGS__)
