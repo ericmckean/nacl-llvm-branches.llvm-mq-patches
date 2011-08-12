@@ -66,3 +66,6 @@ unbreak_nonsrpc.patch
 x86instrinfo.td
 mctargetdesc.patch
 mv-X86InstrNaCl-MCTargetDesc.patch
+remove-intrinsics.patch
+remove-intrinsics2.patch
+include_stdio.patch

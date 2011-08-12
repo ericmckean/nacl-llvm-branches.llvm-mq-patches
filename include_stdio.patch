@@ -1,0 +1,16 @@
+# HG changeset patch
+# User Derek Schuff <dschuff@google.com>
+# Parent 209fdfbfe48041718a3929d535b9859c1fda8dcb
+Include <stdlib.h> in nacl_file.cpp to appease newer compilers like nacl-gcc
+
+diff -r 209fdfbfe480 tools/llc/nacl_file.cpp
+--- a/tools/llc/nacl_file.cpp	Thu Aug 11 14:24:32 2011 -0700
++++ b/tools/llc/nacl_file.cpp	Thu Aug 11 15:05:21 2011 -0700
+@@ -19,6 +19,7 @@
+ 
+ #include <fcntl.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <sys/mman.h>
+ #include <sys/nacl_syscalls.h>
