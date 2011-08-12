@@ -1,11 +1,11 @@
 # HG changeset patch
 # User Jason Kim <jasonwkim@google.com>
-# Parent 7006c79febe35f722ea15718d77b46d71a28a01c
+# Parent 8a4c9a022709de6a0aca49871479c65703eee832
 lib/Target/SubtargetFeature.cpp  has been moved to lib/MC
 
-diff -r 7006c79febe3 lib/MC/SubtargetFeature.cpp
+diff -r 8a4c9a022709 lib/MC/SubtargetFeature.cpp
 --- a/lib/MC/SubtargetFeature.cpp	Thu Mar 17 17:49:59 2011 -0700
-+++ b/lib/MC/SubtargetFeature.cpp	Tue Aug 09 17:19:58 2011 -0700
++++ b/lib/MC/SubtargetFeature.cpp	Fri Aug 12 00:36:47 2011 -0700
 @@ -393,5 +393,11 @@
        AddFeature("64bit");
        AddFeature("altivec");
@@ -18,9 +18,9 @@ diff -r 7006c79febe3 lib/MC/SubtargetFeature.cpp
 +// @LOCALMOD-END
    }
  }
-diff -r 7006c79febe3 tools/llc/llc.cpp
+diff -r 8a4c9a022709 tools/llc/llc.cpp
 --- a/tools/llc/llc.cpp	Thu Mar 17 17:49:59 2011 -0700
-+++ b/tools/llc/llc.cpp	Tue Aug 09 17:19:58 2011 -0700
++++ b/tools/llc/llc.cpp	Fri Aug 12 00:36:47 2011 -0700
 @@ -331,6 +331,11 @@
    std::string FeaturesStr;
    if (MAttrs.size()) {
@@ -28,7 +28,7 @@ diff -r 7006c79febe3 tools/llc/llc.cpp
 +    // @LOCALMOD-BEGIN
 +    // Use the same default attribute settings as libLTO.
 +    // TODO(pdox): Figure out why this isn't done for upstream llc.
-+    Features.getDefaultSubtargetFeatures(MCPU, TheTriple);
++    Features.getDefaultSubtargetFeatures(TheTriple);
 +    // @LOCALMOD-END
      for (unsigned i = 0; i != MAttrs.size(); ++i)
        Features.AddFeature(MAttrs[i]);
