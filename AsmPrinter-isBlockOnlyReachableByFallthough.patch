@@ -1,18 +1,19 @@
 # HG changeset patch
 # User Jason Kim <jasonwkim@google.com>
-# Parent 765b7493d8b0dcc8a134aed3f6ad930cb8d18762
+# Parent 4a6a667b4f2542b4bdca4e67b0bc8e9e35cd78aa
 upstream: reorg isBlockOnlyReachableByFallthough() to have a helper routine
 
-diff -r 765b7493d8b0 lib/CodeGen/AsmPrinter/AsmPrinter.cpp
+diff -r 4a6a667b4f25 lib/CodeGen/AsmPrinter/AsmPrinter.cpp
 --- a/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Wed Feb 02 19:05:20 2011 -0800
-+++ b/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Tue Aug 09 17:19:52 2011 -0700
-@@ -1955,6 +1955,27 @@
++++ b/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Thu Aug 11 23:33:48 2011 -0700
+@@ -1955,6 +1955,28 @@
      OutStreamer.EmitSymbolAttribute(Sym, Attr);
  }
  
 +// CheckIsMIFallThrough -
 +// This is a helper routine for isBlockOnlyReachableByFallthough
-+static bool CheckIsMIFallThrough(MachineBasicBlock::iterator II) {
++static bool CheckIsMIFallThrough(MachineBasicBlock::iterator II,
++                                 const MachineBasicBlock *MBB) {
 +  MachineInstr &MI = *II;
 +  // If it is not a simple branch, we are in a table somewhere.
 +  if (!MI.getDesc().isBranch() || MI.getDesc().isIndirectBranch())
@@ -34,7 +35,7 @@ diff -r 765b7493d8b0 lib/CodeGen/AsmPrinter/AsmPrinter.cpp
  /// isBlockOnlyReachableByFallthough - Return true if the basic block has
  /// exactly one predecessor and the control transfer mechanism between
  /// the predecessor and this block is a fall-through.
-@@ -1984,22 +2005,8 @@
+@@ -1984,22 +2006,8 @@
    // Check the terminators in the previous blocks
    for (MachineBasicBlock::iterator II = Pred->getFirstTerminator(),
           IE = Pred->end(); II != IE; ++II) {
@@ -42,7 +43,7 @@ diff -r 765b7493d8b0 lib/CodeGen/AsmPrinter/AsmPrinter.cpp
 -
 -    // If it is not a simple branch, we are in a table somewhere.
 -    if (!MI.getDesc().isBranch() || MI.getDesc().isIndirectBranch())
-+    if (!CheckIsMIFallThrough(II))
++    if (!CheckIsMIFallThrough(II, MBB))
        return false;
 -
 -    // If we are the operands of one of the branches, this is not

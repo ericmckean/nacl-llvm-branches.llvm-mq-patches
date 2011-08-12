@@ -3,7 +3,7 @@
 # Date 1308867351 14400
 # Branch pnacl-sfi
 # Node ID 7b01f5e8dffade0ca7b7d639c9f9a6a5c82d638b
-# Parent e1ce6d219081405b4fa54b25008972914789b52a
+# Parent 483f7112490c8f5a3e609c2ec54dd67943dad230
 This CL adds a new flag "-add-libgcc-dependencies" to llc
 mimicking --add-nacl-read-tp-dependency.
 Also, slightly over commented this and previous changes
@@ -34,10 +34,12 @@ BUG= http://code.google.com/p/nativeclient/issues/detail?id=1520
 CL= http://codereview.chromium.org/7233016/
 
  From pnacl-llvm-0048-273-7b01f5e8dffade0ca7b7d639c9f9a6a5c82d638b.patch
+* * *
+more typos
 
-diff -r e1ce6d219081 lib/CodeGen/IntrinsicLowering.cpp
+diff -r 483f7112490c lib/CodeGen/IntrinsicLowering.cpp
 --- a/lib/CodeGen/IntrinsicLowering.cpp	Thu Jun 23 14:56:21 2011 -0700
-+++ b/lib/CodeGen/IntrinsicLowering.cpp	Tue Aug 09 16:39:32 2011 -0700
++++ b/lib/CodeGen/IntrinsicLowering.cpp	Thu Aug 11 23:29:20 2011 -0700
 @@ -31,6 +31,11 @@
                   cl::desc("Add __nacl_read_tp dependency to bitcode modules"),
                   cl::init(false));
@@ -163,14 +165,15 @@ diff -r e1ce6d219081 lib/CodeGen/IntrinsicLowering.cpp
    }
    return FuncNames;
  }
-@@ -138,9 +216,40 @@
+@@ -138,8 +216,41 @@
    // archive, it is necessary to add a dependency to it during
    // bitcode linking, so that it gets included in the link.
    if (AddNaClReadTPDep) {
 -    const Type *RetTy = Type::getInt8PtrTy(M.getContext());
-+    const Type *RetTy = Type::getInt8PtrTy(Context);
-     M.getOrInsertFunction("__nacl_read_tp", RetTy, (Type*)0);
-   }
+-    M.getOrInsertFunction("__nacl_read_tp", RetTy, (Type*)0);
++    Type *RetTy = Type::getInt8PtrTy(Context);
++    M.getOrInsertFunction(StringRef("__nacl_read_tp"), RetTy, (Type*)0);
++  }
 +
 +  // If we link libgcc we need to add a dependency to all its functions
 +  // during bitcode linking, so that they get included in the link.
@@ -186,22 +189,23 @@ diff -r e1ce6d219081 lib/CodeGen/IntrinsicLowering.cpp
 +    CharToTypeMap['d'] = Type::getInt64Ty(Context);
 +
 +    for (unsigned i=0; LibgccIntrinsicNames[i].name; ++i) {
-+      const Type *RetTy = 0;
-+      std::vector<const Type *> ParamTys;
++      Type *RetTy = 0;
 +      const char* name = LibgccIntrinsicNames[i].name;
 +      const char* params = LibgccIntrinsicNames[i].types;
++      Type **ParmTys = new Type *[strlen(params)];
++      int p = 0;
 +      for (unsigned j=0; params[j]; ++j) {
-+        const Type *Current = CharToTypeMap[params[j]];
++        const Type *Current = CharToTypeMap[(int) params[j]];
 +        assert (Current != 0);
 +        if (j == 0) {
-+          RetTy = Current;
++          RetTy = const_cast<Type*>(Current);
 +        } else {
-+          ParamTys.push_back(Current);
++          ParmTys[p++] = const_cast<Type*>(Current);
 +        }
 +      }
-+      M.getOrInsertFunction(name, FunctionType::get(RetTy, ParamTys, false));
++      M.getOrInsertFunction(name, FunctionType::get(RetTy, ArrayRef<Type *> (ParmTys, p), false));
++      delete [] ParmTys;
 +    }
-+  }
+   }
    // @LOCALMOD-END
  
-   for (Module::iterator I = M.begin(), E = M.end(); I != E; ++I)

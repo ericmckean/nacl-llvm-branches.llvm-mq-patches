@@ -1,25 +1,25 @@
 # HG changeset patch
 # User Jason Kim <jasonwkim@google.com>
-# Parent 4616e74eeaf51f375385c17d2860b827ed29865a
+# Parent 978154d8cba70d3a1e22418c0856b56ef21312cf
 localmod: BundleUnlock
 
-diff -r 4616e74eeaf5 lib/CodeGen/AsmPrinter/AsmPrinter.cpp
---- a/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Tue Aug 09 17:19:52 2011 -0700
-+++ b/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Tue Aug 09 17:19:52 2011 -0700
-@@ -2005,8 +2005,17 @@
+diff -r 978154d8cba7 lib/CodeGen/AsmPrinter/AsmPrinter.cpp
+--- a/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Thu Aug 11 23:33:48 2011 -0700
++++ b/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	Thu Aug 11 23:37:16 2011 -0700
+@@ -2006,8 +2006,17 @@
    // Check the terminators in the previous blocks
    for (MachineBasicBlock::iterator II = Pred->getFirstTerminator(),
           IE = Pred->end(); II != IE; ++II) {
--    if (!CheckIsMIFallThrough(II))
-+    // @LOCALMOD-BEGIN 
+-    if (!CheckIsMIFallThrough(II, MBB))
++    // @LOCALMOD-BEGIN
 +    // determine whether the block falls through to the next one.
 +    // However, if the last instruction is BUNDLE_UNLOCK, then we have
 +    // to look at the one before it instead.
 +    MachineBasicBlock::const_iterator MBBI = II;
-+    if (LastInst.getOpcode() == TargetOpcode::BUNDLE_UNLOCK) {
++    if ((*MBBI).getOpcode() == TargetOpcode::BUNDLE_UNLOCK) {
 +      --MBBI;
 +    }
-+    if (!CheckIsMIFallThrough(MBBI))
++    if (!CheckIsMIFallThrough(MBBI, MBB))
        return false;
 +    // @LOCALMOD-END
    }

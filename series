@@ -64,9 +64,6 @@ llvm-pnacl-0039-new-emitbundle.patch
 llvm-pnacl-0040-lsdasection.patch
 llvm-pnacl-0041-lto-full.patch
 unbreak_nonsrpc.patch
-fixtypo1.patch
-typo2.patch
-typo-asmprinter.patch
 typo-ArmInstrInfo.patch
 typo-constant.patch
 typo-ARMFrameLowering.patch
