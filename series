@@ -65,7 +65,5 @@ llvm-pnacl-0040-lsdasection.patch
 llvm-pnacl-0041-lto-full.patch
 unbreak_nonsrpc.patch
 x86instrinfo.td
-X86ISelLowering.cpp.patch
-typos.patch
 mctargetdesc.patch
 mv-X86InstrNaCl-MCTargetDesc.patch
