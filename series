@@ -64,9 +64,6 @@ llvm-pnacl-0039-new-emitbundle.patch
 llvm-pnacl-0040-lsdasection.patch
 llvm-pnacl-0041-lto-full.patch
 unbreak_nonsrpc.patch
-typo-arminstrinfo3.patch
-armmcasminfo.patch
-x86registerinfo.patch
 mcasminfo.patch
 x86instrinfo.td
 X86ISelLowering.cpp.patch
