@@ -81,3 +81,5 @@ mcasminfo.patch
 x86instrinfo.td
 X86ISelLowering.cpp.patch
 typos.patch
+mctargetdesc.patch
+mv-X86InstrNaCl-MCTargetDesc.patch

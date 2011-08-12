@@ -1,0 +1,28 @@
+# HG changeset patch
+# Parent bc26da685deecdfebf5af7d391eef2df38d5e0c0
+# User Jason Kim <jasonwkim@google.com>
+diff -r bc26da685dee -r 8e10be576cb3 lib/Target/ARM/MCTargetDesc/ARMInstrNaCl.cpp
+--- a/lib/Target/ARM/MCTargetDesc/ARMInstrNaCl.cpp	Thu Aug 11 22:20:42 2011 -0700
++++ b/lib/Target/ARM/MCTargetDesc/ARMInstrNaCl.cpp	Thu Aug 11 22:49:33 2011 -0700
+@@ -11,8 +11,6 @@
+ #define DEBUG_TYPE "arm-sandboxing"
+ 
+ #include "ARM.h"
+-#include "ARMInstrInfo.h"
+-#include "ARMSubtarget.h"
+ #include "llvm/MC/MCInst.h"
+ #include "llvm/MC/MCStreamer.h"
+ #include "llvm/Support/CommandLine.h"
+@@ -21,9 +19,10 @@
+ using namespace llvm;
+ 
+ namespace llvm {
+-  extern cl::opt<bool> FlagSfiZeroMask;
++  //extern cl::opt<bool> FlagSfiZeroMask;
++  
+ }
+-
++static const bool FlagSfiZeroMask=1;
+ /// Two helper functions for emitting the actual guard instructions
+ 
+ static void EmitBICMask(MCStreamer &Out,

@@ -1,0 +1,145 @@
+# HG changeset patch
+# Parent 8e10be576cb363b41cea8f368da2558b12af8977
+# User Jason Kim <jasonwkim@google.com>
+diff --git a/lib/Target/X86/X86InstrNaCl.cpp b/lib/Target/X86/MCTargetDesc/X86InstrNaCl.cpp
+rename from lib/Target/X86/X86InstrNaCl.cpp
+rename to lib/Target/X86/MCTargetDesc/X86InstrNaCl.cpp
+--- a/lib/Target/X86/X86InstrNaCl.cpp
++++ b/lib/Target/X86/MCTargetDesc/X86InstrNaCl.cpp
+@@ -10,9 +10,12 @@
+ //===----------------------------------------------------------------------===//
+ #define DEBUG_TYPE "x86-sandboxing"
+ 
+-#include "X86.h"
+-#include "X86InstrInfo.h"
+-#include "X86Subtarget.h"
++//#include "X86.h"
++//#include "X86InstrInfo.h"
++
++#include "MCTargetDesc/X86BaseInfo.h"
++#include "MCTargetDesc/X86MCTargetDesc.h"
++//#include "X86Subtarget.h"
+ #include "llvm/MC/MCInst.h"
+ #include "llvm/MC/MCStreamer.h"
+ #include "llvm/Support/CommandLine.h"
+@@ -23,10 +26,89 @@
+ // This option makes it possible to overwrite the x86 jmp mask immediate.
+ // Setting it to -1 will effectively turn masking into a nop which will
+ // help with linking this code with non-sandboxed libs (at least for x86-32).
+-cl::opt<int> FlagSfiX86JmpMask("sfi-x86-jmp-mask", cl::init(-32));
++///cl::opt<int> FlagSfiX86JmpMask("sfi-x86-jmp-mask", cl::init(-32));
++static const unsigned FlagSfiX86JmpMask = -32;
+ 
+ static unsigned PrefixSaved = 0;
+ static bool PrefixPass = false;
++// stolen from getX86SubSuperRegister
++// duplicated here to remove circular dependency
++unsigned getX86SuperRegister(unsigned Reg, bool is64bit) {
++  if (is64bit) {
++    switch (Reg) {
++    default: return Reg;
++    case X86::AH: case X86::AL: case X86::AX: case X86::EAX: case X86::RAX:
++      return X86::RAX;
++    case X86::DH: case X86::DL: case X86::DX: case X86::EDX: case X86::RDX:
++      return X86::RDX;
++    case X86::CH: case X86::CL: case X86::CX: case X86::ECX: case X86::RCX:
++      return X86::RCX;
++    case X86::BH: case X86::BL: case X86::BX: case X86::EBX: case X86::RBX:
++      return X86::RBX;
++    case X86::SIL: case X86::SI: case X86::ESI: case X86::RSI:
++      return X86::RSI;
++    case X86::DIL: case X86::DI: case X86::EDI: case X86::RDI:
++      return X86::RDI;
++    case X86::BPL: case X86::BP: case X86::EBP: case X86::RBP:
++      return X86::RBP;
++    case X86::SPL: case X86::SP: case X86::ESP: case X86::RSP:
++      return X86::RSP;
++    case X86::R8B: case X86::R8W: case X86::R8D: case X86::R8:
++      return X86::R8;
++    case X86::R9B: case X86::R9W: case X86::R9D: case X86::R9:
++      return X86::R9;
++    case X86::R10B: case X86::R10W: case X86::R10D: case X86::R10:
++      return X86::R10;
++    case X86::R11B: case X86::R11W: case X86::R11D: case X86::R11:
++      return X86::R11;
++    case X86::R12B: case X86::R12W: case X86::R12D: case X86::R12:
++      return X86::R12;
++    case X86::R13B: case X86::R13W: case X86::R13D: case X86::R13:
++      return X86::R13;
++    case X86::R14B: case X86::R14W: case X86::R14D: case X86::R14:
++      return X86::R14;
++    case X86::R15B: case X86::R15W: case X86::R15D: case X86::R15:
++      return X86::R15;
++    }
++  } else {
++    switch (Reg) {
++    default: return Reg;
++    case X86::AH: case X86::AL: case X86::AX: case X86::EAX: case X86::RAX:
++      return X86::EAX;
++    case X86::DH: case X86::DL: case X86::DX: case X86::EDX: case X86::RDX:
++      return X86::EDX;
++    case X86::CH: case X86::CL: case X86::CX: case X86::ECX: case X86::RCX:
++      return X86::ECX;
++    case X86::BH: case X86::BL: case X86::BX: case X86::EBX: case X86::RBX:
++      return X86::EBX;
++    case X86::SIL: case X86::SI: case X86::ESI: case X86::RSI:
++      return X86::ESI;
++    case X86::DIL: case X86::DI: case X86::EDI: case X86::RDI:
++      return X86::EDI;
++    case X86::BPL: case X86::BP: case X86::EBP: case X86::RBP:
++      return X86::EBP;
++    case X86::SPL: case X86::SP: case X86::ESP: case X86::RSP:
++      return X86::ESP;
++    case X86::R8B: case X86::R8W: case X86::R8D: case X86::R8:
++      return X86::R8D;
++    case X86::R9B: case X86::R9W: case X86::R9D: case X86::R9:
++      return X86::R9D;
++    case X86::R10B: case X86::R10W: case X86::R10D: case X86::R10:
++      return X86::R10D;
++    case X86::R11B: case X86::R11W: case X86::R11D: case X86::R11:
++      return X86::R11D;
++    case X86::R12B: case X86::R12W: case X86::R12D: case X86::R12:
++      return X86::R12D;
++    case X86::R13B: case X86::R13W: case X86::R13D: case X86::R13:
++      return X86::R13D;
++    case X86::R14B: case X86::R14W: case X86::R14D: case X86::R14:
++      return X86::R14D;
++    case X86::R15B: case X86::R15W: case X86::R15D: case X86::R15:
++      return X86::R15D;
++    }
++  }
++  return Reg;
++}
+ 
+ static void EmitDirectCall(const MCOperand &Op, bool Is64Bit,
+                            MCStreamer &Out) {
+@@ -43,7 +125,7 @@
+                                MCStreamer &Out) {
+   const int JmpMask = FlagSfiX86JmpMask;
+   const unsigned Reg32 = Op.getReg();
+-  const unsigned Reg64 = getX86SubSuperRegister(Reg32, MVT::i64);
++  const unsigned Reg64 = getX86SuperRegister(Reg32, true);
+ 
+   if (IsCall)
+     Out.EmitBundleAlignEnd();
+@@ -218,7 +300,7 @@
+ }
+ 
+ static void EmitRegTruncate(unsigned Reg64, MCStreamer &Out) {
+-  unsigned Reg32 = getX86SubSuperRegister(Reg64, MVT::i32);
++  unsigned Reg32 = getX86SuperRegister(Reg64, false);
+   EmitMoveRegReg(false, Reg32, Reg32, Out);
+ }
+ 
+@@ -329,7 +411,7 @@
+ }
+ 
+ static void EmitREST(const MCInst &Inst, unsigned Reg32, bool IsMem, MCStreamer &Out) {
+-  unsigned Reg64 = getX86SubSuperRegister(Reg32, MVT::i64);
++  unsigned Reg64 = getX86SuperRegister(Reg32, true);
+   Out.EmitBundleLock();
+   if (!IsMem) {
+     EmitMoveRegReg(false, Reg32, Inst.getOperand(0).getReg(), Out);
+diff --git a/lib/Target/X86/X86InstrNaCl.h b/lib/Target/X86/MCTargetDesc/X86InstrNaCl.h
+rename from lib/Target/X86/X86InstrNaCl.h
+rename to lib/Target/X86/MCTargetDesc/X86InstrNaCl.h
