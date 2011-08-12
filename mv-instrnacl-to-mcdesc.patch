@@ -1,6 +1,102 @@
 # HG changeset patch
-# Parent 205e900b100feb1f669453123dbd56e1e02df4d7
+# Parent 45066d52cdb6b45dd837bad7ebb521613527ff0f
 # User Jason Kim <jasonwkim@google.com>
+* * *
+naclmode predicate
+
+diff --git a/include/llvm/MC/MCAsmBackend.h b/include/llvm/MC/MCAsmBackend.h
+--- a/include/llvm/MC/MCAsmBackend.h
++++ b/include/llvm/MC/MCAsmBackend.h
+@@ -24,6 +24,7 @@
+ template<typename T>
+ class SmallVectorImpl;
+ class raw_ostream;
++class MCStreamer;
+ 
+ /// MCAsmBackend - Generic interface to target specific assembler backends.
+ class MCAsmBackend {
+diff --git a/include/llvm/Target/nativeclient.td b/include/llvm/Target/nativeclient.td
+new file mode 100644
+--- /dev/null
++++ b/include/llvm/Target/nativeclient.td
+@@ -0,0 +1,6 @@
++
++
++// @LOCALMOD
++def ModeNaCl    : SubtargetFeature<"modenacl", "InNaClMode", "true",
++                                   "NaCl mode">;
++// @LOCALMOD
+diff --git a/lib/MC/SubtargetFeature.cpp b/lib/MC/SubtargetFeature.cpp
+--- a/lib/MC/SubtargetFeature.cpp
++++ b/lib/MC/SubtargetFeature.cpp
+@@ -400,4 +400,9 @@
+     AddFeature("+vfp2");
+ // @LOCALMOD-END
+   }
++  // @ LOCALMOD-BEGIN
++  if (Triple.getOS() == Triple::NativeClient) {
++    AddFeature("modenacl");
++  }
++  // @LOCALMOD-END
+ }
+diff --git a/lib/Target/ARM/ARM.td b/lib/Target/ARM/ARM.td
+--- a/lib/Target/ARM/ARM.td
++++ b/lib/Target/ARM/ARM.td
+@@ -110,6 +110,7 @@
+                                    "Support ARM v7 instructions",
+                                    [HasV6T2Ops]>;
+ 
++include "llvm/Target/nativeclient.td"
+ //===----------------------------------------------------------------------===//
+ // ARM Processors supported.
+ //
+diff --git a/lib/Target/ARM/ARMInstrInfo.td b/lib/Target/ARM/ARMInstrInfo.td
+--- a/lib/Target/ARM/ARMInstrInfo.td
++++ b/lib/Target/ARM/ARMInstrInfo.td
+@@ -207,7 +207,7 @@
+ 
+ // @LOCALMOD-BEGIN
+ // FIXME: Lift IsNaCl to share with X86
+-def IsNaCl       : Predicate<"Subtarget->isTargetNaCl()">, AssemblerPredicate<"IsTargetNaCl">;
++def IsNaCl       : Predicate<"Subtarget->isTargetNaCl()">, AssemblerPredicate<"ModeNaCl">;
+ def UseConstPool : Predicate<"Subtarget->useConstPool()">;
+ def DontUseConstPool : Predicate<"!Subtarget->useConstPool()">;
+ // @LOCALMOD-END
+diff --git a/lib/Target/ARM/ARMSubtarget.cpp b/lib/Target/ARM/ARMSubtarget.cpp
+--- a/lib/Target/ARM/ARMSubtarget.cpp
++++ b/lib/Target/ARM/ARMSubtarget.cpp
+@@ -67,6 +67,7 @@
+   , PostRAScheduler(false)
+   , IsR9Reserved(ReserveR9)
+   , UseInlineJumpTables(!NoInlineJumpTables) // @LOCALMOD
++  , InNaClMode(false) // @LOCALMOD
+   , UseMovt(false)
+   , HasFP16(false)
+   , HasD16(false)
+diff --git a/lib/Target/ARM/ARMSubtarget.h b/lib/Target/ARM/ARMSubtarget.h
+--- a/lib/Target/ARM/ARMSubtarget.h
++++ b/lib/Target/ARM/ARMSubtarget.h
+@@ -155,6 +155,9 @@
+   // @LOCALMOD-START
+   /// UseInlineJumpTables - True if jump tables should be in-line in the code.
+   bool UseInlineJumpTables;
++
++  /// InNaClMode - True if we are in Native Client mode
++  bool InNaClMode;
+   // @LOCALMOD-END
+ 
+ 
+diff --git a/lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp b/lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp
+--- a/lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp
++++ b/lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp
+@@ -24,6 +24,7 @@
+ #include "llvm/Support/ELF.h"
+ #include "llvm/Support/ErrorHandling.h"
+ #include "llvm/Support/raw_ostream.h"
++#include "MCTargetDesc/ARMInstrNaCl.h" //@ LOCALMOD
+ using namespace llvm;
+ 
+ namespace {
 diff --git a/lib/Target/ARM/ARMInstrNaCl.cpp b/lib/Target/ARM/MCTargetDesc/ARMInstrNaCl.cpp
 rename from lib/Target/ARM/ARMInstrNaCl.cpp
 rename to lib/Target/ARM/MCTargetDesc/ARMInstrNaCl.cpp
