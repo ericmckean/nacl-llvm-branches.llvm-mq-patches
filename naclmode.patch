@@ -1,0 +1,97 @@
+# HG changeset patch
+# Parent 462a9bbee5efc79e2c9da1bd68ec779b08c5717f
+# User Jason Kim <jasonwkim@google.com>
+naclmode predicate
+
+diff -r 462a9bbee5ef include/llvm/MC/MCAsmBackend.h
+--- a/include/llvm/MC/MCAsmBackend.h	Thu Aug 11 15:40:05 2011 -0700
++++ b/include/llvm/MC/MCAsmBackend.h	Thu Aug 11 17:27:34 2011 -0700
+@@ -14,6 +14,7 @@
+ #include "llvm/MC/MCFixup.h"
+ #include "llvm/MC/MCFixupKindInfo.h"
+ #include "llvm/Support/DataTypes.h"
++#include "llvm/MC/MCStreamer.h" // @LOCALMOD
+ 
+ namespace llvm {
+ class MCELFObjectTargetWriter;
+diff -r 462a9bbee5ef include/llvm/Target/nativeclient.td
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/include/llvm/Target/nativeclient.td	Thu Aug 11 17:27:34 2011 -0700
+@@ -0,0 +1,6 @@
++
++
++// @LOCALMOD
++def ModeNaCl    : SubtargetFeature<"modenacl", "InNaClMode", "true",
++                                   "NaCl mode">;
++// @LOCALMOD
+diff -r 462a9bbee5ef lib/MC/SubtargetFeature.cpp
+--- a/lib/MC/SubtargetFeature.cpp	Thu Aug 11 15:40:05 2011 -0700
++++ b/lib/MC/SubtargetFeature.cpp	Thu Aug 11 17:27:34 2011 -0700
+@@ -400,4 +400,9 @@
+     AddFeature("+vfp2");
+ // @LOCALMOD-END
+   }
++  // @ LOCALMOD-BEGIN
++  if (Triple.getOS() == Triple::NativeClient) {
++    AddFeature("modenacl");
++  }
++  // @LOCALMOD-END
+ }
+diff -r 462a9bbee5ef lib/Target/ARM/ARM.td
+--- a/lib/Target/ARM/ARM.td	Thu Aug 11 15:40:05 2011 -0700
++++ b/lib/Target/ARM/ARM.td	Thu Aug 11 17:27:34 2011 -0700
+@@ -110,6 +110,7 @@
+                                    "Support ARM v7 instructions",
+                                    [HasV6T2Ops]>;
+ 
++include "llvm/Target/nativeclient.td"
+ //===----------------------------------------------------------------------===//
+ // ARM Processors supported.
+ //
+diff -r 462a9bbee5ef lib/Target/ARM/ARMInstrInfo.td
+--- a/lib/Target/ARM/ARMInstrInfo.td	Thu Aug 11 15:40:05 2011 -0700
++++ b/lib/Target/ARM/ARMInstrInfo.td	Thu Aug 11 17:27:34 2011 -0700
+@@ -207,7 +207,7 @@
+ 
+ // @LOCALMOD-BEGIN
+ // FIXME: Lift IsNaCl to share with X86
+-def IsNaCl       : Predicate<"Subtarget->isTargetNaCl()">, AssemblerPredicate<"IsTargetNaCl">;
++def IsNaCl       : Predicate<"Subtarget->isTargetNaCl()">, AssemblerPredicate<"ModeNaCl">;
+ def UseConstPool : Predicate<"Subtarget->useConstPool()">;
+ def DontUseConstPool : Predicate<"!Subtarget->useConstPool()">;
+ // @LOCALMOD-END
+diff -r 462a9bbee5ef lib/Target/ARM/ARMSubtarget.cpp
+--- a/lib/Target/ARM/ARMSubtarget.cpp	Thu Aug 11 15:40:05 2011 -0700
++++ b/lib/Target/ARM/ARMSubtarget.cpp	Thu Aug 11 17:27:34 2011 -0700
+@@ -67,6 +67,7 @@
+   , PostRAScheduler(false)
+   , IsR9Reserved(ReserveR9)
+   , UseInlineJumpTables(!NoInlineJumpTables) // @LOCALMOD
++  , InNaClMode(false) // @LOCALMOD
+   , UseMovt(false)
+   , HasFP16(false)
+   , HasD16(false)
+diff -r 462a9bbee5ef lib/Target/ARM/ARMSubtarget.h
+--- a/lib/Target/ARM/ARMSubtarget.h	Thu Aug 11 15:40:05 2011 -0700
++++ b/lib/Target/ARM/ARMSubtarget.h	Thu Aug 11 17:27:34 2011 -0700
+@@ -155,6 +155,9 @@
+   // @LOCALMOD-START
+   /// UseInlineJumpTables - True if jump tables should be in-line in the code.
+   bool UseInlineJumpTables;
++
++  /// InNaClMode - True if we are in Native Client mode
++  bool InNaClMode;
+   // @LOCALMOD-END
+ 
+ 
+diff -r 462a9bbee5ef lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp
+--- a/lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp	Thu Aug 11 15:40:05 2011 -0700
++++ b/lib/Target/ARM/MCTargetDesc/ARMAsmBackend.cpp	Thu Aug 11 17:27:34 2011 -0700
+@@ -24,6 +24,7 @@
+ #include "llvm/Support/ELF.h"
+ #include "llvm/Support/ErrorHandling.h"
+ #include "llvm/Support/raw_ostream.h"
++#include "ARMInstrNaCl.h" //@ LOCALMOD
+ using namespace llvm;
+ 
+ namespace {

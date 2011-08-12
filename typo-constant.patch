@@ -1,0 +1,27 @@
+# HG changeset patch
+# Parent 5a86646fbf92c9d1573a38fd37dbea890f4dd823
+# User Jason Kim <jasonwkim@google.com>
+typo in armconstantisland
+
+diff -r 5a86646fbf92 lib/Target/ARM/ARMConstantIslandPass.cpp
+--- a/lib/Target/ARM/ARMConstantIslandPass.cpp	Thu Aug 11 14:53:29 2011 -0700
++++ b/lib/Target/ARM/ARMConstantIslandPass.cpp	Thu Aug 11 15:09:51 2011 -0700
+@@ -580,10 +580,14 @@
+     if ((offset + fudge) % kBundleSize == 0) fudge += 4;
+     break;
+ 
+-   case ARM::STR_PRE:
+-   case ARM::STR_POST:
+-   case ARM::STRB_PRE:
+-   case ARM::STRB_POST:
++   case ARM::STR_PRE_IMM:
++   case ARM::STR_PRE_REG:
++   case ARM::STR_POST_IMM:
++   case ARM::STR_POST_REG:
++   case ARM::STRB_PRE_IMM:
++   case ARM::STRB_PRE_REG:
++   case ARM::STRB_POST_IMM:
++   case ARM::STRB_POST_REG:
+    case ARM::STRH:
+    case ARM::STRD:
+     // TODO: there are vfp stores missing

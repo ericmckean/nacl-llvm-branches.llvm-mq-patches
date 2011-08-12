@@ -1,0 +1,56 @@
+# HG changeset patch
+# Parent 25e648a207a7d75f8dd1322be615b6c052481e87
+# User Jason Kim <jasonwkim@google.com>
+more STR_PRE
+
+diff -r 25e648a207a7 lib/Target/ARM/ARMNaClRewritePass.cpp
+--- a/lib/Target/ARM/ARMNaClRewritePass.cpp	Thu Aug 11 15:09:54 2011 -0700
++++ b/lib/Target/ARM/ARMNaClRewritePass.cpp	Thu Aug 11 15:20:25 2011 -0700
+@@ -233,15 +233,19 @@
+     // Some localmods *should* prevent selecting a reg offset
+     // (see SelectAddrMode2 in ARMISelDAGToDAG.cpp).
+     // Otherwise, the store is already a potential violation.
+-    case ARM::STR_PRE:
++    case ARM::STR_PRE_REG:
++    case ARM::STR_PRE_IMM:
+     case ARM::STRH_PRE:
+-    case ARM::STRB_PRE:
++    case ARM::STRB_PRE_IMM:
++    case ARM::STRB_PRE_REG:
+       return true;
+ 
+     // Similar, unless it is a load into SP...
+-    case ARM::LDR_PRE:
++    case ARM::LDR_PRE_IMM:
++    case ARM::LDR_PRE_REG:
+     case ARM::LDRH_PRE:
+-    case ARM::LDRB_PRE:
++    case ARM::LDRB_PRE_IMM:
++    case ARM::LDRB_PRE_REG:
+     case ARM::LDRSH_PRE:
+     case ARM::LDRSB_PRE: {
+       const MachineOperand &DestReg = MI.getOperand(0);
+@@ -253,7 +257,8 @@
+ 
+     // Here, if SP is the base / write-back reg, we need to check if
+     // a reg is used as offset (otherwise it is not a small nudge).
+-    case ARM::STR_POST:
++    case ARM::STR_POST_REG:
++    case ARM::STR_POST_IMM:
+     case ARM::STRH_POST:
+     case ARM::STRB_POST: {
+       const MachineOperand &WBReg = MI.getOperand(0);
+@@ -265,9 +270,11 @@
+     }
+ 
+     // Similar, but also check that DestReg is not SP.
+-    case ARM::LDR_POST:
++    case ARM::LDR_POST_IMM:
++    case ARM::LDR_POST_REG:
+     case ARM::LDRH_POST:
+-    case ARM::LDRB_POST:
++    case ARM::LDRB_POST_REG:
++    case ARM::LDRB_POST_IMM:
+     case ARM::LDRSH_POST:
+     case ARM::LDRSB_POST: {
+       const MachineOperand &DestReg = MI.getOperand(0);

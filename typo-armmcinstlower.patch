@@ -1,0 +1,17 @@
+# HG changeset patch
+# Parent 9b9943d88a8e7c646aed8bbd31483f21db68f80c
+# User Jason Kim <jasonwkim@google.com>
+typofix
+
+diff -r 9b9943d88a8e lib/Target/ARM/ARMMCInstLower.cpp
+--- a/lib/Target/ARM/ARMMCInstLower.cpp	Thu Aug 11 14:53:29 2011 -0700
++++ b/lib/Target/ARM/ARMMCInstLower.cpp	Thu Aug 11 14:53:59 2011 -0700
+@@ -149,7 +149,7 @@
+       // Get the usual symbol operand, then subtract the PCRelExpr.
+       const MachineOperand &MOImm = MI->getOperand(ImmIndex);
+       MCOperand SymOp;
+-      bool DidLower = LowerARMMachineOperandToMCOperand(MOImm, MI, AP, SymOp);
++      bool DidLower = AP.lowerOperand(MOImm, SymOp);
+       assert (DidLower && "Immediate-like operand should have been lowered");
+ 
+       const MCExpr *Expr = SymOp.getExpr();

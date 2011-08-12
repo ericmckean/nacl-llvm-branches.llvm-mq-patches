@@ -1,0 +1,17 @@
+# HG changeset patch
+# Parent 734ffb17e83eff917656dfbdea855c347925840c
+# User Jason Kim <jasonwkim@google.com>
+TargetInstrDesc -> MCInstrDesc
+
+diff -r 734ffb17e83e -r 080436ead7c8 include/llvm/CodeGen/MachineInstrBuilder.h
+--- a/include/llvm/CodeGen/MachineInstrBuilder.h	Thu Aug 11 11:29:12 2011 -0700
++++ b/include/llvm/CodeGen/MachineInstrBuilder.h	Thu Aug 11 11:39:58 2011 -0700
+@@ -230,7 +230,7 @@
+ inline MachineInstrBuilder BuildMI_NoImp(MachineBasicBlock &BB,
+                                          MachineBasicBlock::iterator I,
+                                          DebugLoc DL,
+-                                         const TargetInstrDesc &TID) {
++                                         const MCInstrDesc &TID) {
+   MachineInstr *MI = BB.getParent()->CreateMachineInstr(TID, DL, true);
+   BB.insert(I, MI);
+   return MachineInstrBuilder(MI);

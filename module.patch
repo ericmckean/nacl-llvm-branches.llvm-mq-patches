@@ -1,0 +1,19 @@
+# HG changeset patch
+# Parent 517475366d5aa2b6a339f215c1050d78b8dc2185
+# User Jason Kim <jasonwkim@google.com>
+Turn an array into an ArrayRef instance
+
+diff -r 517475366d5a lib/VMCore/Module.cpp
+--- a/lib/VMCore/Module.cpp	Wed Jun 22 16:25:30 2011 -0700
++++ b/lib/VMCore/Module.cpp	Thu Aug 11 11:13:36 2011 -0700
+@@ -456,8 +456,8 @@
+     module->eraseNamedMetadata(node);
+   node = module->getOrInsertNamedMetadata(MetaName);
+   MDString *value = MDString::get(module->getContext(), ValueStr);
+-  Value *v[1] = { value };
+-  node->addOperand(MDNode::get(module->getContext(), v, 1));
++  ArrayRef<Value*> v(value); 
++  node->addOperand(MDNode::get(module->getContext(), v));
+ }
+ 
+ const std::string &Module::getSOName() const {

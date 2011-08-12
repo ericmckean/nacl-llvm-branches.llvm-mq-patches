@@ -1,0 +1,35 @@
+# HG changeset patch
+# Parent 041307faf5e1cc834f6d3044c788ccc8147dc194
+# User Jason Kim <jasonwkim@google.com>
+ArmInstrInfo.td
+
+diff -r 041307faf5e1 lib/Target/ARM/ARMInstrInfo.td
+--- a/lib/Target/ARM/ARMInstrInfo.td	Thu Aug 11 14:03:32 2011 -0700
++++ b/lib/Target/ARM/ARMInstrInfo.td	Thu Aug 11 14:12:39 2011 -0700
+@@ -207,7 +207,7 @@
+ 
+ // @LOCALMOD-BEGIN
+ // FIXME: Lift IsNaCl to share with X86
+-def IsNaCl       : Predicate<"Subtarget->isTargetNaCl()">, AssemblerPredicate;
++def IsNaCl       : Predicate<"Subtarget->isTargetNaCl()">, AssemblerPredicate<"IsTargetNaCl">;
+ def UseConstPool : Predicate<"Subtarget->useConstPool()">;
+ def DontUseConstPool : Predicate<"!Subtarget->useConstPool()">;
+ // @LOCALMOD-END
+@@ -2661,7 +2661,7 @@
+ // be the same as the non-PIC versions to simplify conversion to the 
+ // non-pseudo instructions.
+ let isReMaterializable = 1, isAsCheapAsAMove = 1, isMoveImm = 1 in
+-def MOVi16PIC : PseudoInst<(outs GPR:$Rd), (ins i32imm_hilo16:$imm,
++def MOVi16PIC : PseudoInst<(outs GPR:$Rd), (ins imm0_65535_expr:$imm,
+                                                 pclabel:$pic_add_id,
+                                                 pred:$p),
+                            IIC_iMOVi,
+@@ -2670,7 +2670,7 @@
+ 
+ let Constraints = "$src = $Rd" in
+ def MOVTi16PIC : PseudoInst<(outs GPR:$Rd), (ins GPR:$src,
+-                                                 i32imm_hilo16:$imm,
++                                                 imm0_65535_expr:$imm,
+                                                  pclabel:$pic_add_id,
+                                                  pred:$p),
+                             IIC_iMOVi,

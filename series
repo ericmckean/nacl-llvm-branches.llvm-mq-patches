@@ -48,6 +48,7 @@ pnacl-llvm-0042-266-00f246b3f25fed1cacc02a62d1b202c732bd8f0e.patch
 pnacl-llvm-0043-267-5af6a2efc455176da1327dd66f497be9237bb4b6.patch
 pnacl-llvm-0044-269-07b579b7d4a3750301b03991b58d755fd7ffb975.patch
 pnacl-llvm-0045-270-857e44955115cc8152ee6ce992dc14bb971b294f.patch
+module.patch
 pnacl-llvm-0046-271-f126cff1897d1866b5d66f8f38328007e8de9008.patch
 pnacl-llvm-0047-272-2f18272824f28307bf6efa1ac5c272d1625a10d6.patch
 pnacl-llvm-0048-273-7b01f5e8dffade0ca7b7d639c9f9a6a5c82d638b.patch
@@ -62,3 +63,16 @@ llvm-pnacl-0039-new-emitbundle.patch
 llvm-pnacl-0040-lsdasection.patch
 llvm-pnacl-0041-lto-full.patch
 unbreak_nonsrpc.patch
+fixtypo1.patch
+typo2.patch
+typo-asmprinter.patch
+typo-ArmInstrInfo.patch
+typo-constant.patch
+typo-ARMFrameLowering.patch
+typo-armmcinstlower.patch
+typo-naclrewrite.patch
+typo-arminstrinfo2.patch
+typo-arminstrinfo3.patch
+naclmode.patch
+armmcasminfo.patch
+x86registerinfo.patch
