@@ -1,0 +1,93 @@
+# HG changeset patch
+# Parent 880448700b660eaee1b47e0099e2be3b6e49bbae
+# User Derek Schuff <dschuff@google.com>
+Minimal changes to make lli compile and validate
+
+diff -r 880448700b66 lib/ExecutionEngine/Interpreter/ExternalFunctions.cpp
+--- a/lib/ExecutionEngine/Interpreter/ExternalFunctions.cpp	Thu Aug 11 15:05:21 2011 -0700
++++ b/lib/ExecutionEngine/Interpreter/ExternalFunctions.cpp	Fri Aug 12 12:33:22 2011 -0700
+@@ -325,8 +325,9 @@
+ GenericValue lle_X_abort(const FunctionType *FT,
+                          const std::vector<GenericValue> &Args) {
+   //FIXME: should we report or raise here?
+-  //report_fatal_error("Interpreted program raised SIGABRT");
+-  raise (SIGABRT);
++  report_fatal_error("Interpreted program raised SIGABRT");//@LOCALMOD 
++  //TODO(dschuff) fixme or figure out how to get raise()
++  //raise (SIGABRT);
+   return GenericValue();
+ }
+ 
+diff -r 880448700b66 lib/Makefile
+--- a/lib/Makefile	Thu Aug 11 15:05:21 2011 -0700
++++ b/lib/Makefile	Fri Aug 12 12:33:22 2011 -0700
+@@ -14,7 +14,7 @@
+                 Target ExecutionEngine Linker MC CompilerDriver Object Wrap
+ 
+ ifeq ($(NACL_SANDBOX),1)
+-  PARALLEL_DIRS := $(filter-out Archive ExecutionEngine Linker CompilerDriver, \
++  PARALLEL_DIRS := $(filter-out Archive Linker CompilerDriver, \
+                 $(PARALLEL_DIRS))
+ endif
+ 
+diff -r 880448700b66 lib/Support/DynamicLibrary.cpp
+--- a/lib/Support/DynamicLibrary.cpp	Thu Aug 11 15:05:21 2011 -0700
++++ b/lib/Support/DynamicLibrary.cpp	Fri Aug 12 12:33:22 2011 -0700
+@@ -22,8 +22,6 @@
+ #include <map>
+ #include <vector>
+ 
+-#if !defined(__native_client__)
+-
+ // Collection of symbol name/value pairs to be searched prior to any libraries.
+ static std::map<std::string, void*> *ExplicitSymbols = 0;
+ 
+@@ -171,5 +169,3 @@
+ 
+ #endif // LLVM_ON_WIN32
+ 
+-#endif // (__native_client__)
+-
+diff -r 880448700b66 lib/Target/X86/X86JITInfo.cpp
+--- a/lib/Target/X86/X86JITInfo.cpp	Thu Aug 11 15:05:21 2011 -0700
++++ b/lib/Target/X86/X86JITInfo.cpp	Fri Aug 12 12:33:22 2011 -0700
+@@ -25,15 +25,11 @@
+ using namespace llvm;
+ 
+ // Determine the platform we're running on
+-// @LOCALMOD - This disables the JIT related inline asm code 
+-//             from getting compiled into llvm-tools
+-#if !defined(__native_client__)
+ #if defined (__x86_64__) || defined (_M_AMD64) || defined (_M_X64)
+ # define X86_64_JIT
+ #elif defined(__i386__) || defined(i386) || defined(_M_IX86)
+ # define X86_32_JIT
+ #endif
+-#endif
+ 
+ void X86JITInfo::replaceMachineCodeForFunction(void *Old, void *New) {
+   unsigned char *OldByte = (unsigned char *)Old;
+@@ -234,7 +230,11 @@
+     "popl    %ebp\n"
+     CFI(".cfi_adjust_cfa_offset -4\n")
+     CFI(".cfi_restore %ebp\n")
++#if defined(__native_client__) // @LOCALMOD-BEGIN
++    "popl %ecx; nacljmp %ecx\n"
++#else
+     "ret\n"
++#endif // @LOCALMOD-END
+     CFI(".cfi_endproc\n")
+     SIZE(X86CompilationCallback)
+   );
+@@ -299,7 +299,11 @@
+     "popl    %ebp\n"
+     CFI(".cfi_adjust_cfa_offset -4\n")
+     CFI(".cfi_restore %ebp\n")
++#if defined(__native_client__) // @LOCALMOD-BEGIN
++    "popl %ecx; nacljmp %ecx\n"
++#else
+     "ret\n"
++#endif // @LOCALMOD-END
+     CFI(".cfi_endproc\n")
+     SIZE(X86CompilationCallback_SSE)
+   );

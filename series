@@ -61,3 +61,4 @@ unbreak_nonsrpc.patch
 remove-intrinsics.patch
 remove-intrinsics2.patch
 include_stdio.patch
+compile_lli.patch
