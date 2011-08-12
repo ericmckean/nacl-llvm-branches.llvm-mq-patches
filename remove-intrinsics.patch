@@ -1,12 +1,12 @@
 # HG changeset patch
 # User David Sehr <sehr@google.com>
-# Parent f4f1e1635a7cce8cc66545ada928c9ab2d172d93
+# Parent 6355f81bb5525930601f69e0245f960c4518c181
 First step of removing obsolete ELF start intrinsics and front end support.
 
-diff -r f4f1e1635a7c include/llvm/Intrinsics.td
---- a/include/llvm/Intrinsics.td	Tue Aug 09 16:42:04 2011 -0700
-+++ b/include/llvm/Intrinsics.td	Wed Aug 10 11:38:25 2011 -0700
-@@ -485,8 +485,6 @@
+diff -r 6355f81bb552 include/llvm/Intrinsics.td
+--- a/include/llvm/Intrinsics.td	Fri Aug 12 00:47:15 2011 -0700
++++ b/include/llvm/Intrinsics.td	Fri Aug 12 00:50:25 2011 -0700
+@@ -501,8 +501,6 @@
  // TODO(sehr): conditionalize this on IsNaCl64 | IsNaCl32 | IsNaClArm.
  // The expansions of these are in lib/Target/X86/X86InstrNacl.{td, cpp} and
  // lib/Target/ARM/ARMInstrInfo.td.
@@ -15,10 +15,10 @@ diff -r f4f1e1635a7c include/llvm/Intrinsics.td
  def int_nacl_setjmp : Intrinsic<[llvm_i32_ty],  [llvm_ptr_ty, llvm_ptr_ty]>,
                        GCCBuiltin<"__builtin_nacl_setjmp">;
  def int_nacl_longjmp : Intrinsic<[],  [llvm_ptr_ty, llvm_i32_ty]>,
-diff -r f4f1e1635a7c lib/Target/ARM/ARMInstrInfo.td
---- a/lib/Target/ARM/ARMInstrInfo.td	Tue Aug 09 16:42:04 2011 -0700
-+++ b/lib/Target/ARM/ARMInstrInfo.td	Wed Aug 10 11:38:25 2011 -0700
-@@ -3770,34 +3770,6 @@
+diff -r 6355f81bb552 lib/Target/ARM/ARMInstrInfo.td
+--- a/lib/Target/ARM/ARMInstrInfo.td	Fri Aug 12 00:47:15 2011 -0700
++++ b/lib/Target/ARM/ARMInstrInfo.td	Fri Aug 12 00:50:25 2011 -0700
+@@ -4379,34 +4379,6 @@
  // lib/Target/X86InstrNaCl.{td, cpp}.
  // TODO(sehr): conditionalize this on IsNaCl64 | IsNaCl32 | IsNaClArm.
  
@@ -53,10 +53,10 @@ diff -r f4f1e1635a7c lib/Target/ARM/ARMInstrInfo.td
  let Uses = [R0], Defs = [R0] in {
    // Saves all the callee-saves registers, sp, and lr to the JMP_BUF structure
    // pointed to by r0.  The JMP_BUF structure is the maximum size over all
-diff -r f4f1e1635a7c lib/Target/X86/X86InstrNaCl.cpp
---- a/lib/Target/X86/X86InstrNaCl.cpp	Tue Aug 09 16:42:04 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.cpp	Wed Aug 10 11:38:25 2011 -0700
-@@ -353,55 +353,6 @@
+diff -r 6355f81bb552 lib/Target/X86/MCTargetDesc/X86InstrNaCl.cpp
+--- a/lib/Target/X86/MCTargetDesc/X86InstrNaCl.cpp	Fri Aug 12 00:47:15 2011 -0700
++++ b/lib/Target/X86/MCTargetDesc/X86InstrNaCl.cpp	Fri Aug 12 00:50:25 2011 -0700
+@@ -435,55 +435,6 @@
    Out.EmitBundleUnlock();
  }
  
@@ -112,7 +112,7 @@ diff -r f4f1e1635a7c lib/Target/X86/X86InstrNaCl.cpp
  // Does the x86 platform specific work for setjmp.
  // It expects that a pointer to a JMP_BUF in %ecx/%rdi, and that the return
  // address is in %edx/%rdx.
-@@ -604,12 +555,6 @@
+@@ -686,12 +637,6 @@
      return true;
    // Intrinsics for eliminating platform specific .s code from the client
    // side link.  These are recognized in X86InstrNaCl.td.
@@ -125,9 +125,9 @@ diff -r f4f1e1635a7c lib/Target/X86/X86InstrNaCl.cpp
    case X86::NACL_SETJ32:
      EmitSetjmp(false, Out);
      return true;
-diff -r f4f1e1635a7c lib/Target/X86/X86InstrNaCl.td
---- a/lib/Target/X86/X86InstrNaCl.td	Tue Aug 09 16:42:04 2011 -0700
-+++ b/lib/Target/X86/X86InstrNaCl.td	Wed Aug 10 11:38:25 2011 -0700
+diff -r 6355f81bb552 lib/Target/X86/X86InstrNaCl.td
+--- a/lib/Target/X86/X86InstrNaCl.td	Fri Aug 12 00:47:15 2011 -0700
++++ b/lib/Target/X86/X86InstrNaCl.td	Fri Aug 12 00:50:25 2011 -0700
 @@ -339,49 +339,6 @@
  // lib/Target/X86/X86InstrNaCl.cpp.
  // TODO(sehr): Separate this code to allow NaCl and non-NaCl versions.
