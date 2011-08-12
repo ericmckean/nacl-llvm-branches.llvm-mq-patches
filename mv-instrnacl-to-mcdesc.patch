@@ -1,0 +1,9 @@
+# HG changeset patch
+# Parent 205e900b100feb1f669453123dbd56e1e02df4d7
+# User Jason Kim <jasonwkim@google.com>
+diff --git a/lib/Target/ARM/ARMInstrNaCl.cpp b/lib/Target/ARM/MCTargetDesc/ARMInstrNaCl.cpp
+rename from lib/Target/ARM/ARMInstrNaCl.cpp
+rename to lib/Target/ARM/MCTargetDesc/ARMInstrNaCl.cpp
+diff --git a/lib/Target/ARM/ARMInstrNaCl.h b/lib/Target/ARM/MCTargetDesc/ARMInstrNaCl.h
+rename from lib/Target/ARM/ARMInstrNaCl.h
+rename to lib/Target/ARM/MCTargetDesc/ARMInstrNaCl.h
