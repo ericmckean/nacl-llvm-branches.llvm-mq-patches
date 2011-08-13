@@ -69,3 +69,7 @@ mv-X86InstrNaCl-MCTargetDesc.patch
 remove-intrinsics.patch
 remove-intrinsics2.patch
 include_stdio.patch
+subtargetfeature.patch
+X86Subtarget.patch
+mc-ostype.patch
+mc-ostype.h

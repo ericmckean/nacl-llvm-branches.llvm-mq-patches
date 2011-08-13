@@ -1,0 +1,14 @@
+# HG changeset patch
+# Parent 9ed0978c9663868729daa2753723b55c73f4fd21
+# User Jason Kim <jasonwkim@google.com>
+diff -r 9ed0978c9663 -r fe7df97c23f5 lib/Target/X86/X86Subtarget.cpp
+--- a/lib/Target/X86/X86Subtarget.cpp	Fri Aug 12 13:04:30 2011 -0700
++++ b/lib/Target/X86/X86Subtarget.cpp	Fri Aug 12 16:01:05 2011 -0700
+@@ -258,6 +258,7 @@
+   // FIXME: this is a known good value for Yonah. How about others?
+   , MaxInlineSizeThreshold(128)
+   , TargetTriple(TT)
++  , InNaClMode(false) // @LOCALMOD
+   , In64BitMode(is64Bit) {
+   // Determine default and user specified characteristics
+   if (!FS.empty() || !CPU.empty()) {

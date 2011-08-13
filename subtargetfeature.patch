@@ -1,0 +1,14 @@
+# HG changeset patch
+# Parent 48ff9d5fb9cc5ebb6b369e30da1631070fc20e69
+# User Jason Kim <jasonwkim@google.com>
+diff -r 48ff9d5fb9cc -r 3132cdab2112 lib/MC/SubtargetFeature.cpp
+--- a/lib/MC/SubtargetFeature.cpp	Fri Aug 12 10:57:07 2011 -0700
++++ b/lib/MC/SubtargetFeature.cpp	Fri Aug 12 11:21:12 2011 -0700
+@@ -398,6 +398,7 @@
+              Triple.getOS() == Triple::NativeClient) {
+     AddFeature("-neon");
+     AddFeature("+vfp2");
++    AddFeature("-vfp3");
+ // @LOCALMOD-END
+   }
+   // @ LOCALMOD-BEGIN
