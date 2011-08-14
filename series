@@ -72,3 +72,5 @@ include_stdio.patch
 subtargetfeature.patch
 X86Subtarget.patch
 mc-ostype.patch
+localmod-mcsubtarget.patch
+debug-nonsense.patch

@@ -1,0 +1,22 @@
+# HG changeset patch
+# Parent 077f8ea1cf2289e279f730d04b336886f9db24a4
+# User Jason Kim <jasonwkim@google.com>
+Patch to activate NaCl mode on the MC Subsystem
+
+
+diff -r 077f8ea1cf22 -r fe3f58fc1fbe lib/MC/MCSubtargetInfo.cpp
+--- a/lib/MC/MCSubtargetInfo.cpp	Sat Aug 13 14:27:42 2011 -0700
++++ b/lib/MC/MCSubtargetInfo.cpp	Sat Aug 13 14:40:41 2011 -0700
+@@ -39,6 +39,12 @@
+   SubtargetFeatures Features(FS);
+   FeatureBits = Features.getFeatureBits(CPU, ProcDesc, NumProcs,
+                                         ProcFeatures, NumFeatures);
++
++  // @LOCALMOD-START
++  if (TargetTriple.getOS() == Triple::NativeClient) {
++    ToggleFeature("+modenacl");
++  }
++  // @LOCALMOD-END
+ }
+ 
+ /// ReInitMCSubtargetInfo - Change CPU (and optionally supplemented with
